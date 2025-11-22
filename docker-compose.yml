@@ -7,8 +7,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/app/data
-      - ./config/setting.toml:/app/config/setting.toml
+      - /data/coolify/applications/ows8gwsskoccks0cwcsg44g8/data:/app/data
+      - /data/coolify/applications/ows8gwsskoccks0cwcsg44g8/config:/app/config
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
