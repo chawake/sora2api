@@ -1,4 +1,4 @@
-"""Sora API client module"""
+"""Sora API client module""" 
 import base64
 import io
 import time
@@ -22,9 +22,9 @@ class SoraClient:
     @staticmethod
     def _generate_sentinel_token() -> str:
         """
-        生成 openai-sentinel-token
-        根据测试文件的逻辑，传入任意随机字符即可
-        生成10-20个字符的随机字符串（字母+数字）
+        Generate openai-sentinel-token
+        According to test file logic, any random characters will work
+        Generate 10-20 character random string (letters + digits)
         """
         length = random.randint(10, 20)
         random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=length))
@@ -50,7 +50,7 @@ class SoraClient:
             "Authorization": f"Bearer {token}"
         }
 
-        # 只在生成请求时添加 sentinel token
+        # Only add sentinel token for generation requests
         if add_sentinel_token:
             headers["openai-sentinel-token"] = self._generate_sentinel_token()
 
@@ -63,7 +63,7 @@ class SoraClient:
             kwargs = {
                 "headers": headers,
                 "timeout": self.timeout,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "chrome"  # Automatically generate User-Agent and browser fingerprint
             }
 
             if proxy_url:
@@ -132,20 +132,20 @@ class SoraClient:
     async def upload_image(self, image_data: bytes, token: str, filename: str = "image.png") -> str:
         """Upload image and return media_id
 
-        使用 CurlMime 对象上传文件（curl_cffi 的正确方式）
-        参考：https://curl-cffi.readthedocs.io/en/latest/quick_start.html#uploads
+        Use CurlMime object to upload files (correct way for curl_cffi)
+        Reference: https://curl-cffi.readthedocs.io/en/latest/quick_start.html#uploads
         """
-        # 检测图片类型
+        # Detect image type
         mime_type = "image/png"
         if filename.lower().endswith('.jpg') or filename.lower().endswith('.jpeg'):
             mime_type = "image/jpeg"
         elif filename.lower().endswith('.webp'):
             mime_type = "image/webp"
 
-        # 创建 CurlMime 对象
+        # Create CurlMime object
         mp = CurlMime()
 
-        # 添加文件部分
+        # Add file part
         mp.addpart(
             name="file",
             content_type=mime_type,
@@ -153,7 +153,7 @@ class SoraClient:
             data=image_data
         )
 
-        # 添加文件名字段
+        # Add filename field
         mp.addpart(
             name="file_name",
             data=filename.encode('utf-8')
@@ -186,7 +186,7 @@ class SoraClient:
             "inpaint_items": inpaint_items
         }
 
-        # 生成请求需要添加 sentinel token
+        # Generation requests need sentinel token
         result = await self._make_request("POST", "/video_gen", token, json_data=json_data, add_sentinel_token=True)
         return result["id"]
     
@@ -210,7 +210,7 @@ class SoraClient:
             "inpaint_items": inpaint_items
         }
 
-        # 生成请求需要添加 sentinel token
+        # Generation requests need sentinel token
         result = await self._make_request("POST", "/nf/create", token, json_data=json_data, add_sentinel_token=True)
         return result["id"]
     
@@ -253,10 +253,10 @@ class SoraClient:
             "post_text": prompt
         }
 
-        # 发布请求需要添加 sentinel token
+        # Post request needs sentinel token
         result = await self._make_request("POST", "/project_y/post", token, json_data=json_data, add_sentinel_token=True)
 
-        # 返回 post.id
+        # Return post.id
         return result.get("post", {}).get("id", "")
 
     async def delete_post(self, post_id: str, token: str) -> bool:

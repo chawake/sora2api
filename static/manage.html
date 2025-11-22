@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="h-full">
+<html lang="en" class="h-full">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8"> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理控制台 - Sora2API</title>
+    <title>Admin Console - Sora2API</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @keyframes slide-up{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -15,14 +15,14 @@
     </script>
 </head>
 <body class="h-full bg-background text-foreground antialiased">
-    <!-- 导航栏 -->
+    <!-- Navigation -->
     <header class="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur">
         <div class="mx-auto flex h-14 max-w-7xl items-center px-6">
             <div class="mr-4 flex items-baseline gap-3">
                 <span class="font-bold text-xl">Sora2API</span>
             </div>
             <div class="flex flex-1 items-center justify-end gap-3">
-                <a href="https://github.com/TheSmallHanCat/sora2api" target="_blank" class="inline-flex items-center justify-center text-xs transition-colors hover:bg-accent hover:text-accent-foreground h-7 px-2.5" title="GitHub 仓库">
+                <a href="https://github.com/TheSmallHanCat/sora2api" target="_blank" class="inline-flex items-center justify-center text-xs transition-colors hover:bg-accent hover:text-accent-foreground h-7 px-2.5" title="GitHub Repository">
                     <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v 3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
                     </svg>
@@ -33,95 +33,95 @@
                         <polyline points="16 17 21 12 16 7"/>
                         <line x1="21" y1="12" x2="9" y2="12"/>
                     </svg>
-                    退出
+                    Logout
                 </button>
             </div>
         </div>
     </header>
 
     <main class="mx-auto max-w-7xl px-6 py-6">
-        <!-- Tab 导航 -->
+        <!-- Tab Navigation -->
         <div class="border-b border-border mb-6">
             <nav class="flex space-x-8">
-                <button onclick="switchTab('tokens')" id="tabTokens" class="tab-btn border-b-2 border-primary text-sm font-medium py-3 px-1">Token 管理</button>
-                <button onclick="switchTab('settings')" id="tabSettings" class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">系统配置</button>
-                <button onclick="switchTab('logs')" id="tabLogs" class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">请求日志</button>
+                <button onclick="switchTab('tokens')" id="tabTokens" class="tab-btn border-b-2 border-primary text-sm font-medium py-3 px-1">Token Management</button>
+                <button onclick="switchTab('settings')" id="tabSettings" class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">System Settings</button>
+                <button onclick="switchTab('logs')" id="tabLogs" class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">Request Logs</button>
             </nav>
         </div>
 
-        <!-- Token 管理面板 -->
+        <!-- Token Management Panel -->
         <div id="panelTokens">
-            <!-- 统计卡片 -->
+            <!-- Statistics Cards -->
             <div class="grid gap-4 grid-cols-2 md:grid-cols-5 mb-6">
                 <div class="rounded-lg border border-border bg-background p-4">
-                    <p class="text-sm font-medium text-muted-foreground mb-2">Token 总数</p>
+                    <p class="text-sm font-medium text-muted-foreground mb-2">Total Tokens</p>
                     <h3 class="text-xl font-bold" id="statTotal">-</h3>
                 </div>
                 <div class="rounded-lg border border-border bg-background p-4">
-                    <p class="text-sm font-medium text-muted-foreground mb-2">活跃 Token</p>
+                    <p class="text-sm font-medium text-muted-foreground mb-2">Active Tokens</p>
                     <h3 class="text-xl font-bold text-green-600" id="statActive">-</h3>
                 </div>
                 <div class="rounded-lg border border-border bg-background p-4">
-                    <p class="text-sm font-medium text-muted-foreground mb-2">今日图片/总图片</p>
+                    <p class="text-sm font-medium text-muted-foreground mb-2">Today's Images/Total Images</p>
                     <h3 class="text-xl font-bold text-blue-600" id="statImages">-</h3>
                 </div>
                 <div class="rounded-lg border border-border bg-background p-4">
-                    <p class="text-sm font-medium text-muted-foreground mb-2">今日视频/总视频</p>
+                    <p class="text-sm font-medium text-muted-foreground mb-2">Today's Videos/Total Videos</p>
                     <h3 class="text-xl font-bold text-purple-600" id="statVideos">-</h3>
                 </div>
                 <div class="rounded-lg border border-border bg-background p-4">
-                    <p class="text-sm font-medium text-muted-foreground mb-2">今日错误/总错误</p>
+                    <p class="text-sm font-medium text-muted-foreground mb-2">Today's Errors/Total Errors</p>
                     <h3 class="text-xl font-bold text-destructive" id="statErrors">-</h3>
                 </div>
             </div>
 
-            <!-- Token 列表 -->
+            <!-- Token List --> 
             <div class="rounded-lg border border-border bg-background">
                 <div class="flex items-center justify-between gap-4 p-4 border-b border-border">
-                    <h3 class="text-lg font-semibold">Token 列表</h3>
+                    <h3 class="text-lg font-semibold">Token List</h3>
                     <div class="flex items-center gap-3">
-                        <!-- 自动刷新AT标签和开关 -->
+                        <!-- Auto Refresh AT Label and Toggle -->
                         <div class="flex items-center gap-2">
-                            <span class="text-xs text-muted-foreground">自动刷新AT</span>
+                            <span class="text-xs text-muted-foreground">Auto Refresh AT</span>
                             <div class="relative inline-flex items-center group">
                                 <label class="inline-flex items-center cursor-pointer">
                                     <input type="checkbox" id="atAutoRefreshToggle" onchange="toggleATAutoRefresh()" class="sr-only peer">
                                     <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                                 </label>
-                                <!-- 悬浮提示 -->
+                                <!-- Hover Tooltip -->
                                 <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                    Token距离过期<24h时自动使用ST或RT刷新AT
+                                    Automatically refresh AT using ST or RT when token expires within 24h
                                     <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                                 </div>
                             </div>
                         </div>
-                        <button onclick="refreshTokens()" class="inline-flex items-center justify-center rounded-md transition-colors hover:bg-accent h-8 w-8" title="刷新">
+                        <button onclick="refreshTokens()" class="inline-flex items-center justify-center rounded-md transition-colors hover:bg-accent h-8 w-8" title="Refresh">
                             <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
                             </svg>
                         </button>
-                        <button onclick="exportTokens()" class="inline-flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700 h-8 px-3" title="导出所有Token">
+                        <button onclick="exportTokens()" class="inline-flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700 h-8 px-3" title="Export All Tokens">
                             <svg class="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                 <polyline points="7 10 12 15 17 10"/>
                                 <line x1="12" y1="15" x2="12" y2="3"/>
                             </svg>
-                            <span class="text-sm font-medium">导出</span>
+                            <span class="text-sm font-medium">Export</span>
                         </button>
-                        <button onclick="openImportModal()" class="inline-flex items-center justify-center rounded-md bg-green-600 text-white hover:bg-green-700 h-8 px-3" title="导入Token">
+                        <button onclick="openImportModal()" class="inline-flex items-center justify-center rounded-md bg-green-600 text-white hover:bg-green-700 h-8 px-3" title="Import Token">
                             <svg class="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                 <polyline points="17 8 12 3 7 8"/>
                                 <line x1="12" y1="3" x2="12" y2="15"/>
                             </svg>
-                            <span class="text-sm font-medium">导入</span>
+                            <span class="text-sm font-medium">Import</span>
                         </button>
                         <button onclick="openAddModal()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3">
                             <svg class="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="12" y1="5" x2="12" y2="19"/>
                                 <line x1="5" y1="12" x2="19" y2="12"/>
                             </svg>
-                            <span class="text-sm font-medium">新增</span>
+                            <span class="text-sm font-medium">Add</span>
                         </button>
                     </div>
                 </div>
@@ -130,17 +130,17 @@
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="border-b border-border">
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">邮箱</th>
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">状态</th>
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">过期时间</th>
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">账户类型</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Email</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Status</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Expires</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Account Type</th>
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Sora2</th>
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">可用次数</th>
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">图片</th>
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">视频</th>
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">错误</th>
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">备注</th>
-                                <th class="h-10 px-3 text-right align-middle font-medium text-muted-foreground">操作</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Available</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Images</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Videos</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Errors</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Notes</th>
+                                <th class="h-10 px-3 text-right align-middle font-medium text-muted-foreground">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="tokenTableBody" class="divide-y divide-border">
@@ -151,187 +151,186 @@
             </div>
         </div>
 
-        <!-- 系统配置面板 -->
+        <!-- System Settings Panel -->
         <div id="panelSettings" class="hidden">
             <div class="grid gap-6 lg:grid-cols-2">
-                <!-- 安全配置 -->
+                <!-- Security Settings -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">安全配置</h3>
+                    <h3 class="text-lg font-semibold mb-4">Security Settings</h3>
                     <div class="space-y-4">
                         <div>
-                            <label class="text-sm font-medium mb-2 block">管理员用户名</label>
+                            <label class="text-sm font-medium mb-2 block">Admin Username</label>
                             <input id="cfgAdminUsername" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                            <p class="text-xs text-muted-foreground mt-1">管理员用户名</p>
+                            <p class="text-xs text-muted-foreground mt-1">Admin username</p>
                         </div>
                         <div>
-                            <label class="text-sm font-medium mb-2 block">旧密码</label>
-                            <input id="cfgOldPassword" type="password" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="输入旧密码">
+                            <label class="text-sm font-medium mb-2 block">Old Password</label>
+                            <input id="cfgOldPassword" type="password" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Enter old password">
                         </div>
                         <div>
-                            <label class="text-sm font-medium mb-2 block">新密码</label>
-                            <input id="cfgNewPassword" type="password" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="输入新密码">
+                            <label class="text-sm font-medium mb-2 block">New Password</label>
+                            <input id="cfgNewPassword" type="password" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Enter new password">
                         </div>
-                        <button onclick="updateAdminPassword()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">修改密码</button>
+                        <button onclick="updateAdminPassword()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Change Password</button>
                     </div>
                 </div>
 
-                <!-- API 密钥配置 -->
+                <!-- API Key Settings -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">API 密钥配置</h3>
+                    <h3 class="text-lg font-semibold mb-4">API Key Settings</h3>
                     <div class="space-y-4">
                         <div>
-                            <label class="text-sm font-medium mb-2 block">当前 API Key</label>
+                            <label class="text-sm font-medium mb-2 block">Current API Key</label>
                             <input id="cfgCurrentAPIKey" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" readonly disabled>
-                            <p class="text-xs text-muted-foreground mt-1">当前使用的 API Key（只读）</p>
+                            <p class="text-xs text-muted-foreground mt-1">Currently used API Key (read-only)</p>
                         </div>
                         <div>
-                            <label class="text-sm font-medium mb-2 block">新 API Key</label>
-                            <input id="cfgNewAPIKey" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="输入新的 API Key">
-                            <p class="text-xs text-muted-foreground mt-1">用于客户端调用 API 的密钥</p>
+                            <label class="text-sm font-medium mb-2 block">New API Key</label>
+                            <input id="cfgNewAPIKey" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Enter new API Key">
+                            <p class="text-xs text-muted-foreground mt-1">Key for client API calls</p>
                         </div>
-                        <button onclick="updateAPIKey()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">更新 API Key</button>
+                        <button onclick="updateAPIKey()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Update API Key</button>
                     </div>
                 </div>
 
-                <!-- 代理配置 -->
+                <!-- Proxy Settings -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">代理配置</h3>
+                    <h3 class="text-lg font-semibold mb-4">Proxy Settings</h3>
                     <div class="space-y-4">
                         <div>
                             <label class="inline-flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" id="cfgProxyEnabled" class="h-4 w-4 rounded border-input">
-                                <span class="text-sm font-medium">启用代理</span>
+                                <span class="text-sm font-medium">Enable Proxy</span>
                             </label>
                         </div>
                         <div>
-                            <label class="text-sm font-medium mb-2 block">代理地址</label>
+                            <label class="text-sm font-medium mb-2 block">Proxy URL</label>
                             <input id="cfgProxyUrl" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="http://127.0.0.1:7890 或 socks5://127.0.0.1:1080">
-                            <p class="text-xs text-muted-foreground mt-1">支持 HTTP 和 SOCKS5 代理</p>
+                            <p class="text-xs text-muted-foreground mt-1">Supports HTTP and SOCKS5 proxies</p>
                         </div>
-                        <button onclick="saveProxyConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">保存配置</button>
+                        <button onclick="saveProxyConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save Settings</button>
                     </div>
                 </div>
 
-                <!-- 错误处理配置 -->
+                <!-- Error Handling Settings -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">错误处理配置</h3>
+                    <h3 class="text-lg font-semibold mb-4">Error Handling Settings</h3>
                     <div class="space-y-4">
                         <div>
-                            <label class="text-sm font-medium mb-2 block">错误封禁阈值</label>
+                            <label class="text-sm font-medium mb-2 block">Error Ban Threshold</label>
                             <input id="cfgErrorBan" type="number" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="3">
-                            <p class="text-xs text-muted-foreground mt-1">Token 连续错误达到此次数后自动禁用</p>
+                            <p class="text-xs text-muted-foreground mt-1">Automatically disable token after this many consecutive errors</p>
                         </div>
-                        <button onclick="saveAdminConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">保存配置</button>
+                        <button onclick="saveAdminConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save Settings</button>
                     </div>
                 </div>
 
-                <!-- 缓存配置 -->
+                <!-- Cache Settings -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">缓存配置</h3>
+                    <h3 class="text-lg font-semibold mb-4">Cache Settings</h3>
                     <div class="space-y-4">
                         <div>
                             <label class="inline-flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" id="cfgCacheEnabled" class="h-4 w-4 rounded border-input" onchange="toggleCacheOptions()">
-                                <span class="text-sm font-medium">启用缓存</span>
+                                <span class="text-sm font-medium">Enable Cache</span>
                             </label>
-                            <p class="text-xs text-muted-foreground mt-1">关闭后，生成的图片和视频将直接输出原始链接，不会缓存到本地</p>
+                            <p class="text-xs text-muted-foreground mt-1">When disabled, generated images and videos will output original links without local caching</p>
                         </div>
 
-                        <!-- 缓存配置选项 -->
+                        <!-- Cache Configuration Options -->
                         <div id="cacheOptions" style="display: none;" class="space-y-4 pt-4 border-t border-border">
                             <div>
-                                <label class="text-sm font-medium mb-2 block">缓存超时时间（秒）</label>
+                                <label class="text-sm font-medium mb-2 block">Cache Timeout (seconds)</label>
                                 <input id="cfgCacheTimeout" type="number" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="7200" min="60" max="86400">
-                                <p class="text-xs text-muted-foreground mt-1">文件缓存超时时间，范围：60-86400 秒（1分钟-24小时）</p>
+                                <p class="text-xs text-muted-foreground mt-1">File cache timeout, range: 60-86400 seconds (1 minute - 24 hours)</p>
                             </div>
                             <div>
-                                <label class="text-sm font-medium mb-2 block">缓存文件访问域名</label>
+                                <label class="text-sm font-medium mb-2 block">Cache Access Domain</label>
                                 <input id="cfgCacheBaseUrl" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="https://yourdomain.com">
-                                <p class="text-xs text-muted-foreground mt-1">留空则使用服务器地址，例如：https://yourdomain.com</p>
+                                <p class="text-xs text-muted-foreground mt-1">Leave empty to use server address, e.g.: https://yourdomain.com</p>
                             </div>
                             <div id="cacheEffectiveUrl" class="rounded-md bg-muted p-3 hidden">
                                 <p class="text-xs text-muted-foreground">
-                                    <strong>🌐 当前生效的访问地址：</strong><code id="cacheEffectiveUrlValue" class="bg-background px-1 py-0.5 rounded"></code>
+                                    <strong>🌐 Current effective access URL:</strong><code id="cacheEffectiveUrlValue" class="bg-background px-1 py-0.5 rounded"></code>
                                 </p>
                             </div>
                         </div>
 
-                        <button onclick="saveCacheConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">保存配置</button>
+                        <button onclick="saveCacheConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save Settings</button>
                     </div>
                 </div>
 
-                <!-- 生成超时配置 -->
+                <!-- Generation Timeout Settings -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">生成超时配置</h3>
+                    <h3 class="text-lg font-semibold mb-4">Generation Timeout Settings</h3>
                     <div class="space-y-4">
                         <div>
-                            <label class="text-sm font-medium mb-2 block">图片生成超时时间（秒）</label>
+                            <label class="text-sm font-medium mb-2 block">Image Generation Timeout (seconds)</label>
                             <input id="cfgImageTimeout" type="number" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="300" min="60" max="3600">
-                            <p class="text-xs text-muted-foreground mt-1">图片生成超时时间，范围：60-3600 秒（1分钟-1小时），超时后自动释放Token锁</p>
+                            <p class="text-xs text-muted-foreground mt-1">Image generation timeout, range: 60-3600 seconds (1 minute - 1 hour), releases token lock after timeout</p>
                         </div>
                         <div>
-                            <label class="text-sm font-medium mb-2 block">视频生成超时时间（秒）</label>
+                            <label class="text-sm font-medium mb-2 block">Video Generation Timeout (seconds)</label>
                             <input id="cfgVideoTimeout" type="number" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="1500" min="60" max="7200">
-                            <p class="text-xs text-muted-foreground mt-1">视频生成超时时间，范围：60-7200 秒（1分钟-2小时），超时后返回上游API超时错误</p>
+                            <p class="text-xs text-muted-foreground mt-1">Video generation timeout, range: 60-7200 seconds (1 minute - 2 hours), returns upstream API timeout error after timeout</p>
                         </div>
-                        <button onclick="saveGenerationTimeout()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">保存配置</button>
+                        <button onclick="saveGenerationTimeout()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save Settings</button>
                     </div>
                 </div>
 
-                <!-- 无水印模式配置 -->
+                <!-- Watermark-Free Mode Settings -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">无水印模式配置</h3>
+                    <h3 class="text-lg font-semibold mb-4">Watermark-Free Mode Settings</h3>
                     <div class="space-y-4">
                         <div>
                             <label class="inline-flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" id="cfgWatermarkFreeEnabled" class="h-4 w-4 rounded border-input" onchange="toggleWatermarkFreeOptions()">
-                                <span class="text-sm font-medium">开启无水印模式</span>
                             </label>
-                            <p class="text-xs text-muted-foreground mt-2">开启后生成的视频将会被发布到sora平台并且提取返回无水印的视频，在缓存到本地后会自动删除发布的视频</p>
+                            <p class="text-xs text-muted-foreground mt-2">When enabled, generated videos will be published to sora platform and watermark-free videos will be extracted and returned. Published videos will be automatically deleted after caching locally</p>
                         </div>
 
-                        <!-- 解析方式选择 -->
+                            <!-- Parse Method Selection -->
                         <div id="watermarkFreeOptions" style="display: none;" class="space-y-4 pt-4 border-t border-border">
                             <div>
-                                <label class="text-sm font-medium">解析方式</label>
+                                <label class="text-sm font-medium">Parse Method</label>
                                 <select id="cfgParseMethod" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground" onchange="toggleCustomParseOptions()">
-                                    <option value="third_party">第三方解析</option>
-                                    <option value="custom">自定义解析接口</option>
+                                    <option value="third_party">Third-party Parsing</option>
+                                    <option value="custom">Custom Parse Interface</option>
                                 </select>
                             </div>
 
-                            <!-- 自定义解析配置 -->
+                            <!-- Custom Parse Configuration -->
                             <div id="customParseOptions" style="display: none;" class="space-y-4">
                                 <div>
-                                    <label class="text-sm font-medium">解析服务器地址</label>
-                                    <input type="text" id="cfgCustomParseUrl" placeholder="请输入解析服务器地址 (例如: http://example.com)" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground">
-                                    <p class="text-xs text-muted-foreground mt-1"><a href="https://github.com/tibbar213/sora-downloader" target="_blank" class="text-blue-600 hover:text-blue-800 underline">部署自定义解析服务器</a></p>
+                                    <label class="text-sm font-medium">Parse Server URL</label>
+                                    <input type="text" id="cfgCustomParseUrl" placeholder="Enter parse server URL (e.g.: http://example.com)" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground">
+                                    <p class="text-xs text-muted-foreground mt-1"><a href="https://github.com/tibbar213/sora-downloader" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Deploy Custom Parse Server</a></p>
                                 </div>
                                 <div>
-                                    <label class="text-sm font-medium">访问密钥</label>
-                                    <input type="password" id="cfgCustomParseToken" placeholder="请输入访问密钥" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground">
+                                    <label class="text-sm font-medium">Access Key</label>
+                                    <input type="password" id="cfgCustomParseToken" placeholder="Enter access key" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground">
                                 </div>
                             </div>
                         </div>
 
-                        <button onclick="saveWatermarkFreeConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">保存配置</button>
+                        <button onclick="saveWatermarkFreeConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save Settings</button>
                     </div>
                 </div>
 
-                <!-- 调试配置 -->
+                <!-- Debug Settings -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">调试配置</h3>
+                    <h3 class="text-lg font-semibold mb-4">Debug Settings</h3>
                     <div class="space-y-4">
                         <div>
                             <label class="inline-flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" id="cfgDebugEnabled" class="h-4 w-4 rounded border-input" onchange="toggleDebugMode()">
-                                <span class="text-sm font-medium">启用调试模式</span>
+                                <span class="text-sm font-medium">Enable Debug Mode</span>
                             </label>
-                            <p class="text-xs text-muted-foreground mt-2">开启后，详细的上游API请求和响应日志将写入 <code class="bg-muted px-1 py-0.5 rounded">logs.txt</code> 文件，重启生效</p>
+                            <p class="text-xs text-muted-foreground mt-2">When enabled, detailed upstream API request and response logs will be written to <code class="bg-muted px-1 py-0.5 rounded">logs.txt</code> file, takes effect after restart</p>
                         </div>
                         <div class="rounded-md bg-yellow-50 dark:bg-yellow-900/20 p-3 border border-yellow-200 dark:border-yellow-800">
                             <p class="text-xs text-yellow-800 dark:text-yellow-200">
-                                ⚠️ <strong>注意：</strong>调试模式会产生非常非常大量的日志，仅限Debug时候开启，否则磁盘boom
+                                ⚠️ <strong>Note:</strong> Debug mode generates very large amounts of logs, only enable for debugging, otherwise disk boom
                             </p>
                         </div>
                     </div>
@@ -339,12 +338,12 @@
             </div>
         </div>
 
-        <!-- 请求日志面板 -->
+        <!-- Request Logs Panel -->
         <div id="panelLogs" class="hidden">
             <div class="rounded-lg border border-border bg-background">
                 <div class="flex items-center justify-between gap-4 p-4 border-b border-border">
-                    <h3 class="text-lg font-semibold">请求日志</h3>
-                    <button onclick="refreshLogs()" class="inline-flex items-center justify-center rounded-md transition-colors hover:bg-accent h-8 w-8" title="刷新">
+                    <h3 class="text-lg font-semibold">Request Logs</h3>
+                    <button onclick="refreshLogs()" class="inline-flex items-center justify-center rounded-md transition-colors hover:bg-accent h-8 w-8" title="Refresh">
                         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
                         </svg>
@@ -354,11 +353,11 @@
                     <table class="w-full text-sm">
                         <thead class="sticky top-0 bg-background">
                             <tr class="border-b border-border">
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">操作</th>
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Token邮箱</th>
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">状态码</th>
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">耗时(秒)</th>
-                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">时间</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Operation</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Token Email</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Status Code</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Duration (s)</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Time</th>
                             </tr>
                         </thead>
                         <tbody id="logsTableBody" class="divide-y divide-border">
@@ -369,17 +368,17 @@
             </div>
         </div>
 
-        <!-- 页脚 -->
+        <!-- Footer -->
         <footer class="mt-12 pt-6 border-t border-border text-center text-xs text-muted-foreground">
             <p>© 2025 <a href="https://linux.do/u/thesmallhancat/summary" target="_blank" class="no-underline hover:underline" style="color: inherit;">TheSmallHanCat</a> && <a href="https://linux.do/u/tibbar/summary" target="_blank" class="no-underline hover:underline" style="color: inherit;">Tibbar</a>. All rights reserved.</p>
         </footer>
     </main>
 
-    <!-- 添加 Token 模态框 -->
+    <!-- Add Token Modal -->
     <div id="addModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-background rounded-lg border border-border w-full max-w-2xl shadow-xl my-auto">
             <div class="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-background">
-                <h3 class="text-lg font-semibold">添加 Token</h3>
+                <h3 class="text-lg font-semibold">Add Token</h3>
                 <button onclick="closeAddModal()" class="text-muted-foreground hover:text-foreground">
                     <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/>
@@ -391,7 +390,7 @@
                 <!-- Access Token -->
                 <div class="space-y-2">
                     <label class="text-sm font-medium">Access Token (AT) <span class="text-red-500">*</span></label>
-                    <textarea id="addTokenAT" rows="3" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="请输入 Access Token 或使用下方 ST/RT 转换"></textarea>
+                    <textarea id="addTokenAT" rows="3" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="Enter Access Token or use ST/RT conversion below"></textarea>
                     <p class="text-xs text-muted-foreground">格式: eyJh... (JWT格式)</p>
                 </div>
 
@@ -399,7 +398,7 @@
                 <div class="space-y-2">
                     <label class="text-sm font-medium">Session Token (ST) <span class="text-muted-foreground text-xs">- 可选</span></label>
                     <div class="flex gap-2">
-                        <textarea id="addTokenST" rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="输入 Session Token 后点击转换"></textarea>
+                        <textarea id="addTokenST" rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="Enter Session Token then click convert"></textarea>
                         <button onclick="convertST2AT()" class="inline-flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700 px-4 whitespace-nowrap h-auto">
                             ST→AT
                         </button>
@@ -411,19 +410,19 @@
                 <div class="space-y-2">
                     <label class="text-sm font-medium">Refresh Token (RT) <span class="text-muted-foreground text-xs">- 可选</span></label>
                     <div class="flex gap-2">
-                        <textarea id="addTokenRT" rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="输入 Refresh Token 后点击转换"></textarea>
+                        <textarea id="addTokenRT" rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="Enter Refresh Token then click convert"></textarea>
                         <button onclick="convertRT2AT()" class="inline-flex items-center justify-center rounded-md bg-green-600 text-white hover:bg-green-700 px-4 whitespace-nowrap h-auto">
                             RT→AT
                         </button>
                     </div>
-                    <p class="text-xs text-muted-foreground">从移动端或其他客户端获取</p>
-                    <p id="addRTRefreshHint" class="text-xs text-green-600 font-medium hidden">✓ RT已被刷新，已填入更新后的RT</p>
+                    <p class="text-xs text-muted-foreground">Get from mobile or other clients</p>
+                    <p id="addRTRefreshHint" class="text-xs text-green-600 font-medium hidden">✓ RT has been refreshed, updated RT filled</p>
                 </div>
 
                 <!-- Remark -->
                 <div class="space-y-2">
                     <label class="text-sm font-medium">备注 <span class="text-muted-foreground text-xs">- 可选</span></label>
-                    <input id="addTokenRemark" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="添加备注信息">
+                    <input id="addTokenRemark" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Add notes">
                 </div>
 
                 <!-- 功能开关 -->
@@ -435,7 +434,7 @@
                                 <input type="checkbox" id="addTokenImageEnabled" checked class="h-4 w-4 rounded border-input">
                                 <span class="text-sm font-medium">启用图片生成</span>
                             </label>
-                            <input type="number" id="addTokenImageConcurrency" value="-1" class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm" placeholder="并发数" title="并发数量限制：设置同时处理的最大请求数。-1表示不限制">
+                            <input type="number" id="addTokenImageConcurrency" value="-1" class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm" placeholder="Concurrency" title="Concurrency limit: Set max concurrent requests. -1 for unlimited">
                         </div>
                     </div>
                     <div class="space-y-2">
@@ -444,15 +443,15 @@
                                 <input type="checkbox" id="addTokenVideoEnabled" checked class="h-4 w-4 rounded border-input">
                                 <span class="text-sm font-medium">启用视频生成</span>
                             </label>
-                            <input type="number" id="addTokenVideoConcurrency" value="-1" class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm" placeholder="并发数" title="并发数量限制：设置同时处理的最大请求数。-1表示不限制">
+                            <input type="number" id="addTokenVideoConcurrency" value="-1" class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm" placeholder="Concurrency" title="Concurrency limit: Set max concurrent requests. -1 for unlimited">
                         </div>
                     </div>
                 </div>
             </div>
             <div class="flex items-center justify-end gap-3 p-5 border-t border-border sticky bottom-0 bg-background">
-                <button onclick="closeAddModal()" class="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent h-9 px-5">取消</button>
+                <button onclick="closeAddModal()" class="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent h-9 px-5">Cancel</button>
                 <button id="addTokenBtn" onclick="submitAddToken()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-5">
-                    <span id="addTokenBtnText">添加</span>
+                    <span id="addTokenBtnText">Add</span>
                     <svg id="addTokenBtnSpinner" class="hidden animate-spin h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -462,11 +461,11 @@
         </div>
     </div>
 
-    <!-- 编辑 Token 模态框 -->
+    <!-- Edit Token Modal -->
     <div id="editModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-background rounded-lg border border-border w-full max-w-2xl shadow-xl my-auto">
             <div class="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-background">
-                <h3 class="text-lg font-semibold">编辑 Token</h3>
+                <h3 class="text-lg font-semibold">Edit Token</h3>
                 <button onclick="closeEditModal()" class="text-muted-foreground hover:text-foreground">
                     <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/>
@@ -480,7 +479,7 @@
                 <!-- Access Token -->
                 <div class="space-y-2">
                     <label class="text-sm font-medium">Access Token (AT) <span class="text-red-500">*</span></label>
-                    <textarea id="editTokenAT" rows="3" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="请输入 Access Token 或使用下方 ST/RT 转换"></textarea>
+                    <textarea id="editTokenAT" rows="3" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="Enter Access Token or use ST/RT conversion below"></textarea>
                     <p class="text-xs text-muted-foreground">格式: eyJh... (JWT格式)</p>
                 </div>
 
@@ -488,7 +487,7 @@
                 <div class="space-y-2">
                     <label class="text-sm font-medium">Session Token (ST) <span class="text-muted-foreground text-xs">- 可选</span></label>
                     <div class="flex gap-2">
-                        <textarea id="editTokenST" rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="输入 Session Token 后点击转换"></textarea>
+                        <textarea id="editTokenST" rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="Enter Session Token then click convert"></textarea>
                         <button onclick="convertEditST2AT()" class="inline-flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700 px-4 whitespace-nowrap h-auto">
                             ST→AT
                         </button>
@@ -500,19 +499,19 @@
                 <div class="space-y-2">
                     <label class="text-sm font-medium">Refresh Token (RT) <span class="text-muted-foreground text-xs">- 可选</span></label>
                     <div class="flex gap-2">
-                        <textarea id="editTokenRT" rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="输入 Refresh Token 后点击转换"></textarea>
+                        <textarea id="editTokenRT" rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="Enter Refresh Token then click convert"></textarea>
                         <button onclick="convertEditRT2AT()" class="inline-flex items-center justify-center rounded-md bg-green-600 text-white hover:bg-green-700 px-4 whitespace-nowrap h-auto">
                             RT→AT
                         </button>
                     </div>
-                    <p class="text-xs text-muted-foreground">从移动端或其他客户端获取</p>
-                    <p id="editRTRefreshHint" class="text-xs text-green-600 font-medium hidden">✓ RT已被刷新，已填入更新后的RT</p>
+                    <p class="text-xs text-muted-foreground">Get from mobile or other clients</p>
+                    <p id="editRTRefreshHint" class="text-xs text-green-600 font-medium hidden">✓ RT has been refreshed, updated RT filled</p>
                 </div>
 
                 <!-- Remark -->
                 <div class="space-y-2">
                     <label class="text-sm font-medium">备注 <span class="text-muted-foreground text-xs">- 可选</span></label>
-                    <input id="editTokenRemark" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="添加备注信息">
+                    <input id="editTokenRemark" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Add notes">
                 </div>
 
                 <!-- 功能开关 -->
@@ -524,7 +523,7 @@
                                 <input type="checkbox" id="editTokenImageEnabled" class="h-4 w-4 rounded border-input">
                                 <span class="text-sm font-medium">启用图片生成</span>
                             </label>
-                            <input type="number" id="editTokenImageConcurrency" class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm" placeholder="并发数" title="并发数量限制：设置同时处理的最大请求数。-1表示不限制">
+                            <input type="number" id="editTokenImageConcurrency" class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm" placeholder="Concurrency" title="Concurrency limit: Set max concurrent requests. -1 for unlimited">
                         </div>
                     </div>
                     <div class="space-y-2">
@@ -533,15 +532,15 @@
                                 <input type="checkbox" id="editTokenVideoEnabled" class="h-4 w-4 rounded border-input">
                                 <span class="text-sm font-medium">启用视频生成</span>
                             </label>
-                            <input type="number" id="editTokenVideoConcurrency" class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm" placeholder="并发数" title="并发数量限制：设置同时处理的最大请求数。-1表示不限制">
+                            <input type="number" id="editTokenVideoConcurrency" class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm" placeholder="Concurrency" title="Concurrency limit: Set max concurrent requests. -1 for unlimited">
                         </div>
                     </div>
                 </div>
             </div>
             <div class="flex items-center justify-end gap-3 p-5 border-t border-border sticky bottom-0 bg-background">
-                <button onclick="closeEditModal()" class="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent h-9 px-5">取消</button>
+                <button onclick="closeEditModal()" class="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent h-9 px-5">Cancel</button>
                 <button id="editTokenBtn" onclick="submitEditToken()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-5">
-                    <span id="editTokenBtnText">保存</span>
+                    <span id="editTokenBtnText">Save</span>
                     <svg id="editTokenBtnSpinner" class="hidden animate-spin h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -551,11 +550,11 @@
         </div>
     </div>
 
-    <!-- Sora2 激活模态框 -->
+    <!-- Sora2 Activation Modal -->
     <div id="sora2Modal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
         <div class="bg-background rounded-lg border border-border w-full max-w-md shadow-xl">
             <div class="flex items-center justify-between p-5 border-b border-border">
-                <h3 class="text-lg font-semibold">激活 Sora2</h3>
+                <h3 class="text-lg font-semibold">Activate Sora2</h3>
                 <button onclick="closeSora2Modal()" class="text-muted-foreground hover:text-foreground">
                     <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/>
@@ -566,15 +565,15 @@
             <div class="p-5 space-y-4">
                 <input type="hidden" id="sora2TokenId">
                 <div>
-                    <label class="text-sm font-medium mb-2 block">Sora2 邀请码</label>
-                    <input id="sora2InviteCode" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="输入6位邀请码，例如：0ZSKEG">
-                    <p class="text-xs text-muted-foreground mt-1">输入Sora2邀请码以激活该Token的Sora2功能</p>
+                    <label class="text-sm font-medium mb-2 block">Sora2 Invite Code</label>
+                    <input id="sora2InviteCode" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Enter 6-digit invite code, e.g.: 0ZSKEG">
+                    <p class="text-xs text-muted-foreground mt-1">Enter Sora2 invite code to activate Sora2 functionality for this token</p>
                 </div>
             </div>
             <div class="flex items-center justify-end gap-3 p-5 border-t border-border">
-                <button onclick="closeSora2Modal()" class="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent h-9 px-5">取消</button>
+                <button onclick="closeSora2Modal()" class="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent h-9 px-5">Cancel</button>
                 <button id="sora2ActivateBtn" onclick="submitSora2Activate()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-5">
-                    <span id="sora2ActivateBtnText">激活</span>
+                    <span id="sora2ActivateBtnText">Activate</span>
                     <svg id="sora2ActivateBtnSpinner" class="hidden animate-spin h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -584,11 +583,11 @@
         </div>
     </div>
 
-    <!-- Token 导入模态框 -->
+    <!-- Token Import Modal -->
     <div id="importModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
         <div class="bg-background rounded-lg border border-border w-full max-w-md shadow-xl">
             <div class="flex items-center justify-between p-5 border-b border-border">
-                <h3 class="text-lg font-semibold">导入 Token</h3>
+                <h3 class="text-lg font-semibold">Import Token</h3>
                 <button onclick="closeImportModal()" class="text-muted-foreground hover:text-foreground">
                     <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/>
@@ -598,20 +597,20 @@
             </div>
             <div class="p-5 space-y-4">
                 <div>
-                    <label class="text-sm font-medium mb-2 block">选择 JSON 文件</label>
+                    <label class="text-sm font-medium mb-2 block">Select JSON File</label>
                     <input type="file" id="importFile" accept=".json" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <p class="text-xs text-muted-foreground mt-1">选择导出的 Token JSON 文件进行导入</p>
+                    <p class="text-xs text-muted-foreground mt-1">Select exported Token JSON file for import</p>
                 </div>
                 <div class="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 border border-blue-200 dark:border-blue-800">
                     <p class="text-xs text-blue-800 dark:text-blue-200">
-                        <strong>说明：</strong>如果邮箱存在则会覆盖更新，不存在则会新增
+                        <strong>Note:</strong> If email exists, it will be overwritten and updated. If not exists, it will be added
                     </p>
                 </div>
             </div>
             <div class="flex items-center justify-end gap-3 p-5 border-t border-border">
-                <button onclick="closeImportModal()" class="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent h-9 px-5">取消</button>
+                <button onclick="closeImportModal()" class="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent h-9 px-5">Cancel</button>
                 <button id="importBtn" onclick="submitImportTokens()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-5">
-                    <span id="importBtnText">导入</span>
+                    <span id="importBtnText">Import</span>
                     <svg id="importBtnSpinner" class="hidden animate-spin h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

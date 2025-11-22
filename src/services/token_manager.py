@@ -8,7 +8,7 @@ from curl_cffi.requests import AsyncSession
 from faker import Faker
 from ..core.database import Database
 from ..core.models import Token, TokenStats
-from ..core.config import config
+from ..core.config import config 
 from .proxy_manager import ProxyManager
 from ..core.logger import debug_logger
 
@@ -35,18 +35,18 @@ class TokenManager:
         Returns:
             A random username string
         """
-        # 生成真实姓名
+        # Generate real name
         first_name = self.fake.first_name()
         last_name = self.fake.last_name()
 
-        # 去除姓名中的空格和特殊字符，只保留字母
+        # Remove spaces and special characters from name, keep only letters
         first_name_clean = ''.join(c for c in first_name if c.isalpha())
         last_name_clean = ''.join(c for c in last_name if c.isalpha())
 
-        # 生成1-4位随机数字
+        # Generate 1-4 digit random number
         random_digits = str(random.randint(1, 9999))
 
-        # 随机选择用户名格式
+        # Randomly select username format
         format_choice = random.choice([
             f"{first_name_clean}{last_name_clean}{random_digits}",
             f"{first_name_clean}.{last_name_clean}{random_digits}",
@@ -56,7 +56,7 @@ class TokenManager:
             f"{first_name_clean}{last_name_clean[0]}{random_digits}"
         ])
 
-        # 转换为小写
+        # Convert to lowercase
         return format_choice.lower()
 
     async def get_user_info(self, access_token: str) -> dict:
@@ -74,7 +74,7 @@ class TokenManager:
             kwargs = {
                 "headers": headers,
                 "timeout": 30,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "chrome"  # Automatically generate User-Agent and browser fingerprint
             }
 
             if proxy_url:
@@ -100,7 +100,7 @@ class TokenManager:
                 "subscription_end": "2025-11-13T16:58:21Z"
             }
         """
-        print(f"🔍 开始获取订阅信息...")
+        print(f"🔍 Starting to get subscription info...")
         proxy_url = await self.proxy_manager.get_proxy_url()
 
         headers = {
@@ -109,27 +109,27 @@ class TokenManager:
 
         async with AsyncSession() as session:
             url = "https://sora.chatgpt.com/backend/billing/subscriptions"
-            print(f"📡 请求 URL: {url}")
-            print(f"🔑 使用 Token: {token[:30]}...")
+            print(f"📡 Request URL: {url}")
+            print(f"🔑 Using Token: {token[:30]}...")
 
             kwargs = {
                 "headers": headers,
                 "timeout": 30,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "chrome"  # Automatically generate User-Agent and browser fingerprint
             }
 
             if proxy_url:
                 kwargs["proxy"] = proxy_url
-                print(f"🌐 使用代理: {proxy_url}")
+                print(f"🌐 Using proxy: {proxy_url}")
 
             response = await session.get(url, **kwargs)
-            print(f"📥 响应状态码: {response.status_code}")
+            print(f"📥 Response status code: {response.status_code}")
 
             if response.status_code == 200:
                 data = response.json()
-                print(f"📦 响应数据: {data}")
+                print(f"📦 Response data: {data}")
 
-                # 提取第一个订阅信息
+                # Extract first subscription info
                 if data.get("data") and len(data["data"]) > 0:
                     subscription = data["data"][0]
                     plan = subscription.get("plan", {})
@@ -139,10 +139,10 @@ class TokenManager:
                         "plan_title": plan.get("title", ""),
                         "subscription_end": subscription.get("end_ts", "")
                     }
-                    print(f"✅ 订阅信息提取成功: {result}")
+                    print(f"✅ Subscription info extracted successfully: {result}")
                     return result
 
-                print(f"⚠️  响应数据中没有订阅信息")
+                print(f"⚠️  No subscription info in response data")
                 return {
                     "plan_type": "",
                     "plan_title": "",
@@ -151,14 +151,14 @@ class TokenManager:
             else:
                 error_msg = f"Failed to get subscription info: {response.status_code}"
                 print(f"❌ {error_msg}")
-                print(f"📄 响应内容: {response.text[:500]}")
+                print(f"📄 Response content: {response.text[:500]}")
                 raise Exception(error_msg)
 
     async def get_sora2_invite_code(self, access_token: str) -> dict:
         """Get Sora2 invite code"""
         proxy_url = await self.proxy_manager.get_proxy_url()
 
-        print(f"🔍 开始获取Sora2邀请码...")
+        print(f"🔍 Starting to get Sora2 invite code...")
 
         async with AsyncSession() as session:
             headers = {
@@ -169,23 +169,23 @@ class TokenManager:
             kwargs = {
                 "headers": headers,
                 "timeout": 30,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "chrome"  # Automatically generate User-Agent and browser fingerprint
             }
 
             if proxy_url:
                 kwargs["proxy"] = proxy_url
-                print(f"🌐 使用代理: {proxy_url}")
+                print(f"🌐 Using proxy: {proxy_url}")
 
             response = await session.get(
                 "https://sora.chatgpt.com/backend/project_y/invite/mine",
                 **kwargs
             )
 
-            print(f"📥 响应状态码: {response.status_code}")
+            print(f"📥 Response status code: {response.status_code}")
 
             if response.status_code == 200:
                 data = response.json()
-                print(f"✅ Sora2邀请码获取成功: {data}")
+                print(f"✅ Sora2 invite code retrieved successfully: {data}")
                 return {
                     "supported": True,
                     "invite_code": data.get("invite_code"),
@@ -197,7 +197,7 @@ class TokenManager:
                 try:
                     error_data = response.json()
                     if error_data.get("error", {}).get("message", "").startswith("401"):
-                        print(f"⚠️  Token不支持Sora2")
+                        print(f"⚠️  Token does not support Sora2")
                         return {
                             "supported": False,
                             "invite_code": None
@@ -205,8 +205,8 @@ class TokenManager:
                 except:
                     pass
 
-                print(f"❌ 获取Sora2邀请码失败: {response.status_code}")
-                print(f"📄 响应内容: {response.text[:500]}")
+                print(f"❌ Failed to get Sora2 invite code: {response.status_code}")
+                print(f"📄 Response content: {response.text[:500]}")
                 return {
                     "supported": False,
                     "invite_code": None
@@ -224,7 +224,7 @@ class TokenManager:
         """
         proxy_url = await self.proxy_manager.get_proxy_url()
 
-        print(f"🔍 开始获取Sora2剩余次数...")
+        print(f"🔍 Starting to get Sora2 remaining count...")
 
         async with AsyncSession() as session:
             headers = {
@@ -235,23 +235,23 @@ class TokenManager:
             kwargs = {
                 "headers": headers,
                 "timeout": 30,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "chrome"  # Automatically generate User-Agent and browser fingerprint
             }
 
             if proxy_url:
                 kwargs["proxy"] = proxy_url
-                print(f"🌐 使用代理: {proxy_url}")
+                print(f"🌐 Using proxy: {proxy_url}")
 
             response = await session.get(
                 "https://sora.chatgpt.com/backend/nf/check",
                 **kwargs
             )
 
-            print(f"📥 响应状态码: {response.status_code}")
+            print(f"📥 Response status code: {response.status_code}")
 
             if response.status_code == 200:
                 data = response.json()
-                print(f"✅ Sora2剩余次数获取成功: {data}")
+                print(f"✅ Sora2 remaining count retrieved successfully: {data}")
 
                 rate_limit_info = data.get("rate_limit_and_credit_balance", {})
                 return {
@@ -261,8 +261,8 @@ class TokenManager:
                     "access_resets_in_seconds": rate_limit_info.get("access_resets_in_seconds", 0)
                 }
             else:
-                print(f"❌ 获取Sora2剩余次数失败: {response.status_code}")
-                print(f"📄 响应内容: {response.text[:500]}")
+                print(f"❌ Failed to get Sora2 remaining count: {response.status_code}")
+                print(f"📄 Response content: {response.text[:500]}")
                 return {
                     "success": False,
                     "remaining_count": 0,
@@ -281,7 +281,7 @@ class TokenManager:
         """
         proxy_url = await self.proxy_manager.get_proxy_url()
 
-        print(f"🔍 检查用户名是否可用: {username}")
+        print(f"🔍 Checking if username is available: {username}")
 
         async with AsyncSession() as session:
             headers = {
@@ -298,23 +298,23 @@ class TokenManager:
 
             if proxy_url:
                 kwargs["proxy"] = proxy_url
-                print(f"🌐 使用代理: {proxy_url}")
+                print(f"🌐 Using proxy: {proxy_url}")
 
             response = await session.post(
                 "https://sora.chatgpt.com/backend/project_y/profile/username/check",
                 **kwargs
             )
 
-            print(f"📥 响应状态码: {response.status_code}")
+            print(f"📥 Response status code: {response.status_code}")
 
             if response.status_code == 200:
                 data = response.json()
                 available = data.get("available", False)
-                print(f"✅ 用户名检查结果: available={available}")
+                print(f"✅ Username check result: available={available}")
                 return available
             else:
-                print(f"❌ 用户名检查失败: {response.status_code}")
-                print(f"📄 响应内容: {response.text[:500]}")
+                print(f"❌ Username check failed: {response.status_code}")
+                print(f"📄 Response content: {response.text[:500]}")
                 return False
 
     async def set_username(self, access_token: str, username: str) -> dict:
@@ -329,7 +329,7 @@ class TokenManager:
         """
         proxy_url = await self.proxy_manager.get_proxy_url()
 
-        print(f"🔍 开始设置用户名: {username}")
+        print(f"🔍 Starting to set username: {username}")
 
         async with AsyncSession() as session:
             headers = {
@@ -346,22 +346,22 @@ class TokenManager:
 
             if proxy_url:
                 kwargs["proxy"] = proxy_url
-                print(f"🌐 使用代理: {proxy_url}")
+                print(f"🌐 Using proxy: {proxy_url}")
 
             response = await session.post(
                 "https://sora.chatgpt.com/backend/project_y/profile/username/set",
                 **kwargs
             )
 
-            print(f"📥 响应状态码: {response.status_code}")
+            print(f"📥 Response status code: {response.status_code}")
 
             if response.status_code == 200:
                 data = response.json()
-                print(f"✅ 用户名设置成功: {data.get('username')}")
+                print(f"✅ Username set successfully: {data.get('username')}")
                 return data
             else:
-                print(f"❌ 用户名设置失败: {response.status_code}")
-                print(f"📄 响应内容: {response.text[:500]}")
+                print(f"❌ Username setting failed: {response.status_code}")
+                print(f"📄 Response content: {response.text[:500]}")
                 raise Exception(f"Failed to set username: {response.status_code}")
 
     async def activate_sora2_invite(self, access_token: str, invite_code: str) -> dict:
@@ -369,55 +369,55 @@ class TokenManager:
         import uuid
         proxy_url = await self.proxy_manager.get_proxy_url()
 
-        print(f"🔍 开始激活Sora2邀请码: {invite_code}")
-        print(f"🔑 Access Token 前缀: {access_token[:50]}...")
+        print(f"🔍 Starting to activate Sora2 invite code: {invite_code}")
+        print(f"🔑 Access Token prefix: {access_token[:50]}...")
 
         async with AsyncSession() as session:
-            # 生成设备ID
+            # Generate device ID
             device_id = str(uuid.uuid4())
 
-            # 只设置必要的头，让 impersonate 处理其他
+            # Only set necessary headers, let impersonate handle others
             headers = {
                 "authorization": f"Bearer {access_token}",
                 "cookie": f"oai-did={device_id}"
             }
 
-            print(f"🆔 设备ID: {device_id}")
-            print(f"📦 请求体: {{'invite_code': '{invite_code}'}}")
+            print(f"🆔 Device ID: {device_id}")
+            print(f"📦 Request body: {{'invite_code': '{invite_code}'}}")
 
             kwargs = {
                 "headers": headers,
                 "json": {"invite_code": invite_code},
                 "timeout": 30,
-                "impersonate": "chrome120"  # 使用 chrome120 让库自动处理 UA 等头
+                "impersonate": "chrome120"  # Use chrome120 to let library automatically handle UA and other headers
             }
 
             if proxy_url:
                 kwargs["proxy"] = proxy_url
-                print(f"🌐 使用代理: {proxy_url}")
+                print(f"🌐 Using proxy: {proxy_url}")
 
             response = await session.post(
                 "https://sora.chatgpt.com/backend/project_y/invite/accept",
                 **kwargs
             )
 
-            print(f"📥 响应状态码: {response.status_code}")
+            print(f"📥 Response status code: {response.status_code}")
 
             if response.status_code == 200:
                 data = response.json()
-                print(f"✅ Sora2激活成功: {data}")
+                print(f"✅ Sora2 activation successful: {data}")
                 return {
                     "success": data.get("success", False),
                     "already_accepted": data.get("already_accepted", False)
                 }
             else:
-                print(f"❌ Sora2激活失败: {response.status_code}")
-                print(f"📄 响应内容: {response.text[:500]}")
+                print(f"❌ Sora2 activation failed: {response.status_code}")
+                print(f"📄 Response content: {response.text[:500]}")
                 raise Exception(f"Failed to activate Sora2: {response.status_code}")
 
     async def st_to_at(self, session_token: str) -> dict:
         """Convert Session Token to Access Token"""
-        debug_logger.log_info(f"[ST_TO_AT] 开始转换 Session Token 为 Access Token...")
+        debug_logger.log_info(f"[ST_TO_AT] Starting to convert Session Token to Access Token...")
         proxy_url = await self.proxy_manager.get_proxy_url()
 
         async with AsyncSession() as session:
@@ -431,45 +431,45 @@ class TokenManager:
             kwargs = {
                 "headers": headers,
                 "timeout": 30,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "chrome"  # Automatically generate User-Agent and browser fingerprint
             }
 
             if proxy_url:
                 kwargs["proxy"] = proxy_url
-                debug_logger.log_info(f"[ST_TO_AT] 使用代理: {proxy_url}")
+                debug_logger.log_info(f"[ST_TO_AT] Using proxy: {proxy_url}")
 
             url = "https://sora.chatgpt.com/api/auth/session"
-            debug_logger.log_info(f"[ST_TO_AT] 📡 请求 URL: {url}")
+            debug_logger.log_info(f"[ST_TO_AT] 📡 Request URL: {url}")
 
             try:
                 response = await session.get(url, **kwargs)
-                debug_logger.log_info(f"[ST_TO_AT] 📥 响应状态码: {response.status_code}")
+                debug_logger.log_info(f"[ST_TO_AT] 📥 Response status code: {response.status_code}")
 
                 if response.status_code != 200:
                     error_msg = f"Failed to convert ST to AT: {response.status_code}"
                     debug_logger.log_info(f"[ST_TO_AT] ❌ {error_msg}")
-                    debug_logger.log_info(f"[ST_TO_AT] 响应内容: {response.text[:500]}")
+                    debug_logger.log_info(f"[ST_TO_AT] Response content: {response.text[:500]}")
                     raise ValueError(error_msg)
 
                 # 获取响应文本用于调试
                 response_text = response.text
-                debug_logger.log_info(f"[ST_TO_AT] 📄 响应内容: {response_text[:500]}")
+                debug_logger.log_info(f"[ST_TO_AT] 📄 Response content: {response_text[:500]}")
 
                 # 检查响应是否为空
                 if not response_text or response_text.strip() == "":
-                    debug_logger.log_info(f"[ST_TO_AT] ❌ 响应体为空")
+                    debug_logger.log_info(f"[ST_TO_AT] ❌ Response body is empty")
                     raise ValueError("Response body is empty")
 
                 try:
                     data = response.json()
                 except Exception as json_err:
-                    debug_logger.log_info(f"[ST_TO_AT] ❌ JSON解析失败: {str(json_err)}")
-                    debug_logger.log_info(f"[ST_TO_AT] 原始响应: {response_text[:1000]}")
+                    debug_logger.log_info(f"[ST_TO_AT] ❌ JSON parsing failed: {str(json_err)}")
+                    debug_logger.log_info(f"[ST_TO_AT] Original response: {response_text[:1000]}")
                     raise ValueError(f"Failed to parse JSON response: {str(json_err)}")
 
                 # 检查data是否为None
                 if data is None:
-                    debug_logger.log_info(f"[ST_TO_AT] ❌ 响应JSON为空")
+                    debug_logger.log_info(f"[ST_TO_AT] ❌ Response JSON is empty")
                     raise ValueError("Response JSON is empty")
 
                 access_token = data.get("accessToken")
@@ -478,13 +478,13 @@ class TokenManager:
 
                 # 检查必要字段
                 if not access_token:
-                    debug_logger.log_info(f"[ST_TO_AT] ❌ 响应中缺少 accessToken 字段")
-                    debug_logger.log_info(f"[ST_TO_AT] 响应数据: {data}")
+                    debug_logger.log_info(f"[ST_TO_AT] ❌ Missing accessToken field in response")
+                    debug_logger.log_info(f"[ST_TO_AT] Response data: {data}")
                     raise ValueError("Missing accessToken in response")
 
-                debug_logger.log_info(f"[ST_TO_AT] ✅ ST 转换成功")
+                debug_logger.log_info(f"[ST_TO_AT] ✅ ST conversion successful")
                 debug_logger.log_info(f"  - Email: {email}")
-                debug_logger.log_info(f"  - 过期时间: {expires}")
+                debug_logger.log_info(f"  - Expiry time: {expires}")
 
                 return {
                     "access_token": access_token,
@@ -492,12 +492,12 @@ class TokenManager:
                     "expires": expires
                 }
             except Exception as e:
-                debug_logger.log_info(f"[ST_TO_AT] 🔴 异常: {str(e)}")
+                debug_logger.log_info(f"[ST_TO_AT] 🔴 Exception: {str(e)}")
                 raise
     
     async def rt_to_at(self, refresh_token: str) -> dict:
         """Convert Refresh Token to Access Token"""
-        debug_logger.log_info(f"[RT_TO_AT] 开始转换 Refresh Token 为 Access Token...")
+        debug_logger.log_info(f"[RT_TO_AT] Starting to convert Refresh Token to Access Token...")
         proxy_url = await self.proxy_manager.get_proxy_url()
 
         async with AsyncSession() as session:
@@ -515,45 +515,45 @@ class TokenManager:
                     "refresh_token": refresh_token
                 },
                 "timeout": 30,
-                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
+                "impersonate": "chrome"  # Automatically generate User-Agent and browser fingerprint
             }
 
             if proxy_url:
                 kwargs["proxy"] = proxy_url
-                debug_logger.log_info(f"[RT_TO_AT] 使用代理: {proxy_url}")
+                debug_logger.log_info(f"[RT_TO_AT] Using proxy: {proxy_url}")
 
             url = "https://auth.openai.com/oauth/token"
-            debug_logger.log_info(f"[RT_TO_AT] 📡 请求 URL: {url}")
+            debug_logger.log_info(f"[RT_TO_AT] 📡 Request URL: {url}")
 
             try:
                 response = await session.post(url, **kwargs)
-                debug_logger.log_info(f"[RT_TO_AT] 📥 响应状态码: {response.status_code}")
+                debug_logger.log_info(f"[RT_TO_AT] 📥 Response status code: {response.status_code}")
 
                 if response.status_code != 200:
                     error_msg = f"Failed to convert RT to AT: {response.status_code}"
                     debug_logger.log_info(f"[RT_TO_AT] ❌ {error_msg}")
-                    debug_logger.log_info(f"[RT_TO_AT] 响应内容: {response.text[:500]}")
+                    debug_logger.log_info(f"[RT_TO_AT] Response content: {response.text[:500]}")
                     raise ValueError(f"{error_msg} - {response.text}")
 
                 # 获取响应文本用于调试
                 response_text = response.text
-                debug_logger.log_info(f"[RT_TO_AT] 📄 响应内容: {response_text[:500]}")
+                debug_logger.log_info(f"[RT_TO_AT] 📄 Response content: {response_text[:500]}")
 
                 # 检查响应是否为空
                 if not response_text or response_text.strip() == "":
-                    debug_logger.log_info(f"[RT_TO_AT] ❌ 响应体为空")
+                    debug_logger.log_info(f"[RT_TO_AT] ❌ Response body is empty")
                     raise ValueError("Response body is empty")
 
                 try:
                     data = response.json()
                 except Exception as json_err:
-                    debug_logger.log_info(f"[RT_TO_AT] ❌ JSON解析失败: {str(json_err)}")
-                    debug_logger.log_info(f"[RT_TO_AT] 原始响应: {response_text[:1000]}")
+                    debug_logger.log_info(f"[RT_TO_AT] ❌ JSON parsing failed: {str(json_err)}")
+                    debug_logger.log_info(f"[RT_TO_AT] Original response: {response_text[:1000]}")
                     raise ValueError(f"Failed to parse JSON response: {str(json_err)}")
 
                 # 检查data是否为None
                 if data is None:
-                    debug_logger.log_info(f"[RT_TO_AT] ❌ 响应JSON为空")
+                    debug_logger.log_info(f"[RT_TO_AT] ❌ Response JSON is empty")
                     raise ValueError("Response JSON is empty")
 
                 access_token = data.get("access_token")
@@ -562,13 +562,13 @@ class TokenManager:
 
                 # 检查必要字段
                 if not access_token:
-                    debug_logger.log_info(f"[RT_TO_AT] ❌ 响应中缺少 access_token 字段")
-                    debug_logger.log_info(f"[RT_TO_AT] 响应数据: {data}")
+                    debug_logger.log_info(f"[RT_TO_AT] ❌ Missing access_token field in response")
+                    debug_logger.log_info(f"[RT_TO_AT] Response data: {data}")
                     raise ValueError("Missing access_token in response")
 
-                debug_logger.log_info(f"[RT_TO_AT] ✅ RT 转换成功")
-                debug_logger.log_info(f"  - 新 Access Token 有效期: {expires_in} 秒")
-                debug_logger.log_info(f"  - Refresh Token 已更新: {'是' if new_refresh_token else '否'}")
+                debug_logger.log_info(f"[RT_TO_AT] ✅ RT conversion successful")
+                debug_logger.log_info(f"  - New Access Token validity: {expires_in} seconds")
+                debug_logger.log_info(f"  - Refresh Token updated: {'Yes' if new_refresh_token else 'No'}")
 
                 return {
                     "access_token": access_token,
@@ -576,7 +576,7 @@ class TokenManager:
                     "expires_in": expires_in
                 }
             except Exception as e:
-                debug_logger.log_info(f"[RT_TO_AT] 🔴 异常: {str(e)}")
+                debug_logger.log_info(f"[RT_TO_AT] 🔴 Exception: {str(e)}")
                 raise
     
     async def add_token(self, token_value: str,
@@ -611,7 +611,7 @@ class TokenManager:
         existing_token = await self.db.get_token_by_value(token_value)
         if existing_token:
             if not update_if_exists:
-                raise ValueError(f"Token 已存在（邮箱: {existing_token.email}）。如需更新，请先删除旧 Token 或使用更新功能。")
+                raise ValueError(f"Token already exists (email: {existing_token.email}). To update, please delete the old token or use the update function.")
             # Update existing token
             return await self.update_existing_token(existing_token.id, token_value, st, rt, remark)
 
@@ -671,7 +671,7 @@ class TokenManager:
                     remaining_info = await self.get_sora2_remaining_count(token_value)
                     if remaining_info.get("success"):
                         sora2_remaining_count = remaining_info.get("remaining_count", 0)
-                        print(f"✅ Sora2剩余次数: {sora2_remaining_count}")
+                        print(f"✅ Sora2 remaining count: {sora2_remaining_count}")
                 except Exception as e:
                     print(f"Failed to get Sora2 remaining count: {e}")
         except Exception as e:
@@ -686,33 +686,33 @@ class TokenManager:
 
             # If username is null, need to set one
             if username is None:
-                print(f"⚠️  检测到用户名为null，需要设置用户名")
+                print(f"⚠️  Detected username is null, need to set username")
 
                 # Generate random username
                 max_attempts = 5
                 for attempt in range(max_attempts):
                     generated_username = self._generate_random_username()
-                    print(f"🔄 尝试用户名 ({attempt + 1}/{max_attempts}): {generated_username}")
+                    print(f"🔄 Trying username ({attempt + 1}/{max_attempts}): {generated_username}")
 
                     # Check if username is available
                     if await self.check_username_available(token_value, generated_username):
                         # Set the username
                         try:
                             await self.set_username(token_value, generated_username)
-                            print(f"✅ 用户名设置成功: {generated_username}")
+                            print(f"✅ Username set successfully: {generated_username}")
                             break
                         except Exception as e:
-                            print(f"❌ 用户名设置失败: {e}")
+                            print(f"❌ Username setting failed: {e}")
                             if attempt == max_attempts - 1:
-                                print(f"⚠️  达到最大尝试次数，跳过用户名设置")
+                                print(f"⚠️  Maximum attempts reached, skipping username setting")
                     else:
-                        print(f"⚠️  用户名 {generated_username} 已被占用，尝试下一个")
+                        print(f"⚠️  Username {generated_username} is taken, trying next")
                         if attempt == max_attempts - 1:
                             print(f"⚠️  达到最大尝试次数，跳过用户名设置")
             else:
-                print(f"✅ 用户名已设置: {username}")
+                print(f"✅ Username already set: {username}")
         except Exception as e:
-            print(f"⚠️  用户名检查/设置过程中出错: {e}")
+            print(f"⚠️  Error during username check/setting: {e}")
 
         # Create token object
         token = Token(

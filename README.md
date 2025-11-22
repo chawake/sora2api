@@ -7,163 +7,163 @@
 [![FastAPI](https://img.shields.io/badge/fastapi-0.119.0-green.svg)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/docker-supported-blue.svg)](https://www.docker.com/)
 
-**一个功能完整的 OpenAI 兼容 API 服务，为 Sora 提供统一的接口**
+**A fully featured OpenAI-compatible API service that provides a unified interface for Sora**
 
 </div>
 
 ---
 
-## 📋 目录
+## 📋 Table of Contents
 
-- [功能特性](#功能特性)
-- [快速开始](#快速开始)
-- [使用指南](#使用指南)
-  - [快速参考](#快速参考)
-  - [管理后台](#管理后台)
-  - [API 调用](#api-调用)
-  - [视频角色功能](#视频角色功能)
-- [常见问题](#常见问题)
-- [许可证](#许可证)
-
----
-
-## ✨ 功能特性
-
-### 核心功能
-- 🎨 **文生图** - 根据文本描述生成图片
-- 🖼️ **图生图** - 基于上传的图片进行创意变换
-- 🎬 **文生视频** - 根据文本描述生成视频
-- 🎥 **图生视频** - 基于图片生成相关视频
-- 📊 **多尺寸支持** - 横屏、竖屏等多种规格
-- 🎭 **视频角色功能** - 创建角色，生成角色视频
-- 🎬 **Remix 功能** - 基于已有视频继续创作
-
-### 高级特性
-- 🔐 **Token 管理** - 支持多 Token 管理和轮询负载均衡
-- 🌐 **代理支持** - 支持 HTTP 和 SOCKS5 代理
-- 📝 **详细日志** - 完整的请求/响应日志记录
-- 🔄 **异步处理** - 高效的异步任务处理
-- 💾 **数据持久化** - SQLite 数据库存储
-- 🎯 **OpenAI 兼容** - 完全兼容 OpenAI API 格式
-- 🛡️ **安全认证** - API Key 验证和权限管理
-- 📱 **Web 管理界面** - 直观的管理后台
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Usage Guide](#usage-guide)
+  - [Quick Reference](#quick-reference)
+  - [Admin Dashboard](#admin-dashboard)
+  - [API Calls](#api-calls)
+  - [Video Character Feature](#video-character-feature)
+- [FAQ](#faq)
+- [License](#license)
 
 ---
 
-## 🚀 快速开始
+## ✨ Features
 
-### 前置要求
+### Core Features
+- 🎨 **Text-to-Image** – Generate images from text descriptions
+- 🖼️ **Image-to-Image** – Apply creative transformations based on an uploaded image
+- 🎬 **Text-to-Video** – Generate videos from text descriptions
+- 🎥 **Image-to-Video** – Generate related videos from an image
+- 📊 **Multiple Aspect Ratios** – Landscape, portrait, and more
+- 🎭 **Video Character Feature** – Create characters and generate character videos
+- 🎬 **Remix Feature** – Continue creation based on an existing video
 
-- Docker 和 Docker Compose（推荐）
-- 或 Python 3.8+
+### Advanced Features
+- 🔐 **Token Management** – Manage multiple tokens with round-robin load balancing
+- 🌐 **Proxy Support** – HTTP and SOCKS5 proxies
+- 📝 **Detailed Logging** – Full request/response logs
+- 🔄 **Asynchronous Processing** – Efficient async task handling
+- 💾 **Data Persistence** – SQLite database storage
+- 🎯 **OpenAI Compatible** – Fully compatible with the OpenAI API format
+- 🛡️ **Secure Authentication** – API key verification and permission management
+- 📱 **Web Admin UI** – Intuitive management dashboard
 
-### 方式一：Docker 部署（推荐）
+---
 
-#### 标准模式（不使用代理）
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Docker and Docker Compose (recommended)
+- Or Python 3.8+
+
+### Option 1: Docker Deployment (Recommended)
+
+#### Standard Mode (no proxy)
 
 ```bash
-# 克隆项目
+# Clone the project
 git clone https://github.com/TheSmallHanCat/sora2api.git
 cd sora2api
 
-# 启动服务
+# Start the service
 docker-compose up -d
 
-# 查看日志
+# View logs
 docker-compose logs -f
 ```
 
-#### WARP 模式（使用代理）
+#### WARP Mode (with proxy)
 
 ```bash
-# 使用 WARP 代理启动
+# Start with WARP proxy
 docker-compose -f docker-compose.warp.yml up -d
 
-# 查看日志
+# View logs
 docker-compose -f docker-compose.warp.yml logs -f
 ```
 
-### 方式二：本地部署
+### Option 2: Local Deployment
 
 ```bash
-# 克隆项目
+# Clone the project
 git clone https://github.com/TheSmallHanCat/sora2api.git
 cd sora2api
 
-# 创建虚拟环境
+# Create a virtual environment
 python -m venv venv
 
-# 激活虚拟环境
+# Activate the virtual environment
 # Windows
 venv\Scripts\activate
 # Linux/Mac
 source venv/bin/activate
 
-# 安装依赖
+# Install dependencies
 pip install -r requirements.txt
 
-# 启动服务
+# Start the service
 python main.py
 ```
 
-### 首次启动
+### First Run
 
-服务启动后，访问管理后台进行初始化配置：
+After the service starts, open the admin dashboard to perform the initial configuration:
 
-- **地址**: http://localhost:8000
-- **用户名**: `admin`
-- **密码**: `admin`
+- **URL**: http://localhost:8000
+- **Username**: `admin`
+- **Password**: `admin`
 
-⚠️ **重要**: 首次登录后请立即修改密码！
-
----
-
-### 快速参考
-
-| 功能 | 模型 | 说明 |
-|------|------|------|
-| 文生图 | `sora-image*` | 使用 `content` 为字符串 |
-| 图生图 | `sora-image*` | 使用 `content` 数组 + `image_url` |
-| 文生视频 | `sora-video*` | 使用 `content` 为字符串 |
-| 图生视频 | `sora-video*` | 使用 `content` 数组 + `image_url` |
-| 创建角色 | `sora-video*` | 使用 `content` 数组 + `video_url` |
-| 角色生成视频 | `sora-video*` | 使用 `content` 数组 + `video_url` + 文本 |
-| Remix | `sora-video*` | 在 `content` 中包含 Remix ID |
+⚠️ **Important**: Please change the password immediately after your first login!
 
 ---
 
-### API 调用
+### Quick Reference
 
-#### 基本信息（OpenAI标准格式，需要使用流式）
+| Feature              | Model          | Notes                                        |
+|----------------------|----------------|----------------------------------------------|
+| Text-to-Image        | `sora-image*`  | Use `content` as a string                    |
+| Image-to-Image       | `sora-image*`  | Use `content` as an array + `image_url`      |
+| Text-to-Video        | `sora-video*`  | Use `content` as a string                    |
+| Image-to-Video       | `sora-video*`  | Use `content` as an array + `image_url`      |
+| Create Character     | `sora-video*`  | Use `content` as an array + `video_url`      |
+| Character Video      | `sora-video*`  | Use `content` as an array + `video_url` + text |
+| Remix                | `sora-video*`  | Include Remix ID in `content`                |
 
-- **端点**: `http://localhost:8000/v1/chat/completions`
-- **认证**: 在请求头中添加 `Authorization: Bearer YOUR_API_KEY`
-- **默认 API Key**: `han1234`（建议修改）
+---
 
-#### 支持的模型
+### API Calls
 
-**图片模型**
+#### Basics (OpenAI-compatible format, streaming required)
 
-| 模型 | 说明 | 尺寸 |
-|------|------|------|
-| `sora-image` | 文生图（默认） | 360×360 |
-| `sora-image-landscape` | 文生图（横屏） | 540×360 |
-| `sora-image-portrait` | 文生图（竖屏） | 360×540 |
+- **Endpoint**: `http://localhost:8000/v1/chat/completions`
+- **Authentication**: Add `Authorization: Bearer YOUR_API_KEY` to the request headers
+- **Default API key**: `han1234` (change it in production)
 
-**视频模型**
+#### Supported Models
 
-| 模型 | 时长 | 方向 | 说明 |
-|------|------|------|------|
-| `sora-video-10s` | 10秒 | 横屏 | 文生视频/图生视频 |
-| `sora-video-15s` | 15秒 | 横屏 | 文生视频/图生视频 |
-| `sora-video-landscape-10s` | 10秒 | 横屏 | 文生视频/图生视频 |
-| `sora-video-landscape-15s` | 15秒 | 横屏 | 文生视频/图生视频 |
-| `sora-video-portrait-10s` | 10秒 | 竖屏 | 文生视频/图生视频 |
-| `sora-video-portrait-15s` | 15秒 | 竖屏 | 文生视频/图生视频 |
+**Image Models**
 
-#### 请求示例
+| Model                  | Description                 | Size    |
+|------------------------|-----------------------------|---------|
+| `sora-image`           | Text-to-image (default)     | 360×360 |
+| `sora-image-landscape` | Text-to-image (landscape)   | 540×360 |
+| `sora-image-portrait`  | Text-to-image (portrait)    | 360×540 |
 
-**文生图**
+**Video Models**
+
+| Model                         | Duration | Orientation | Description                       |
+|------------------------------|----------|-------------|-----------------------------------|
+| `sora-video-10s`             | 10s      | Landscape   | Text-to-video / image-to-video   |
+| `sora-video-15s`             | 15s      | Landscape   | Text-to-video / image-to-video   |
+| `sora-video-landscape-10s`   | 10s      | Landscape   | Text-to-video / image-to-video   |
+| `sora-video-landscape-15s`   | 15s      | Landscape   | Text-to-video / image-to-video   |
+| `sora-video-portrait-10s`    | 10s      | Portrait    | Text-to-video / image-to-video   |
+| `sora-video-portrait-15s`    | 15s      | Portrait    | Text-to-video / image-to-video   |
+
+#### Request Examples
+
+**Text-to-Image**
 
 ```bash
 curl -X POST "http://localhost:8000/v1/chat/completions" \
@@ -174,13 +174,13 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
     "messages": [
       {
         "role": "user",
-        "content": "一只可爱的小猫咪"
+        "content": "A cute little cat"
       }
     ]
   }'
 ```
 
-**图生图**
+**Image-to-Image**
 
 ```bash
 curl -X POST "http://localhost:8000/v1/chat/completions" \
@@ -194,7 +194,7 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
         "content": [
           {
             "type": "text",
-            "text": "将这张图片变成油画风格"
+            "text": "Turn this image into an oil painting style"
           },
           {
             "type": "image_url",
@@ -209,7 +209,7 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
   }'
 ```
 
-**文生视频**
+**Text-to-Video**
 
 ```bash
 curl -X POST "http://localhost:8000/v1/chat/completions" \
@@ -220,14 +220,14 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
     "messages": [
       {
         "role": "user",
-        "content": "一只小猫在草地上奔跑"
+        "content": "A small cat running on the grass"
       }
     ],
     "stream": true
   }'
 ```
 
-**图生视频**
+**Image-to-Video**
 
 ```bash
 curl -X POST "http://localhost:8000/v1/chat/completions" \
@@ -241,7 +241,7 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
         "content": [
           {
             "type": "text",
-            "text": "这只猫在跳舞"
+            "text": "This cat is dancing"
           },
           {
             "type": "image_url",
@@ -256,7 +256,7 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
   }'
 ```
 
-**视频Remix（基于已有视频继续创作）**
+**Video Remix (continue creation from an existing video)**
 
 ```bash
 curl -X POST "http://localhost:8000/v1/chat/completions" \
@@ -267,26 +267,26 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
     "messages": [
       {
         "role": "user",
-        "content": "https://sora.chatgpt.com/p/s_68e3a06dcd888191b150971da152c1f5改成水墨画风格"
+        "content": "https://sora.chatgpt.com/p/s_68e3a06dcd888191b150971da152c1f5 change to an ink painting style"
       }
     ]
   }'
 ```
 
-### 视频角色功能
+### Video Character Feature
 
-Sora2API 支持**视频角色生成**功能。
+Sora2API supports **video character generation**.
 
-#### 功能说明
+#### Feature Description
 
-- **角色创建**: 如果只有视频，无prompt，则生成角色自动提取角色信息，输出角色名
-- **角色生成**: 有视频、prompt，则上传视频创建角色，使用角色和prompt进行生成，输出视频
+- **Character Creation**: If there is only a video and no prompt, the service automatically extracts character information and returns the character name.
+- **Character Generation**: If both a video and a prompt are provided, upload the video to create a character, then use that character plus the prompt to generate a video.
 
-#### API调用（OpenAI标准格式，需要使用流式）
+#### API Calls (OpenAI-compatible format, streaming required)
 
-**场景 1: 仅创建角色（不生成视频）**
+**Scenario 1: Create a character only (no video generation)**
 
-上传视频提取角色信息，获取角色名称和头像。
+Upload a video to extract character information and obtain the character name and avatar.
 
 ```bash
 curl -X POST "http://localhost:8000/v1/chat/completions" \
@@ -311,9 +311,9 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
   }'
 ```
 
-**场景 2: 创建角色并生成视频**
+**Scenario 2: Create a character and generate a video**
 
-上传视频创建角色，然后使用该角色生成新视频。
+Upload a video to create a character, then use that character to generate a new video.
 
 ```bash
 curl -X POST "http://localhost:8000/v1/chat/completions" \
@@ -333,7 +333,7 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
           },
           {
             "type": "text",
-            "text": "角色做一个跳舞的动作"
+            "text": "Make the character perform a dancing move"
           }
         ]
       }
@@ -342,17 +342,17 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
   }'
 ```
 
-#### Python 代码示例
+#### Python Code Example
 
 ```python
 import requests
 import base64
 
-# 读取视频文件并编码为 Base64
+# Read the video file and encode it as Base64
 with open("video.mp4", "rb") as f:
     video_data = base64.b64encode(f.read()).decode("utf-8")
 
-# 仅创建角色
+# Create character only
 response = requests.post(
     "http://localhost:8000/v1/chat/completions",
     headers={
@@ -379,7 +379,7 @@ response = requests.post(
     stream=True
 )
 
-# 处理流式响应
+# Handle streaming responses
 for line in response.iter_lines():
     if line:
         print(line.decode("utf-8"))
@@ -387,23 +387,23 @@ for line in response.iter_lines():
 
 ---
 
-## 📄 许可证
+## 📄 License
 
-本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
-
----
-
-## 🙏 致谢
-
-感谢所有贡献者和使用者的支持！
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 📞 联系方式
+## 🙏 Acknowledgements
 
-- 提交 Issue：[GitHub Issues](https://github.com/TheSmallHanCat/sora2api/issues)
-- 讨论：[GitHub Discussions](https://github.com/TheSmallHanCat/sora2api/discussions)
+Thanks to all contributors and users for your support!
 
 ---
 
-**⭐ 如果这个项目对你有帮助，请给个 Star！**
+## 📞 Contact
+
+- Issues: [GitHub Issues](https://github.com/TheSmallHanCat/sora2api/issues)
+- Discussions: [GitHub Discussions](https://github.com/TheSmallHanCat/sora2api/discussions)
+
+---
+
+**⭐ If this project is helpful to you, please give it a Star!**
