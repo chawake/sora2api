@@ -451,11 +451,11 @@ class TokenManager:
                     debug_logger.log_info(f"[ST_TO_AT] Response content: {response.text[:500]}")
                     raise ValueError(error_msg)
 
-                # 获取响应文本用于调试
+                # Get response text for debugging
                 response_text = response.text
                 debug_logger.log_info(f"[ST_TO_AT] 📄 Response content: {response_text[:500]}")
 
-                # 检查响应是否为空
+                # Check if response is empty
                 if not response_text or response_text.strip() == "":
                     debug_logger.log_info(f"[ST_TO_AT] ❌ Response body is empty")
                     raise ValueError("Response body is empty")
@@ -467,7 +467,7 @@ class TokenManager:
                     debug_logger.log_info(f"[ST_TO_AT] Original response: {response_text[:1000]}")
                     raise ValueError(f"Failed to parse JSON response: {str(json_err)}")
 
-                # 检查data是否为None
+                # Check if data is None
                 if data is None:
                     debug_logger.log_info(f"[ST_TO_AT] ❌ Response JSON is empty")
                     raise ValueError("Response JSON is empty")
@@ -476,7 +476,7 @@ class TokenManager:
                 email = data.get("user", {}).get("email") if data.get("user") else None
                 expires = data.get("expires")
 
-                # 检查必要字段
+                # Check required fields
                 if not access_token:
                     debug_logger.log_info(f"[ST_TO_AT] ❌ Missing accessToken field in response")
                     debug_logger.log_info(f"[ST_TO_AT] Response data: {data}")
@@ -535,11 +535,11 @@ class TokenManager:
                     debug_logger.log_info(f"[RT_TO_AT] Response content: {response.text[:500]}")
                     raise ValueError(f"{error_msg} - {response.text}")
 
-                # 获取响应文本用于调试
+                # Get response text for debugging
                 response_text = response.text
                 debug_logger.log_info(f"[RT_TO_AT] 📄 Response content: {response_text[:500]}")
 
-                # 检查响应是否为空
+                # Check if response is empty
                 if not response_text or response_text.strip() == "":
                     debug_logger.log_info(f"[RT_TO_AT] ❌ Response body is empty")
                     raise ValueError("Response body is empty")
@@ -551,7 +551,7 @@ class TokenManager:
                     debug_logger.log_info(f"[RT_TO_AT] Original response: {response_text[:1000]}")
                     raise ValueError(f"Failed to parse JSON response: {str(json_err)}")
 
-                # 检查data是否为None
+                # Check if data is None
                 if data is None:
                     debug_logger.log_info(f"[RT_TO_AT] ❌ Response JSON is empty")
                     raise ValueError("Response JSON is empty")
@@ -560,7 +560,7 @@ class TokenManager:
                 new_refresh_token = data.get("refresh_token")
                 expires_in = data.get("expires_in")
 
-                # 检查必要字段
+                # Check required fields
                 if not access_token:
                     debug_logger.log_info(f"[RT_TO_AT] ❌ Missing access_token field in response")
                     debug_logger.log_info(f"[RT_TO_AT] Response data: {data}")
@@ -708,7 +708,7 @@ class TokenManager:
                     else:
                         print(f"⚠️  Username {generated_username} is taken, trying next")
                         if attempt == max_attempts - 1:
-                            print(f"⚠️  达到最大尝试次数，跳过用户名设置")
+                            print(f"⚠️  Maximum attempts reached, skipping username setting")
             else:
                 print(f"✅ Username already set: {username}")
         except Exception as e:
@@ -934,7 +934,7 @@ class TokenManager:
                     if remaining_info.get("success"):
                         remaining_count = remaining_info.get("remaining_count", 0)
                         await self.db.update_token_sora2_remaining(token_id, remaining_count)
-                        print(f"✅ 更新Token {token_id} 的Sora2剩余次数: {remaining_count}")
+                        print(f"✅ Updated Token {token_id} Sora2 remaining count: {remaining_count}")
 
                         # If remaining count is 0, set cooldown
                         if remaining_count == 0:
@@ -942,7 +942,7 @@ class TokenManager:
                             if reset_seconds > 0:
                                 cooldown_until = datetime.now() + timedelta(seconds=reset_seconds)
                                 await self.db.update_token_sora2_cooldown(token_id, cooldown_until)
-                                print(f"⏱️ Token {token_id} 剩余次数为0，设置冷却时间至: {cooldown_until}")
+                                print(f"⏱️ Token {token_id} remaining count is 0, setting cooldown until: {cooldown_until}")
             except Exception as e:
                 print(f"Failed to update Sora2 remaining count: {e}")
     
@@ -955,7 +955,7 @@ class TokenManager:
 
             # Check if Sora2 cooldown has expired
             if token_data.sora2_cooldown_until and token_data.sora2_cooldown_until <= datetime.now():
-                print(f"🔄 Token {token_id} Sora2冷却已过期，正在刷新剩余次数...")
+                print(f"🔄 Token {token_id} Sora2 cooldown expired, refreshing remaining count...")
 
                 try:
                     remaining_info = await self.get_sora2_remaining_count(token_data.token)
@@ -964,7 +964,7 @@ class TokenManager:
                         await self.db.update_token_sora2_remaining(token_id, remaining_count)
                         # Clear cooldown
                         await self.db.update_token_sora2_cooldown(token_id, None)
-                        print(f"✅ Token {token_id} Sora2剩余次数已刷新: {remaining_count}")
+                        print(f"✅ Token {token_id} Sora2 remaining count refreshed: {remaining_count}")
                 except Exception as e:
                     print(f"Failed to refresh Sora2 remaining count: {e}")
         except Exception as e:
@@ -978,41 +978,41 @@ class TokenManager:
             True if refresh successful, False otherwise
         """
         try:
-            # 📍 Step 1: 获取Token数据
-            debug_logger.log_info(f"[AUTO_REFRESH] 开始检查Token {token_id}...")
+            # 📍 Step 1: Get Token data
+            debug_logger.log_info(f"[AUTO_REFRESH] Starting to check Token {token_id}...")
             token_data = await self.db.get_token(token_id)
 
             if not token_data:
-                debug_logger.log_info(f"[AUTO_REFRESH] ❌ Token {token_id} 不存在")
+                debug_logger.log_info(f"[AUTO_REFRESH] ❌ Token {token_id} does not exist")
                 return False
 
-            # 📍 Step 2: 检查是否有过期时间
+            # 📍 Step 2: Check if has expiry time
             if not token_data.expiry_time:
-                debug_logger.log_info(f"[AUTO_REFRESH] ⏭️  Token {token_id} 无过期时间，跳过刷新")
+                debug_logger.log_info(f"[AUTO_REFRESH] ⏭️  Token {token_id} has no expiry time, skipping refresh")
                 return False  # No expiry time set
 
-            # 📍 Step 3: 计算剩余时间
+            # 📍 Step 3: Calculate remaining time
             time_until_expiry = token_data.expiry_time - datetime.now()
             hours_until_expiry = time_until_expiry.total_seconds() / 3600
 
-            debug_logger.log_info(f"[AUTO_REFRESH] ⏰ Token {token_id} 信息:")
+            debug_logger.log_info(f"[AUTO_REFRESH] ⏰ Token {token_id} info:")
             debug_logger.log_info(f"  - Email: {token_data.email}")
-            debug_logger.log_info(f"  - 过期时间: {token_data.expiry_time.strftime('%Y-%m-%d %H:%M:%S')}")
-            debug_logger.log_info(f"  - 剩余时间: {hours_until_expiry:.2f} 小时")
-            debug_logger.log_info(f"  - 是否激活: {token_data.is_active}")
-            debug_logger.log_info(f"  - 有ST: {'是' if token_data.st else '否'}")
-            debug_logger.log_info(f"  - 有RT: {'是' if token_data.rt else '否'}")
+            debug_logger.log_info(f"  - Expiry time: {token_data.expiry_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            debug_logger.log_info(f"  - Remaining time: {hours_until_expiry:.2f} hours")
+            debug_logger.log_info(f"  - Is active: {token_data.is_active}")
+            debug_logger.log_info(f"  - Has ST: {'Yes' if token_data.st else 'No'}")
+            debug_logger.log_info(f"  - Has RT: {'Yes' if token_data.rt else 'No'}")
 
-            # 📍 Step 4: 检查是否需要刷新
+            # 📍 Step 4: Check if refresh is needed
             if hours_until_expiry > 24:
-                debug_logger.log_info(f"[AUTO_REFRESH] ⏭️  Token {token_id} 剩余时间 > 24小时，无需刷新")
+                debug_logger.log_info(f"[AUTO_REFRESH] ⏭️  Token {token_id} remaining time > 24 hours, no refresh needed")
                 return False  # Token not expiring soon
 
-            # 📍 Step 5: 触发刷新
+            # 📍 Step 5: Trigger refresh
             if hours_until_expiry < 0:
-                debug_logger.log_info(f"[AUTO_REFRESH] 🔴 Token {token_id} 已过期，尝试自动刷新...")
+                debug_logger.log_info(f"[AUTO_REFRESH] 🔴 Token {token_id} expired, attempting auto refresh...")
             else:
-                debug_logger.log_info(f"[AUTO_REFRESH] 🟡 Token {token_id} 将在 {hours_until_expiry:.2f} 小时后过期，尝试自动刷新...")
+                debug_logger.log_info(f"[AUTO_REFRESH] 🟡 Token {token_id} will expire in {hours_until_expiry:.2f} hours, attempting auto refresh...")
 
             # Priority: ST > RT
             new_at = None
@@ -1020,62 +1020,62 @@ class TokenManager:
             new_rt = None
             refresh_method = None
 
-            # 📍 Step 6: 尝试使用ST刷新
+            # 📍 Step 6: Try using ST to refresh
             if token_data.st:
                 try:
-                    debug_logger.log_info(f"[AUTO_REFRESH] 📝 Token {token_id}: 尝试使用 ST 刷新...")
+                    debug_logger.log_info(f"[AUTO_REFRESH] 📝 Token {token_id}: Trying to refresh using ST...")
                     result = await self.st_to_at(token_data.st)
                     new_at = result.get("access_token")
                     new_st = token_data.st  # ST refresh doesn't return new ST, so keep the old one
                     refresh_method = "ST"
-                    debug_logger.log_info(f"[AUTO_REFRESH] ✅ Token {token_id}: 使用 ST 刷新成功")
+                    debug_logger.log_info(f"[AUTO_REFRESH] ✅ Token {token_id}: ST refresh successful")
                 except Exception as e:
-                    debug_logger.log_info(f"[AUTO_REFRESH] ❌ Token {token_id}: 使用 ST 刷新失败 - {str(e)}")
+                    debug_logger.log_info(f"[AUTO_REFRESH] ❌ Token {token_id}: ST refresh failed - {str(e)}")
                     new_at = None
 
-            # 📍 Step 7: 如果ST失败，尝试使用RT
+            # 📍 Step 7: If ST fails, try using RT
             if not new_at and token_data.rt:
                 try:
-                    debug_logger.log_info(f"[AUTO_REFRESH] 📝 Token {token_id}: 尝试使用 RT 刷新...")
+                    debug_logger.log_info(f"[AUTO_REFRESH] 📝 Token {token_id}: Trying to refresh using RT...")
                     result = await self.rt_to_at(token_data.rt)
                     new_at = result.get("access_token")
                     new_rt = result.get("refresh_token", token_data.rt)  # RT might be updated
                     refresh_method = "RT"
-                    debug_logger.log_info(f"[AUTO_REFRESH] ✅ Token {token_id}: 使用 RT 刷新成功")
+                    debug_logger.log_info(f"[AUTO_REFRESH] ✅ Token {token_id}: RT refresh successful")
                 except Exception as e:
-                    debug_logger.log_info(f"[AUTO_REFRESH] ❌ Token {token_id}: 使用 RT 刷新失败 - {str(e)}")
+                    debug_logger.log_info(f"[AUTO_REFRESH] ❌ Token {token_id}: RT refresh failed - {str(e)}")
                     new_at = None
 
-            # 📍 Step 8: 处理刷新结果
+            # 📍 Step 8: Handle refresh result
             if new_at:
-                # 刷新成功: 更新Token
-                debug_logger.log_info(f"[AUTO_REFRESH] 💾 Token {token_id}: 保存新的 Access Token...")
+                # Refresh successful: Update Token
+                debug_logger.log_info(f"[AUTO_REFRESH] 💾 Token {token_id}: Saving new Access Token...")
                 await self.update_token(token_id, token=new_at, st=new_st, rt=new_rt)
 
-                # 获取更新后的Token信息
+                # Get updated Token info
                 updated_token = await self.db.get_token(token_id)
                 new_expiry_time = updated_token.expiry_time
                 new_hours_until_expiry = ((new_expiry_time - datetime.now()).total_seconds() / 3600) if new_expiry_time else -1
 
-                debug_logger.log_info(f"[AUTO_REFRESH] ✅ Token {token_id} 已自动刷新成功")
-                debug_logger.log_info(f"  - 刷新方式: {refresh_method}")
-                debug_logger.log_info(f"  - 新过期时间: {new_expiry_time.strftime('%Y-%m-%d %H:%M:%S') if new_expiry_time else 'N/A'}")
-                debug_logger.log_info(f"  - 新剩余时间: {new_hours_until_expiry:.2f} 小时")
+                debug_logger.log_info(f"[AUTO_REFRESH] ✅ Token {token_id} auto refresh successful")
+                debug_logger.log_info(f"  - Refresh method: {refresh_method}")
+                debug_logger.log_info(f"  - New expiry time: {new_expiry_time.strftime('%Y-%m-%d %H:%M:%S') if new_expiry_time else 'N/A'}")
+                debug_logger.log_info(f"  - New remaining time: {new_hours_until_expiry:.2f} hours")
 
-                # 📍 Step 9: 检查刷新后的过期时间
+                # 📍 Step 9: Check expiry time after refresh
                 if new_hours_until_expiry < 0:
-                    # 刷新后仍然过期，禁用Token
-                    debug_logger.log_info(f"[AUTO_REFRESH] 🔴 Token {token_id}: 刷新后仍然过期（剩余时间: {new_hours_until_expiry:.2f} 小时），已禁用")
+                    # Still expired after refresh, disable Token
+                    debug_logger.log_info(f"[AUTO_REFRESH] 🔴 Token {token_id}: Still expired after refresh (remaining time: {new_hours_until_expiry:.2f} hours), disabled")
                     await self.disable_token(token_id)
                     return False
 
                 return True
             else:
-                # 刷新失败: 禁用Token
-                debug_logger.log_info(f"[AUTO_REFRESH] 🚫 Token {token_id}: 无法刷新（无有效的 ST 或 RT），已禁用")
+                # Refresh failed: Disable Token
+                debug_logger.log_info(f"[AUTO_REFRESH] 🚫 Token {token_id}: Cannot refresh (no valid ST or RT), disabled")
                 await self.disable_token(token_id)
                 return False
 
         except Exception as e:
-            debug_logger.log_info(f"[AUTO_REFRESH] 🔴 Token {token_id}: 自动刷新异常 - {str(e)}")
+            debug_logger.log_info(f"[AUTO_REFRESH] 🔴 Token {token_id}: Auto refresh exception - {str(e)}")
             return False
