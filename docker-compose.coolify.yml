@@ -7,13 +7,11 @@ services:
     ports:
       - "8001:8000"
     volumes:
-      - ./data:/app/data
-      - ./config/setting_warp.toml:/app/config/setting.toml
+      - /data/coolify/applications/ows8gwsskoccks0cwcsg44g8/data:/app/data
+      - /data/coolify/applications/ows8gwsskoccks0cwcsg44g8/config/setting.toml:/app/config/setting.toml
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
-    depends_on:
-      - warp
 
   warp:
     image: caomingjun/warp
@@ -33,4 +31,4 @@ services:
       - net.ipv6.conf.all.disable_ipv6=0
       - net.ipv4.conf.all.src_valid_mark=1
     volumes:
-      - ./data:/var/lib/cloudflare-warp
+      - /data/coolify/applications/ows8gwsskoccks0cwcsg44g8/data:/var/lib/cloudflare-warp
