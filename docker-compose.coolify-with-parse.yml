@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  sora2api:
+    build: .
+    container_name: sora2api
+    ports:
+      - "8001:8000"
+    volumes:
+      - /data/coolify/applications/ows8gwsskoccks0cwcsg44g8/data:/app/data
+      - /data/coolify/applications/ows8gwsskoccks0cwcsg44g8/config/setting.toml:/app/config/setting.toml
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    depends_on:
+      - sora-parse-server
+
+  sora-parse-server:
+    build: ./custom_parse_server
+    container_name: sora-parse-server
+    ports:
+      - "8002:8000"
+    environment:
+      - PARSE_TOKEN=your_secure_token_here
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Add Warp if needed for IP rotation
+  warp:
+    image: caomingjun/warp
+    container_name: warp
+    restart: always
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - "1080:1080"
+    environment:
+      - WARP_SLEEP=2
+    cap_add:
+      - MKNOD
+      - AUDIT_WRITE
+      - NET_ADMIN
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv4.conf.all.src_valid_mark=1
+    volumes:
+      - /data/coolify/applications/ows8gwsskoccks0cwcsg44g8/data:/var/lib/cloudflare-warp

@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  sora-parse-server:
+    build: .
+    container_name: sora-parse-server
+    ports:
+      - "8002:8000"
+    environment:
+      - PARSE_TOKEN=your_secure_token_here
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
