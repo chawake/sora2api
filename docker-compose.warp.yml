@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   sora2api:
     build: .
@@ -8,7 +6,7 @@ services:
       - "8001:8000"
     volumes:
       - ./data:/app/data
-      - ./config/setting_warp.toml:/app/config/setting.toml
+      - ./config/setting.toml:/app/config/setting.toml
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped

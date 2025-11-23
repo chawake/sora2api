@@ -1,5 +1,5 @@
 [global]
-api_key = "han1234"
+api_key = "sk-1234"
 admin_username = "admin"
 admin_password = "admin"
 
@@ -37,10 +37,27 @@ proxy_enabled = false
 proxy_url = ""
 
 [watermark_free]
-watermark_free_enabled = false
-parse_method = "third_party"
-custom_parse_url = ""
-custom_parse_token = ""
+watermark_free_enabled = true
+parse_method = "third_party"  # Options: custom (Android API), third_party
+custom_parse_url = ""  # No needed for Android API method
+custom_parse_token = ""  # No needed for Android API method
+
+[android_credentials]
+# Android app credentials for direct API access (REQUIRED for custom method)
+# Get these from rooted Android device + packet capture (see sora-down README)
+# Update these through admin panel - not in code
+SORA_AUTH_TOKEN=""
+SORA_REFRESH_TOKEN=""
+SORA_CLIENT_ID="app_OHnYmJt5u1XEdhDUx0ig1ziv"
+
+[android_api]
+# Android API settings (based on sora-downloader)
+# Note: client_id is loaded from android_credentials.SORA_CLIENT_ID
+android_api_enabled = true
+# client_id = "loaded from android_credentials.SORA_CLIENT_ID"
+user_agent = "Sora/1.2025.308"
+impersonate_chrome_version = "chrome110"
+auto_refresh_tokens = true
 
 [token_refresh]
-at_auto_refresh_enabled = false
+at_auto_refresh_enabled = true

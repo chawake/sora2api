@@ -891,3 +891,60 @@ async def update_at_auto_refresh_enabled(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update AT auto refresh enabled status: {str(e)}")
+
+
+@app.get("/admin/android-credentials", summary="Get Android credentials")
+async def get_android_credentials(token: str = Depends(verify_admin_token)) -> dict:
+    """Get current Android credentials configuration"""
+    try:
+        credentials = await db.get_android_credentials()
+        return {
+            "success": True,
+            "data": {
+                "sora_auth_token": credentials.get('sora_auth_token', ''),
+                "sora_refresh_token": credentials.get('sora_refresh_token', ''),
+                "sora_client_id": credentials.get('sora_client_id', 'app_OHnYmJt5u1XEdhDUx0ig1ziv')
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get Android credentials: {str(e)}")
+
+
+@app.post("/admin/android-credentials", summary="Update Android credentials")
+async def update_android_credentials(
+    request: dict,
+    token: str = Depends(verify_admin_token)
+) -> dict:
+    """Update Android credentials configuration"""
+    try:
+        sora_auth_token = request.get("sora_auth_token", "").strip()
+        sora_refresh_token = request.get("sora_refresh_token", "").strip()
+        sora_client_id = request.get("sora_client_id", "app_OHnYmJt5u1XEdhDUx0ig1ziv").strip()
+
+        # Validate required fields
+        if not sora_auth_token or not sora_refresh_token:
+            raise HTTPException(
+                status_code=400, 
+                detail="Both SORA_AUTH_TOKEN and SORA_REFRESH_TOKEN are required"
+            )
+
+        # Update database
+        await db.update_android_credentials(
+            sora_auth_token=sora_auth_token,
+            sora_refresh_token=sora_refresh_token,
+            sora_client_id=sora_client_id
+        )
+
+        return {
+            "success": True,
+            "message": "Android credentials updated successfully",
+            "data": {
+                "sora_auth_token": "***" + sora_auth_token[-4:] if len(sora_auth_token) > 4 else "***",
+                "sora_refresh_token": "***" + sora_refresh_token[-4:] if len(sora_refresh_token) > 4 else "***",
+                "sora_client_id": sora_client_id
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update Android credentials: {str(e)}")
