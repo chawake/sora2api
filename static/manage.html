@@ -144,7 +144,7 @@
                             </tr>
                         </thead>
                         <tbody id="tokenTableBody" class="divide-y divide-border">
-                            <!-- 动态填充 -->
+                            <!-- Dynamic content -->
                         </tbody>
                     </table>
                 </div>
@@ -205,7 +205,7 @@
                         </div>
                         <div>
                             <label class="text-sm font-medium mb-2 block">Proxy URL</label>
-                            <input id="cfgProxyUrl" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="http://127.0.0.1:7890 或 socks5://127.0.0.1:1080">
+                            <input id="cfgProxyUrl" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="http://127.0.0.1:7890 or socks5://127.0.0.1:1080">
                             <p class="text-xs text-muted-foreground mt-1">Supports HTTP and SOCKS5 proxies</p>
                         </div>
                         <button onclick="saveProxyConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save Settings</button>
@@ -361,7 +361,7 @@
                             </tr>
                         </thead>
                         <tbody id="logsTableBody" class="divide-y divide-border">
-                            <!-- 动态填充 -->
+                            <!-- Dynamic content -->
                         </tbody>
                     </table>
                 </div>
@@ -391,24 +391,24 @@
                 <div class="space-y-2">
                     <label class="text-sm font-medium">Access Token (AT) <span class="text-red-500">*</span></label>
                     <textarea id="addTokenAT" rows="3" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="Enter Access Token or use ST/RT conversion below"></textarea>
-                    <p class="text-xs text-muted-foreground">格式: eyJh... (JWT格式)</p>
+                    <p class="text-xs text-muted-foreground">Format: eyJh... (JWT format)</p>
                 </div>
 
                 <!-- Session Token -->
                 <div class="space-y-2">
-                    <label class="text-sm font-medium">Session Token (ST) <span class="text-muted-foreground text-xs">- 可选</span></label>
+                    <label class="text-sm font-medium">Session Token (ST) <span class="text-muted-foreground text-xs">- Optional</span></label>
                     <div class="flex gap-2">
                         <textarea id="addTokenST" rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="Enter Session Token then click convert"></textarea>
                         <button onclick="convertST2AT()" class="inline-flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700 px-4 whitespace-nowrap h-auto">
                             ST→AT
                         </button>
                     </div>
-                    <p class="text-xs text-muted-foreground">从浏览器 Cookie 中获取 __Secure-next-auth.session-token</p>
+                    <p class="text-xs text-muted-foreground">Get from browser Cookie: __Secure-next-auth.session-token</p>
                 </div>
 
                 <!-- Refresh Token -->
                 <div class="space-y-2">
-                    <label class="text-sm font-medium">Refresh Token (RT) <span class="text-muted-foreground text-xs">- 可选</span></label>
+                    <label class="text-sm font-medium">Refresh Token (RT) <span class="text-muted-foreground text-xs">- Optional</span></label>
                     <div class="flex gap-2">
                         <textarea id="addTokenRT" rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="Enter Refresh Token then click convert"></textarea>
                         <button onclick="convertRT2AT()" class="inline-flex items-center justify-center rounded-md bg-green-600 text-white hover:bg-green-700 px-4 whitespace-nowrap h-auto">
@@ -421,18 +421,18 @@
 
                 <!-- Remark -->
                 <div class="space-y-2">
-                    <label class="text-sm font-medium">备注 <span class="text-muted-foreground text-xs">- 可选</span></label>
+                    <label class="text-sm font-medium">Notes <span class="text-muted-foreground text-xs">- Optional</span></label>
                     <input id="addTokenRemark" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Add notes">
                 </div>
 
-                <!-- 功能开关 -->
+                <!-- Feature Toggles -->
                 <div class="space-y-3 pt-2 border-t border-border">
-                    <label class="text-sm font-medium">功能开关</label>
+                    <label class="text-sm font-medium">Feature Toggles</label>
                     <div class="space-y-2">
                         <div class="flex items-center gap-3">
                             <label class="inline-flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" id="addTokenImageEnabled" checked class="h-4 w-4 rounded border-input">
-                                <span class="text-sm font-medium">启用图片生成</span>
+                                <span class="text-sm font-medium">Enable Image Generation</span>
                             </label>
                             <input type="number" id="addTokenImageConcurrency" value="-1" class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm" placeholder="Concurrency" title="Concurrency limit: Set max concurrent requests. -1 for unlimited">
                         </div>
@@ -441,7 +441,7 @@
                         <div class="flex items-center gap-3">
                             <label class="inline-flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" id="addTokenVideoEnabled" checked class="h-4 w-4 rounded border-input">
-                                <span class="text-sm font-medium">启用视频生成</span>
+                                <span class="text-sm font-medium">Enable Video Generation</span>
                             </label>
                             <input type="number" id="addTokenVideoConcurrency" value="-1" class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm" placeholder="Concurrency" title="Concurrency limit: Set max concurrent requests. -1 for unlimited">
                         </div>
@@ -480,24 +480,24 @@
                 <div class="space-y-2">
                     <label class="text-sm font-medium">Access Token (AT) <span class="text-red-500">*</span></label>
                     <textarea id="editTokenAT" rows="3" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="Enter Access Token or use ST/RT conversion below"></textarea>
-                    <p class="text-xs text-muted-foreground">格式: eyJh... (JWT格式)</p>
+                    <p class="text-xs text-muted-foreground">Format: eyJh... (JWT format)</p>
                 </div>
 
                 <!-- Session Token -->
                 <div class="space-y-2">
-                    <label class="text-sm font-medium">Session Token (ST) <span class="text-muted-foreground text-xs">- 可选</span></label>
+                    <label class="text-sm font-medium">Session Token (ST) <span class="text-muted-foreground text-xs">- Optional</span></label>
                     <div class="flex gap-2">
                         <textarea id="editTokenST" rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="Enter Session Token then click convert"></textarea>
                         <button onclick="convertEditST2AT()" class="inline-flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700 px-4 whitespace-nowrap h-auto">
                             ST→AT
                         </button>
                     </div>
-                    <p class="text-xs text-muted-foreground">从浏览器 Cookie 中获取 __Secure-next-auth.session-token</p>
+                    <p class="text-xs text-muted-foreground">Get from browser Cookie: __Secure-next-auth.session-token</p>
                 </div>
 
                 <!-- Refresh Token -->
                 <div class="space-y-2">
-                    <label class="text-sm font-medium">Refresh Token (RT) <span class="text-muted-foreground text-xs">- 可选</span></label>
+                    <label class="text-sm font-medium">Refresh Token (RT) <span class="text-muted-foreground text-xs">- Optional</span></label>
                     <div class="flex gap-2">
                         <textarea id="editTokenRT" rows="2" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none" placeholder="Enter Refresh Token then click convert"></textarea>
                         <button onclick="convertEditRT2AT()" class="inline-flex items-center justify-center rounded-md bg-green-600 text-white hover:bg-green-700 px-4 whitespace-nowrap h-auto">
@@ -510,18 +510,18 @@
 
                 <!-- Remark -->
                 <div class="space-y-2">
-                    <label class="text-sm font-medium">备注 <span class="text-muted-foreground text-xs">- 可选</span></label>
+                    <label class="text-sm font-medium">Notes <span class="text-muted-foreground text-xs">- Optional</span></label>
                     <input id="editTokenRemark" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Add notes">
                 </div>
 
-                <!-- 功能开关 -->
+                <!-- Feature Toggles -->
                 <div class="space-y-3 pt-2 border-t border-border">
-                    <label class="text-sm font-medium">功能开关</label>
+                    <label class="text-sm font-medium">Feature Toggles</label>
                     <div class="space-y-2">
                         <div class="flex items-center gap-3">
                             <label class="inline-flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" id="editTokenImageEnabled" class="h-4 w-4 rounded border-input">
-                                <span class="text-sm font-medium">启用图片生成</span>
+                                <span class="text-sm font-medium">Enable Image Generation</span>
                             </label>
                             <input type="number" id="editTokenImageConcurrency" class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm" placeholder="Concurrency" title="Concurrency limit: Set max concurrent requests. -1 for unlimited">
                         </div>
@@ -530,7 +530,7 @@
                         <div class="flex items-center gap-3">
                             <label class="inline-flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" id="editTokenVideoEnabled" class="h-4 w-4 rounded border-input">
-                                <span class="text-sm font-medium">启用视频生成</span>
+                                <span class="text-sm font-medium">Enable Video Generation</span>
                             </label>
                             <input type="number" id="editTokenVideoConcurrency" class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm" placeholder="Concurrency" title="Concurrency limit: Set max concurrent requests. -1 for unlimited">
                         </div>

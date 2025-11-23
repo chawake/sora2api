@@ -30,9 +30,9 @@ class LoadBalancer:
         """
         # Try to auto-refresh tokens expiring within 24 hours if enabled
         if config.at_auto_refresh_enabled:
-            debug_logger.log_info(f"[LOAD_BALANCER] 🔄 自动刷新功能已启用，开始检查Token过期时间...")
+            debug_logger.log_info(f"[LOAD_BALANCER] 🔄 Auto-refresh enabled, checking Token expiry...")
             all_tokens = await self.token_manager.get_all_tokens()
-            debug_logger.log_info(f"[LOAD_BALANCER] 📊 总Token数: {len(all_tokens)}")
+            debug_logger.log_info(f"[LOAD_BALANCER] 📊 Total Tokens: {len(all_tokens)}")
 
             refresh_count = 0
             for token in all_tokens:
@@ -42,14 +42,14 @@ class LoadBalancer:
                     hours_until_expiry = time_until_expiry.total_seconds() / 3600
                     # Refresh if expiry is within 24 hours
                     if hours_until_expiry <= 24:
-                        debug_logger.log_info(f"[LOAD_BALANCER] 🔔 Token {token.id} ({token.email}) 需要刷新，剩余时间: {hours_until_expiry:.2f} 小时")
+                        debug_logger.log_info(f"[LOAD_BALANCER] 🔔 Token {token.id} ({token.email}) needs refresh, time remaining: {hours_until_expiry:.2f} hours")
                         refresh_count += 1
                         await self.token_manager.auto_refresh_expiring_token(token.id)
 
             if refresh_count == 0:
-                debug_logger.log_info(f"[LOAD_BALANCER] ✅ 所有Token都无需刷新")
+                debug_logger.log_info(f"[LOAD_BALANCER] ✅ All Tokens do not need refresh")
             else:
-                debug_logger.log_info(f"[LOAD_BALANCER] ✅ 刷新检查完成，共检查 {refresh_count} 个Token")
+                debug_logger.log_info(f"[LOAD_BALANCER] ✅ Refresh check completed, checked {refresh_count} Tokens")
 
         active_tokens = await self.token_manager.get_active_tokens()
 
