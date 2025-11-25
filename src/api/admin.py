@@ -689,6 +689,7 @@ async def get_logs(limit: int = 100, token: str = Depends(verify_admin_token)):
         "operation": log.get("operation"),
         "status_code": log.get("status_code"),
         "duration": log.get("duration"),
+        "watermark_method": log.get("watermark_method"),
         "created_at": log.get("created_at")
     } for log in logs]
 

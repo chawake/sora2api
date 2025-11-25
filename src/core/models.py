@@ -73,6 +73,7 @@ class RequestLog(BaseModel):
     response_body: Optional[str] = None
     status_code: int
     duration: float
+    watermark_method: Optional[str] = None
     created_at: Optional[datetime] = None
 
 class AdminConfig(BaseModel):

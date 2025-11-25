@@ -273,13 +273,6 @@
                             <label class="text-sm font-medium mb-2 block">Video Generation Timeout (seconds)</label>
                             <input id="cfgVideoTimeout" type="number" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="1500" min="60" max="7200">
                             <p class="text-xs text-muted-foreground mt-1">Video generation timeout, range: 60-7200 seconds (1 minute - 2 hours), returns upstream API timeout error after timeout</p>
-                        </div>
-                        <button onclick="saveGenerationTimeout()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save Settings</button>
-                    </div>
-                </div>
-
-                <!-- Watermark-Free Mode Settings -->
-                <div class="rounded-lg border border-border bg-background p-6">
                     <h3 class="text-lg font-semibold mb-4">Watermark-Free Mode Settings</h3>
                     <div class="space-y-4">
                         <div>
@@ -295,20 +288,24 @@
                                 <label class="text-sm font-medium">Parse Method</label>
                                 <select id="cfgParseMethod" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground" onchange="toggleCustomParseOptions()">
                                     <option value="third_party">Third-party Parsing</option>
-                                    <option value="custom">Custom Parse Interface</option>
+                                    <option value="custom">Android API (in-container)</option>
                                 </select>
                             </div>
 
-                            <!-- Custom Parse Configuration -->
+                            <!-- Android API Configuration (sora-down style) -->
                             <div id="customParseOptions" style="display: none;" class="space-y-4">
                                 <div>
-                                    <label class="text-sm font-medium">Parse Server URL</label>
-                                    <input type="text" id="cfgCustomParseUrl" placeholder="Enter parse server URL (e.g.: http://example.com)" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground">
-                                    <p class="text-xs text-muted-foreground mt-1"><a href="https://github.com/tibbar213/sora-downloader" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Deploy Custom Parse Server</a></p>
+                                    <label class="text-sm font-medium">Android Access Token</label>
+                                    <textarea id="cfgAndroidAuthToken" rows="2" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground font-mono" placeholder="Paste Android Access Token (Bearer)"></textarea>
                                 </div>
                                 <div>
-                                    <label class="text-sm font-medium">Access Key</label>
-                                    <input type="password" id="cfgCustomParseToken" placeholder="Enter access key" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground">
+                                    <label class="text-sm font-medium">Android Refresh Token</label>
+                                    <textarea id="cfgAndroidRefreshToken" rows="2" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground font-mono" placeholder="Paste Android Refresh Token"></textarea>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium">Android Client ID</label>
+                                    <input type="text" id="cfgAndroidClientId" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground font-mono" placeholder="app_OHnYmJt5u1XEdhDUx0ig1ziv">
+                                    <p class="text-xs text-muted-foreground mt-1">Default: <code class="bg-muted px-1 py-0.5 rounded">app_OHnYmJt5u1XEdhDUx0ig1ziv</code></p>
                                 </div>
                             </div>
                         </div>
@@ -316,11 +313,6 @@
                         <button onclick="saveWatermarkFreeConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save Settings</button>
                     </div>
                 </div>
-
-                <!-- Debug Settings -->
-                <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">Debug Settings</h3>
-                    <div class="space-y-4">
                         <div>
                             <label class="inline-flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" id="cfgDebugEnabled" class="h-4 w-4 rounded border-input" onchange="toggleDebugMode()">
@@ -357,6 +349,7 @@
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Token Email</th>
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Status Code</th>
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Duration (s)</th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Watermark Method</th>
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Time</th>
                             </tr>
                         </thead>
@@ -1399,36 +1392,83 @@ const $ = (id) => document.getElementById(id),
             const d = await r.json();
             $('cfgWatermarkFreeEnabled').checked = d.watermark_free_enabled || false;
             $('cfgParseMethod').value = d.parse_method || 'third_party';
-            $('cfgCustomParseUrl').value = d.custom_parse_url || '';
-            $('cfgCustomParseToken').value = d.custom_parse_token || '';
             toggleWatermarkFreeOptions();
-            toggleCustomParseOptions()
+            toggleCustomParseOptions();
+            // Load Android credentials when settings tab is opened; they are managed via a separate API
+            await loadAndroidCredentials();
         } catch (e) {
             console.error('Failed to load watermark-free config:', e)
+        }
+    },
+    loadAndroidCredentials = async () => {
+        try {
+            const r = await apiRequest('/api/android-credentials');
+            if (!r) return;
+            const d = await r.json();
+            if (!d.success || !d.data) return;
+            $('cfgAndroidAuthToken').value = d.data.sora_auth_token || '';
+            $('cfgAndroidRefreshToken').value = d.data.sora_refresh_token || '';
+            $('cfgAndroidClientId').value = d.data.sora_client_id || 'app_OHnYmJt5u1XEdhDUx0ig1ziv';
+        } catch (e) {
+            console.error('Failed to load Android credentials:', e)
+        }
+    },
+    saveAndroidCredentials = async () => {
+        const at = $('cfgAndroidAuthToken').value.trim(),
+            rt = $('cfgAndroidRefreshToken').value.trim(),
+            clientId = $('cfgAndroidClientId').value.trim() || 'app_OHnYmJt5u1XEdhDUx0ig1ziv';
+        if (!at || !rt) {
+            showToast('Please enter Android Access Token and Refresh Token', 'error');
+            return false;
+        }
+        try {
+            const r = await apiRequest('/api/android-credentials', {
+                method: 'POST',
+                body: JSON.stringify({
+                    sora_auth_token: at,
+                    sora_refresh_token: rt,
+                    sora_client_id: clientId
+                })
+            });
+            if (!r) return false;
+            const d = await r.json();
+            if (d.success) {
+                showToast('Android credentials saved successfully', 'success');
+                return true;
+            }
+            showToast(d.detail || d.message || 'Failed to save Android credentials', 'error');
+            return false;
+        } catch (e) {
+            showToast('Failed to save Android credentials: ' + e.message, 'error');
+            return false;
         }
     },
     saveWatermarkFreeConfig = async () => {
         try {
             const enabled = $('cfgWatermarkFreeEnabled').checked,
-                parseMethod = $('cfgParseMethod').value,
-                customUrl = $('cfgCustomParseUrl').value.trim(),
-                customToken = $('cfgCustomParseToken').value.trim();
-            if (enabled && parseMethod === 'custom') {
-                if (!customUrl) return showToast('Please enter parse server URL', 'error');
-                if (!customToken) return showToast('Please enter access token', 'error')
-            }
+                parseMethod = $('cfgParseMethod').value;
             const r = await apiRequest('/api/watermark-free/config', {
                 method: 'POST',
                 body: JSON.stringify({
                     watermark_free_enabled: enabled,
                     parse_method: parseMethod,
-                    custom_parse_url: customUrl || null,
-                    custom_parse_token: customToken || null
+                    // Custom parse URL/token are not used in Android API mode; set to null for now
+                    custom_parse_url: null,
+                    custom_parse_token: null
                 })
             });
             if (!r) return;
             const d = await r.json();
-            d.success ? showToast('Watermark-free config saved successfully', 'success') : showToast('Save failed', 'error')
+            if (!d.success) {
+                return showToast('Save failed', 'error');
+            }
+
+            // When using Android API mode, also persist Android credentials
+            if (enabled && parseMethod === 'custom') {
+                await saveAndroidCredentials();
+            } else {
+                showToast('Watermark-free config saved successfully', 'success');
+            }
         } catch (e) {
             showToast('Save failed: ' + e.message, 'error')
         }
@@ -1664,7 +1704,23 @@ const $ = (id) => document.getElementById(id),
             if (!r) return;
             const logs = await r.json();
             const tb = $('logsTableBody');
-            tb.innerHTML = logs.map(l => `<tr><td class="py-2.5 px-3">${l.operation}</td><td class="py-2.5 px-3"><span class="text-xs ${l.token_email?'text-blue-600':'text-muted-foreground'}">${l.token_email||'Unknown'}</span></td><td class="py-2.5 px-3"><span class="inline-flex items-center rounded px-2 py-0.5 text-xs ${l.status_code===200?'bg-green-50 text-green-700':'bg-red-50 text-red-700'}">${l.status_code}</span></td><td class="py-2.5 px-3">${l.duration.toFixed(2)}</td><td class="py-2.5 px-3 text-xs text-muted-foreground">${l.created_at?new Date(l.created_at).toLocaleString('en-US'):'-'}</td></tr>`).join('')
+            tb.innerHTML = logs.map(l => {
+                const method = l.watermark_method || '-';
+                let methodClass = 'bg-gray-50 text-gray-600';
+                if (method === 'android_success') methodClass = 'bg-green-50 text-green-700';
+                else if (method === 'android_fallback_third_party') methodClass = 'bg-yellow-50 text-yellow-700';
+                else if (method === 'third_party') methodClass = 'bg-blue-50 text-blue-700';
+                else if (method === 'watermark_disabled') methodClass = 'bg-gray-50 text-gray-500';
+                else if (method === 'watermark_publish_failed') methodClass = 'bg-red-50 text-red-700';
+                return `<tr>
+                    <td class="py-2.5 px-3">${l.operation}</td>
+                    <td class="py-2.5 px-3"><span class="text-xs ${l.token_email?'text-blue-600':'text-muted-foreground'}">${l.token_email||'Unknown'}</span></td>
+                    <td class="py-2.5 px-3"><span class="inline-flex items-center rounded px-2 py-0.5 text-xs ${l.status_code===200?'bg-green-50 text-green-700':'bg-red-50 text-red-700'}">${l.status_code}</span></td>
+                    <td class="py-2.5 px-3">${l.duration.toFixed(2)}</td>
+                    <td class="py-2.5 px-3"><span class="inline-flex items-center rounded px-2 py-0.5 text-xs ${methodClass}">${method}</span></td>
+                    <td class="py-2.5 px-3 text-xs text-muted-foreground">${l.created_at?new Date(l.created_at).toLocaleString('en-US'):'-'}</td>
+                </tr>`
+            }).join('')
         } catch (e) {
             console.error('Failed to load logs:', e)
         }

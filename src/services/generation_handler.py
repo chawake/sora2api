@@ -230,6 +230,8 @@ class GenerationHandler:
         model_config = MODEL_CONFIG[model]
         is_video = model_config["type"] == "video"
         is_image = model_config["type"] == "image"
+        # Track which watermark-free method was ultimately used (if any)
+        watermark_info: Dict[str, Any] = {"method": None}
 
         # Non-streaming mode: only check availability
         if not stream:
@@ -368,7 +370,7 @@ class GenerationHandler:
             await self.token_manager.record_usage(token_obj.id, is_video=is_video)
             
             # Poll for results with timeout
-            async for chunk in self._poll_task_result(task_id, token_obj.token, is_video, stream, prompt, token_obj.id):
+            async for chunk in self._poll_task_result(task_id, token_obj.token, is_video, stream, prompt, token_obj.id, watermark_info):
                 yield chunk
             
             # Record success
@@ -393,7 +395,8 @@ class GenerationHandler:
                 {"model": model, "prompt": prompt, "has_image": image is not None},
                 {"task_id": task_id, "status": "success"},
                 200,
-                duration
+                duration,
+                watermark_info.get("method") if is_video else None,
             )
 
         except Exception as e:
@@ -420,12 +423,14 @@ class GenerationHandler:
                 {"model": model, "prompt": prompt, "has_image": image is not None},
                 {"error": str(e)},
                 500,
-                duration
+                duration,
+                watermark_info.get("method") if is_video else None,
             )
             raise e
     
     async def _poll_task_result(self, task_id: str, token: str, is_video: bool,
-                                stream: bool, prompt: str, token_id: int = None) -> AsyncGenerator[str, None]:
+                                stream: bool, prompt: str, token_id: int = None,
+                                watermark_info: Optional[Dict[str, Any]] = None) -> AsyncGenerator[str, None]:
         """Poll for task result with timeout"""
         # Get timeout from config
         timeout = config.video_timeout if is_video else config.image_timeout
@@ -444,6 +449,9 @@ class GenerationHandler:
         if is_video:
             watermark_free_config = await self.db.get_watermark_free_config()
             debug_logger.log_info(f"Watermark-free mode: {'ENABLED' if watermark_free_config.watermark_free_enabled else 'DISABLED'}")
+            # If watermark-free is disabled, record that explicitly
+            if not watermark_free_config.watermark_free_enabled and watermark_info is not None:
+                watermark_info["method"] = "watermark_disabled"
 
         for attempt in range(max_attempts):
             # Check if timeout exceeded
@@ -564,12 +572,16 @@ class GenerationHandler:
                                                 
                                                 if watermark_free_url:
                                                     debug_logger.log_info(f"Android API extraction succeeded: {watermark_free_url}")
+                                                    if watermark_info is not None:
+                                                        watermark_info["method"] = "android_success"
                                                     if stream:
                                                         yield self._format_stream_chunk(
                                                             reasoning_content="✅ Android API extraction successful!\n"
                                                         )
                                                 else:
                                                     debug_logger.log_info("Android API failed, falling back to third-party")
+                                                    if watermark_info is not None:
+                                                        watermark_info["method"] = "android_fallback_third_party"
                                                     if stream:
                                                         yield self._format_stream_chunk(
                                                             reasoning_content="Android API extraction failed, falling back to third-party...\n"
@@ -580,6 +592,8 @@ class GenerationHandler:
                                                     
                                             except ImportError:
                                                 debug_logger.log_info("Android API module not available, using third-party")
+                                                if watermark_info is not None:
+                                                    watermark_info["method"] = "android_fallback_third_party"
                                                 if stream:
                                                     yield self._format_stream_chunk(
                                                         reasoning_content="Android API module not available, using third-party...\n"
@@ -588,6 +602,8 @@ class GenerationHandler:
                                                 watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
                                             except Exception as e:
                                                 debug_logger.log_info(f"Android API error: {e}, falling back to third-party")
+                                                if watermark_info is not None:
+                                                    watermark_info["method"] = "android_fallback_third_party"
                                                 if stream:
                                                     yield self._format_stream_chunk(
                                                         reasoning_content=f"Android API extraction failed ({str(e)}), falling back to third-party...\n"
@@ -598,6 +614,8 @@ class GenerationHandler:
                                             # Use third-party parse (default)
                                             watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
                                             debug_logger.log_info(f"Using third-party parse server")
+                                            if watermark_info is not None:
+                                                watermark_info["method"] = "third_party"
 
                                         debug_logger.log_info(f"Watermark-free URL: {watermark_free_url}")
 
@@ -657,6 +675,8 @@ class GenerationHandler:
                                             status_code=500,
                                             response_text=str(publish_error)
                                         )
+                                        if watermark_info is not None:
+                                            watermark_info["method"] = "watermark_publish_failed"
                                         if stream:
                                             yield self._format_stream_chunk(
                                                 reasoning_content=f"Warning: Failed to get watermark-free version - {str(publish_error)}\nFalling back to normal video...\n"
@@ -947,7 +967,8 @@ class GenerationHandler:
 
     async def _log_request(self, token_id: Optional[int], operation: str,
                           request_data: Dict[str, Any], response_data: Dict[str, Any],
-                          status_code: int, duration: float):
+                          status_code: int, duration: float,
+                          watermark_method: Optional[str] = None):
         """Log request to database"""
         try:
             log = RequestLog(
@@ -956,7 +977,8 @@ class GenerationHandler:
                 request_body=json.dumps(request_data),
                 response_body=json.dumps(response_data),
                 status_code=status_code,
-                duration=duration
+                duration=duration,
+                watermark_method=watermark_method,
             )
             await self.db.log_request(log)
         except Exception as e:

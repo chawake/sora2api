@@ -252,6 +252,14 @@ class Database:
                         except Exception as e:
                             print(f"  ✗ Failed to add column '{col_name}': {e}")
 
+            if await self._table_exists(db, "request_logs"):
+                if not await self._column_exists(db, "request_logs", "watermark_method"):
+                    try:
+                        await db.execute("ALTER TABLE request_logs ADD COLUMN watermark_method TEXT")
+                        print("  ✓ Added column 'watermark_method' to request_logs table")
+                    except Exception as e:
+                        print(f"  ✗ Failed to add column 'watermark_method': {e}")
+
             # Ensure all config tables have their default rows
             # Pass config_dict if available to initialize from setting.toml
             await self._ensure_config_rows(db, config_dict)
@@ -340,6 +348,7 @@ class Database:
                     response_body TEXT,
                     status_code INTEGER NOT NULL,
                     duration FLOAT NOT NULL,
+                    watermark_method TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (token_id) REFERENCES tokens(id)
                 )
@@ -930,10 +939,17 @@ class Database:
         """Log a request"""
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("""
-                INSERT INTO request_logs (token_id, operation, request_body, response_body, status_code, duration)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (log.token_id, log.operation, log.request_body, log.response_body, 
-                  log.status_code, log.duration))
+                INSERT INTO request_logs (token_id, operation, request_body, response_body, status_code, duration, watermark_method)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                log.token_id,
+                log.operation,
+                log.request_body,
+                log.response_body,
+                log.status_code,
+                log.duration,
+                log.watermark_method,
+            ))
             await db.commit()
     
     async def get_recent_logs(self, limit: int = 100) -> List[dict]:
@@ -949,6 +965,7 @@ class Database:
                     rl.response_body,
                     rl.status_code,
                     rl.duration,
+                    rl.watermark_method,
                     rl.created_at,
                     t.email as token_email
                 FROM request_logs rl

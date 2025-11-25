@@ -10,6 +10,7 @@ import threading
 import asyncio
 from typing import Optional, Dict
 from curl_cffi.requests import Session, errors
+from ..core.database import Database
 
 class SoraCustomAPIExtractor:
     """
@@ -17,12 +18,13 @@ class SoraCustomAPIExtractor:
     Replaces scraping methods with direct API access using Android credentials
     """
     
-    def __init__(self, sora_client, proxy_manager=None):
+    def __init__(self, sora_client, proxy_manager=None, database=None):
         self.sora_client = sora_client
         self.proxy_manager = proxy_manager
         self.access_token = None
         self.refresh_token = None
-        self.client_id = None  # Will be loaded from config
+        self.client_id = None  # Will be loaded from config / database
+        self.db: Optional[Database] = database or Database()
         
         # Thread safety for token refresh
         self.lock = threading.Lock()
@@ -36,26 +38,25 @@ class SoraCustomAPIExtractor:
             if proxy_url:
                 self.session.proxies = {"http": proxy_url, "https": proxy_url}
     
-    def load_android_credentials(self):
-        """Load Android credentials from TOML configuration"""
+    async def load_android_credentials(self):
+        """Load Android credentials from database"""
         try:
-            # Import here to avoid circular imports
-            from core.config import config
-            
-            # Load from TOML configuration
-            self.access_token = getattr(config, 'SORA_AUTH_TOKEN', None)
-            self.refresh_token = getattr(config, 'SORA_REFRESH_TOKEN', None)
-            self.client_id = getattr(config, 'SORA_CLIENT_ID', "app_OHnYmJt5u1XEdhDUx0ig1ziv")
+            if self.db is None:
+                self.db = Database()
+            creds = await self.db.get_android_credentials()
+            self.access_token = creds.get('sora_auth_token')
+            self.refresh_token = creds.get('sora_refresh_token')
+            self.client_id = creds.get('sora_client_id') or "app_OHnYmJt5u1XEdhDUx0ig1ziv"
             
             if self.access_token or self.refresh_token:
-                print("Loaded Android credentials from TOML configuration")
+                print("Loaded Android credentials from database")
                 return True
             else:
-                print("Android credentials not configured in TOML")
+                print("Android credentials not configured in database")
                 return False
             
         except Exception as e:
-            print(f"Failed to load Android credentials from TOML: {e}")
+            print(f"Failed to load Android credentials from database: {e}")
             return False
     
     def refresh_token_if_needed(self):
@@ -84,44 +85,34 @@ class SoraCustomAPIExtractor:
                 
                 print("Successfully refreshed Android access token.")
                 
-                # Update TOML configuration
-                self._save_tokens_to_toml()
+                # Persist updated tokens to database asynchronously (fire-and-forget)
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        loop.create_task(self._save_tokens_to_db())
+                except RuntimeError:
+                    # No running event loop; skip async DB update
+                    pass
                 return True
                 
             except errors.RequestsError as e:
                 print(f"Failed to refresh Android token: {e}")
                 raise Exception(f"Failed to refresh Android token: {e}")
     
-    def _save_tokens_to_toml(self):
-        """Save updated tokens to TOML configuration"""
+    async def _save_tokens_to_db(self):
+        """Save updated tokens to database"""
         try:
-            # Import here to avoid circular imports
-            from core.config import config
-            
-            # Update TOML file with new tokens
-            config_file = "config/setting.toml"
-            
-            # Read current TOML content
-            import toml
-            with open(config_file, 'r') as f:
-                toml_data = toml.load(f)
-            
-            # Update tokens
-            if 'android_credentials' not in toml_data:
-                toml_data['android_credentials'] = {}
-            
-            toml_data['android_credentials']['SORA_AUTH_TOKEN'] = self.access_token
-            toml_data['android_credentials']['SORA_REFRESH_TOKEN'] = self.refresh_token
-            toml_data['android_credentials']['SORA_CLIENT_ID'] = self.client_id
-            
-            # Write back to TOML file
-            with open(config_file, 'w') as f:
-                toml.dump(toml_data, f)
-            
-            print("Android tokens updated in TOML configuration")
+            if self.db is None:
+                self.db = Database()
+            await self.db.update_android_credentials(
+                sora_auth_token=self.access_token or "",
+                sora_refresh_token=self.refresh_token or "",
+                sora_client_id=self.client_id or "app_OHnYmJt5u1XEdhDUx0ig1ziv"
+            )
+            print("Android tokens updated in database")
             
         except Exception as e:
-            print(f"Failed to save tokens to TOML: {e}")
+            print(f"Failed to save tokens to database: {e}")
     
     def make_sora_api_call(self, post_id: str) -> Dict:
         """Make API call to Sora backend to get published post data"""
@@ -185,7 +176,7 @@ class SoraCustomAPIExtractor:
         Note: This requires post_id from published video, not generation_id
         """
         # Load Android credentials
-        if not self.load_android_credentials():
+        if not await self.load_android_credentials():
             print("Failed to load Android credentials")
             return None
         
