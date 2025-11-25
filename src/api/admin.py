@@ -893,7 +893,7 @@ async def update_at_auto_refresh_enabled(
         raise HTTPException(status_code=500, detail=f"Failed to update AT auto refresh enabled status: {str(e)}")
 
 
-@app.get("/admin/android-credentials", summary="Get Android credentials")
+@router.get("/api/android-credentials", summary="Get Android credentials")
 async def get_android_credentials(token: str = Depends(verify_admin_token)) -> dict:
     """Get current Android credentials configuration"""
     try:
@@ -910,7 +910,7 @@ async def get_android_credentials(token: str = Depends(verify_admin_token)) -> d
         raise HTTPException(status_code=500, detail=f"Failed to get Android credentials: {str(e)}")
 
 
-@app.post("/admin/android-credentials", summary="Update Android credentials")
+@router.post("/api/android-credentials", summary="Update Android credentials")
 async def update_android_credentials(
     request: dict,
     token: str = Depends(verify_admin_token)
