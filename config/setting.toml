@@ -37,7 +37,7 @@ proxy_enabled = false
 proxy_url = ""
 
 [watermark_free]
-watermark_free_enabled = true
+watermark_free_enabled = false
 parse_method = "third_party"  # Options: custom (Android API), third_party
 custom_parse_url = ""  # No needed for Android API method
 custom_parse_token = ""  # No needed for Android API method
