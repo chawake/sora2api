@@ -31,12 +31,6 @@ class SoraCustomAPIExtractor:
         
         # Initialize curl-cffi session with proper impersonation
         self.session = Session(impersonate="chrome110")
-        
-        # Set proxy if available
-        if self.proxy_manager:
-            proxy_url = self.proxy_manager.get_proxy_url()
-            if proxy_url:
-                self.session.proxies = {"http": proxy_url, "https": proxy_url}
     
     async def load_android_credentials(self):
         """Load Android credentials from database"""
@@ -179,6 +173,15 @@ class SoraCustomAPIExtractor:
         if not await self.load_android_credentials():
             print("Failed to load Android credentials")
             return None
+        
+        # Configure proxy if available
+        if self.proxy_manager is not None:
+            try:
+                proxy_url = await self.proxy_manager.get_proxy_url()
+                if proxy_url:
+                    self.session.proxies = {"http": proxy_url, "https": proxy_url}
+            except Exception as e:
+                print(f"Failed to configure proxy for Android extractor: {e}")
         
         # Extract clean URL using Android API
         return self.extract_clean_video_url(post_id)
