@@ -1180,10 +1180,14 @@ class Database:
     async def update_android_credentials(self, sora_auth_token: str, sora_refresh_token: str, sora_client_id: str = "app_OHnYmJt5u1XEdhDUx0ig1ziv"):
         """Update Android credentials in database"""
         async with aiosqlite.connect(self.db_path) as db:
-            await db.execute("""
+            cursor = await db.execute("""
                 UPDATE android_credentials
                 SET sora_auth_token = ?, sora_refresh_token = ?, sora_client_id = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = 1
             """, (sora_auth_token, sora_refresh_token, sora_client_id))
+            if cursor.rowcount == 0:
+                await db.execute("""
+                    INSERT INTO android_credentials (id, sora_auth_token, sora_refresh_token, sora_client_id)
+                    VALUES (1, ?, ?, ?)
+                """, (sora_auth_token, sora_refresh_token, sora_client_id))
             await db.commit()
-
