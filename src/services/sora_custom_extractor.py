@@ -146,22 +146,38 @@ class SoraCustomAPIExtractor:
         """Extract clean video URL from published Sora post using Android credentials"""
         try:
             response_data = self.make_sora_api_call(post_id)
-            
-            # Extract the clean video URL from encodings.source.path
-            download_link = response_data['post']['attachments'][0]['encodings']['source']['path']
-            
+
+            # Safely navigate response structure
+            post = (response_data or {}).get('post') or {}
+            attachments = post.get('attachments') or []
+            if not attachments:
+                print("No attachments found in Sora API response")
+                return None
+
+            attachment = attachments[0]
+
+            # Prefer explicit no-watermark URL if available
+            download_urls = attachment.get('download_urls') or {}
+            no_wm_url = download_urls.get('no_watermark')
+
+            # Fallback chain: no_watermark -> encodings.source.path -> downloadable_url -> url
+            encodings = attachment.get('encodings') or {}
+            source = (encodings.get('source') or {}).get('path')
+            downloadable = attachment.get('downloadable_url')
+            direct_url = attachment.get('url')
+
+            download_link = no_wm_url or source or downloadable or direct_url
+
             if download_link:
                 print(f"Successfully extracted clean video URL via Android API: {download_link}")
                 return download_link
-            else:
-                print("No download link found in Sora API response")
-                return None
-                
-        except (KeyError, IndexError) as e:
-            print(f"Failed to extract download link from Sora API: {e}")
+
+            print("No suitable download link found in Sora API response")
             return None
+
         except Exception as e:
-            print(f"Sora API call failed: {e}")
+            # Be robust against schema changes and unexpected shapes
+            print(f"Failed to extract download link from Sora API: {e}")
             return None
     
     async def get_clean_video_url(self, post_id: str) -> Optional[str]:
