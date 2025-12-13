@@ -78,7 +78,6 @@ class GenerationHandler:
         self.token_manager = token_manager
         self.load_balancer = load_balancer
         self.db = db
-        self.proxy_manager = proxy_manager
         self.concurrency_manager = concurrency_manager
         self.file_cache = FileCache(
             cache_dir="tmp",
@@ -231,8 +230,6 @@ class GenerationHandler:
         model_config = MODEL_CONFIG[model]
         is_video = model_config["type"] == "video"
         is_image = model_config["type"] == "image"
-        # Track which watermark-free method was ultimately used (if any)
-        watermark_info: Dict[str, Any] = {"method": None}
 
         # Non-streaming mode: only check availability
         if not stream:
@@ -342,12 +339,31 @@ class GenerationHandler:
                 # Get n_frames from model configuration
                 n_frames = model_config.get("n_frames", 300)  # Default to 300 frames (10s)
 
-                task_id = await self.sora_client.generate_video(
-                    prompt, token_obj.token,
-                    orientation=model_config["orientation"],
-                    media_id=media_id,
-                    n_frames=n_frames
-                )
+                # Check if prompt is in storyboard format
+                if self.sora_client.is_storyboard_prompt(prompt):
+                    # Storyboard mode
+                    if stream:
+                        yield self._format_stream_chunk(
+                            reasoning_content="Detected storyboard format. Converting to storyboard API format...\n"
+                        )
+
+                    formatted_prompt = self.sora_client.format_storyboard_prompt(prompt)
+                    debug_logger.log_info(f"Storyboard mode detected. Formatted prompt: {formatted_prompt}")
+
+                    task_id = await self.sora_client.generate_storyboard(
+                        formatted_prompt, token_obj.token,
+                        orientation=model_config["orientation"],
+                        media_id=media_id,
+                        n_frames=n_frames
+                    )
+                else:
+                    # Normal video generation
+                    task_id = await self.sora_client.generate_video(
+                        prompt, token_obj.token,
+                        orientation=model_config["orientation"],
+                        media_id=media_id,
+                        n_frames=n_frames
+                    )
             else:
                 task_id = await self.sora_client.generate_image(
                     prompt, token_obj.token,
@@ -371,7 +387,7 @@ class GenerationHandler:
             await self.token_manager.record_usage(token_obj.id, is_video=is_video)
             
             # Poll for results with timeout
-            async for chunk in self._poll_task_result(task_id, token_obj.token, is_video, stream, prompt, token_obj.id, watermark_info):
+            async for chunk in self._poll_task_result(task_id, token_obj.token, is_video, stream, prompt, token_obj.id):
                 yield chunk
             
             # Record success
@@ -396,8 +412,7 @@ class GenerationHandler:
                 {"model": model, "prompt": prompt, "has_image": image is not None},
                 {"task_id": task_id, "status": "success"},
                 200,
-                duration,
-                watermark_info.get("method") if is_video else None,
+                duration
             )
 
         except Exception as e:
@@ -424,14 +439,12 @@ class GenerationHandler:
                 {"model": model, "prompt": prompt, "has_image": image is not None},
                 {"error": str(e)},
                 500,
-                duration,
-                watermark_info.get("method") if is_video else None,
+                duration
             )
             raise e
     
     async def _poll_task_result(self, task_id: str, token: str, is_video: bool,
-                                stream: bool, prompt: str, token_id: int = None,
-                                watermark_info: Optional[Dict[str, Any]] = None) -> AsyncGenerator[str, None]:
+                                stream: bool, prompt: str, token_id: int = None) -> AsyncGenerator[str, None]:
         """Poll for task result with timeout"""
         # Get timeout from config
         timeout = config.video_timeout if is_video else config.image_timeout
@@ -450,9 +463,6 @@ class GenerationHandler:
         if is_video:
             watermark_free_config = await self.db.get_watermark_free_config()
             debug_logger.log_info(f"Watermark-free mode: {'ENABLED' if watermark_free_config.watermark_free_enabled else 'DISABLED'}")
-            # If watermark-free is disabled, record that explicitly
-            if not watermark_free_config.watermark_free_enabled and watermark_info is not None:
-                watermark_info["method"] = "watermark_disabled"
 
         for attempt in range(max_attempts):
             # Check if timeout exceeded
@@ -524,6 +534,51 @@ class GenerationHandler:
                         # Find matching task in drafts
                         for item in items:
                             if item.get("task_id") == task_id:
+                                # Check for content violation
+                                kind = item.get("kind")
+                                reason_str = item.get("reason_str") or item.get("markdown_reason_str")
+                                url = item.get("url") or item.get("downloadable_url")
+                                debug_logger.log_info(f"Found task {task_id} in drafts with kind: {kind}, reason_str: {reason_str}, has_url: {bool(url)}")
+
+                                # Check if content violates policy
+                                # Violation indicators: kind is violation type, or has reason_str, or missing video URL
+                                is_violation = (
+                                    kind == "sora_content_violation" or
+                                    (reason_str and reason_str.strip()) or  # Has non-empty reason
+                                    not url  # No video URL means generation failed
+                                )
+
+                                if is_violation:
+                                    error_message = f"Content policy violation: {reason_str or 'Content violates guardrails'}"
+
+                                    debug_logger.log_error(
+                                        error_message=error_message,
+                                        status_code=400,
+                                        response_text=json.dumps(item)
+                                    )
+
+                                    # Update task status
+                                    await self.db.update_task(task_id, "failed", 0, error_message=error_message)
+
+                                    # Release resources
+                                    if token_id and self.concurrency_manager:
+                                        await self.concurrency_manager.release_video(token_id)
+                                        debug_logger.log_info(f"Released concurrency slot for token {token_id} due to content violation")
+
+                                    # Return error in stream format
+                                    if stream:
+                                        yield self._format_stream_chunk(
+                                            reasoning_content=f"**Content Policy Violation**\n\n{reason_str}\n"
+                                        )
+                                        yield self._format_stream_chunk(
+                                            content=f"❌ 生成失败: {reason_str}",
+                                            finish_reason="STOP"
+                                        )
+                                        yield "data: [DONE]\n\n"
+
+                                    # Stop polling immediately
+                                    return
+
                                 # Check if watermark-free mode is enabled
                                 watermark_free_config = await self.db.get_watermark_free_config()
                                 watermark_free_enabled = watermark_free_config.watermark_free_enabled
@@ -560,63 +615,25 @@ class GenerationHandler:
 
                                         # Get watermark-free video URL based on parse method
                                         if parse_method == "custom":
-                                            # Use Android API method (sora-down approach)
+                                            # Use custom parse server
+                                            if not watermark_config.custom_parse_url or not watermark_config.custom_parse_token:
+                                                raise Exception("Custom parse server URL or token not configured")
+
                                             if stream:
                                                 yield self._format_stream_chunk(
-                                                    reasoning_content=f"Video published successfully. Post ID: {post_id}\nUsing Android API to get watermark-free URL...\n"
+                                                    reasoning_content=f"Video published successfully. Post ID: {post_id}\nUsing custom parse server to get watermark-free URL...\n"
                                                 )
 
-                                            try:
-                                                from .sora_custom_extractor import SoraCustomAPIExtractor
-                                                android_extractor = SoraCustomAPIExtractor(self.sora_client, self.proxy_manager)
-                                                watermark_free_url = await android_extractor.get_clean_video_url(post_id)
-                                                
-                                                if watermark_free_url:
-                                                    debug_logger.log_info(f"Android API extraction succeeded: {watermark_free_url}")
-                                                    if watermark_info is not None:
-                                                        watermark_info["method"] = "android_success"
-                                                    if stream:
-                                                        yield self._format_stream_chunk(
-                                                            reasoning_content="✅ Android API extraction successful!\n"
-                                                        )
-                                                else:
-                                                    debug_logger.log_info("Android API failed, falling back to third-party")
-                                                    if watermark_info is not None:
-                                                        watermark_info["method"] = "android_fallback_third_party"
-                                                    if stream:
-                                                        yield self._format_stream_chunk(
-                                                            reasoning_content="Android API extraction failed, falling back to third-party...\n"
-                                                        )
-                                                    # Fallback to third-party
-                                                    watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
-                                                    debug_logger.log_info(f"Fallback to third-party parse")
-                                                    
-                                            except ImportError:
-                                                debug_logger.log_info("Android API module not available, using third-party")
-                                                if watermark_info is not None:
-                                                    watermark_info["method"] = "android_fallback_third_party"
-                                                if stream:
-                                                    yield self._format_stream_chunk(
-                                                        reasoning_content="Android API module not available, using third-party...\n"
-                                                    )
-                                                # Fallback to third-party
-                                                watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
-                                            except Exception as e:
-                                                debug_logger.log_info(f"Android API error: {e}, falling back to third-party")
-                                                if watermark_info is not None:
-                                                    watermark_info["method"] = "android_fallback_third_party"
-                                                if stream:
-                                                    yield self._format_stream_chunk(
-                                                        reasoning_content=f"Android API extraction failed ({str(e)}), falling back to third-party...\n"
-                                                    )
-                                                # Fallback to third-party
-                                                watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
+                                            debug_logger.log_info(f"Using custom parse server: {watermark_config.custom_parse_url}")
+                                            watermark_free_url = await self.sora_client.get_watermark_free_url_custom(
+                                                parse_url=watermark_config.custom_parse_url,
+                                                parse_token=watermark_config.custom_parse_token,
+                                                post_id=post_id
+                                            )
                                         else:
                                             # Use third-party parse (default)
                                             watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
                                             debug_logger.log_info(f"Using third-party parse server")
-                                            if watermark_info is not None:
-                                                watermark_info["method"] = "third_party"
 
                                         debug_logger.log_info(f"Watermark-free URL: {watermark_free_url}")
 
@@ -676,8 +693,6 @@ class GenerationHandler:
                                             status_code=500,
                                             response_text=str(publish_error)
                                         )
-                                        if watermark_info is not None:
-                                            watermark_info["method"] = "watermark_publish_failed"
                                         if stream:
                                             yield self._format_stream_chunk(
                                                 reasoning_content=f"Warning: Failed to get watermark-free version - {str(publish_error)}\nFalling back to normal video...\n"
@@ -968,8 +983,7 @@ class GenerationHandler:
 
     async def _log_request(self, token_id: Optional[int], operation: str,
                           request_data: Dict[str, Any], response_data: Dict[str, Any],
-                          status_code: int, duration: float,
-                          watermark_method: Optional[str] = None):
+                          status_code: int, duration: float):
         """Log request to database"""
         try:
             log = RequestLog(
@@ -978,8 +992,7 @@ class GenerationHandler:
                 request_body=json.dumps(request_data),
                 response_body=json.dumps(response_data),
                 status_code=status_code,
-                duration=duration,
-                watermark_method=watermark_method,
+                duration=duration
             )
             await self.db.log_request(log)
         except Exception as e:

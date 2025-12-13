@@ -8,7 +8,7 @@ from curl_cffi.requests import AsyncSession
 from faker import Faker
 from ..core.database import Database
 from ..core.models import Token, TokenStats
-from ..core.config import config 
+from ..core.config import config
 from .proxy_manager import ProxyManager
 from ..core.logger import debug_logger
 
@@ -43,7 +43,7 @@ class TokenManager:
         first_name_clean = ''.join(c for c in first_name if c.isalpha())
         last_name_clean = ''.join(c for c in last_name if c.isalpha())
 
-        # Generate 1-4 digit random number
+        # Generate 1-4 random digits
         random_digits = str(random.randint(1, 9999))
 
         # Randomly select username format
@@ -142,17 +142,26 @@ class TokenManager:
                     print(f"✅ Subscription info extracted successfully: {result}")
                     return result
 
-                print(f"⚠️  No subscription info in response data")
+                print(f"⚠️  No subscription info in response")
                 return {
                     "plan_type": "",
                     "plan_title": "",
                     "subscription_end": ""
                 }
             else:
-                error_msg = f"Failed to get subscription info: {response.status_code}"
-                print(f"❌ {error_msg}")
-                print(f"📄 Response content: {response.text[:500]}")
-                raise Exception(error_msg)
+                print(f"❌ Failed to get subscription info: {response.status_code}")
+                print(f"📄 Response content: {response.text}")
+
+                # Check for token_expired error
+                try:
+                    error_data = response.json()
+                    error_info = error_data.get("error", {})
+                    if error_info.get("code") == "token_expired":
+                        raise Exception(f"Token expired: {error_info.get('message', 'Token expired')}")
+                except ValueError:
+                    pass
+
+                raise Exception(f"Failed to get subscription info: {response.status_code}")
 
     async def get_sora2_invite_code(self, access_token: str) -> dict:
         """Get Sora2 invite code"""
@@ -193,20 +202,62 @@ class TokenManager:
                     "total_count": data.get("total_count", 0)
                 }
             else:
-                # Check if it's 401 unauthorized
+                print(f"❌ Failed to get Sora2 invite code: {response.status_code}")
+                print(f"📄 Response content: {response.text}")
+
+                # Check for specific errors
                 try:
                     error_data = response.json()
-                    if error_data.get("error", {}).get("message", "").startswith("401"):
-                        print(f"⚠️  Token does not support Sora2")
+                    error_info = error_data.get("error", {})
+
+                    # Check for unsupported_country_code
+                    if error_info.get("code") == "unsupported_country_code":
+                        country = error_info.get("param", "Unknown")
+                        raise Exception(f"Sora is not available in your country/region ({country}): {error_info.get('message', '')}")
+
+                    # Check if it's 401 unauthorized (token doesn't support Sora2)
+                    if response.status_code == 401 and "Unauthorized" in error_info.get("message", ""):
+                        print(f"⚠️  Token does not support Sora2, attempting activation...")
+
+                        # Try to activate Sora2
+                        try:
+                            activate_response = await session.get(
+                                "https://sora.chatgpt.com/backend/m/bootstrap",
+                                **kwargs
+                            )
+
+                            if activate_response.status_code == 200:
+                                print(f"✅ Sora2 activation request successful, retrying invite code...")
+
+                                # Retry getting invite code
+                                retry_response = await session.get(
+                                    "https://sora.chatgpt.com/backend/project_y/invite/mine",
+                                    **kwargs
+                                )
+
+                                if retry_response.status_code == 200:
+                                    retry_data = retry_response.json()
+                                    print(f"✅ Sora2 activation successful! Invite code: {retry_data}")
+                                    return {
+                                        "supported": True,
+                                        "invite_code": retry_data.get("invite_code"),
+                                        "redeemed_count": retry_data.get("redeemed_count", 0),
+                                        "total_count": retry_data.get("total_count", 0)
+                                    }
+                                else:
+                                    print(f"⚠️  Still unable to get invite code after activation: {retry_response.status_code}")
+                            else:
+                                print(f"⚠️  Sora2 activation failed: {activate_response.status_code}")
+                        except Exception as activate_e:
+                            print(f"⚠️  Error during Sora2 activation: {activate_e}")
+
                         return {
                             "supported": False,
                             "invite_code": None
                         }
-                except:
+                except ValueError:
                     pass
 
-                print(f"❌ Failed to get Sora2 invite code: {response.status_code}")
-                print(f"📄 Response content: {response.text[:500]}")
                 return {
                     "supported": False,
                     "invite_code": None
@@ -360,7 +411,7 @@ class TokenManager:
                 print(f"✅ Username set successfully: {data.get('username')}")
                 return data
             else:
-                print(f"❌ Username setting failed: {response.status_code}")
+                print(f"❌ Username set failed: {response.status_code}")
                 print(f"📄 Response content: {response.text[:500]}")
                 raise Exception(f"Failed to set username: {response.status_code}")
 
@@ -376,7 +427,7 @@ class TokenManager:
             # Generate device ID
             device_id = str(uuid.uuid4())
 
-            # Only set necessary headers, let impersonate handle others
+            # Set only necessary headers, let impersonate handle others
             headers = {
                 "authorization": f"Bearer {access_token}",
                 "cookie": f"oai-did={device_id}"
@@ -463,7 +514,7 @@ class TokenManager:
                 try:
                     data = response.json()
                 except Exception as json_err:
-                    debug_logger.log_info(f"[ST_TO_AT] ❌ JSON parsing failed: {str(json_err)}")
+                    debug_logger.log_info(f"[ST_TO_AT] ❌ JSON parse failed: {str(json_err)}")
                     debug_logger.log_info(f"[ST_TO_AT] Original response: {response_text[:1000]}")
                     raise ValueError(f"Failed to parse JSON response: {str(json_err)}")
 
@@ -476,7 +527,7 @@ class TokenManager:
                 email = data.get("user", {}).get("email") if data.get("user") else None
                 expires = data.get("expires")
 
-                # Check required fields
+                # Check necessary fields
                 if not access_token:
                     debug_logger.log_info(f"[ST_TO_AT] ❌ Missing accessToken field in response")
                     debug_logger.log_info(f"[ST_TO_AT] Response data: {data}")
@@ -495,9 +546,18 @@ class TokenManager:
                 debug_logger.log_info(f"[ST_TO_AT] 🔴 Exception: {str(e)}")
                 raise
     
-    async def rt_to_at(self, refresh_token: str) -> dict:
-        """Convert Refresh Token to Access Token"""
+    async def rt_to_at(self, refresh_token: str, client_id: Optional[str] = None) -> dict:
+        """Convert Refresh Token to Access Token
+
+        Args:
+            refresh_token: Refresh Token
+            client_id: Client ID (optional, uses default if not provided)
+        """
+        # Use provided client_id or default
+        effective_client_id = client_id or "app_LlGpXReQgckcGGUo2JrYvtJK"
+
         debug_logger.log_info(f"[RT_TO_AT] Starting to convert Refresh Token to Access Token...")
+        debug_logger.log_info(f"[RT_TO_AT] Using Client ID: {effective_client_id[:20]}...")
         proxy_url = await self.proxy_manager.get_proxy_url()
 
         async with AsyncSession() as session:
@@ -509,7 +569,7 @@ class TokenManager:
             kwargs = {
                 "headers": headers,
                 "json": {
-                    "client_id": "app_LlGpXReQgckcGGUo2JrYvtJK",
+                    "client_id": effective_client_id,
                     "grant_type": "refresh_token",
                     "redirect_uri": "com.openai.chat://auth0.openai.com/ios/com.openai.chat/callback",
                     "refresh_token": refresh_token
@@ -547,7 +607,7 @@ class TokenManager:
                 try:
                     data = response.json()
                 except Exception as json_err:
-                    debug_logger.log_info(f"[RT_TO_AT] ❌ JSON parsing failed: {str(json_err)}")
+                    debug_logger.log_info(f"[RT_TO_AT] ❌ JSON parse failed: {str(json_err)}")
                     debug_logger.log_info(f"[RT_TO_AT] Original response: {response_text[:1000]}")
                     raise ValueError(f"Failed to parse JSON response: {str(json_err)}")
 
@@ -560,14 +620,14 @@ class TokenManager:
                 new_refresh_token = data.get("refresh_token")
                 expires_in = data.get("expires_in")
 
-                # Check required fields
+                # Check necessary fields
                 if not access_token:
                     debug_logger.log_info(f"[RT_TO_AT] ❌ Missing access_token field in response")
                     debug_logger.log_info(f"[RT_TO_AT] Response data: {data}")
                     raise ValueError("Missing access_token in response")
 
                 debug_logger.log_info(f"[RT_TO_AT] ✅ RT conversion successful")
-                debug_logger.log_info(f"  - New Access Token validity: {expires_in} seconds")
+                debug_logger.log_info(f"  - New Access Token expiry: {expires_in} seconds")
                 debug_logger.log_info(f"  - Refresh Token updated: {'Yes' if new_refresh_token else 'No'}")
 
                 return {
@@ -582,6 +642,7 @@ class TokenManager:
     async def add_token(self, token_value: str,
                        st: Optional[str] = None,
                        rt: Optional[str] = None,
+                       client_id: Optional[str] = None,
                        remark: Optional[str] = None,
                        update_if_exists: bool = False,
                        image_enabled: bool = True,
@@ -594,6 +655,7 @@ class TokenManager:
             token_value: Access Token
             st: Session Token (optional)
             rt: Refresh Token (optional)
+            client_id: Client ID (optional)
             remark: Remark (optional)
             update_if_exists: If True, update existing token instead of raising error
             image_enabled: Enable image generation (default: True)
@@ -611,7 +673,7 @@ class TokenManager:
         existing_token = await self.db.get_token_by_value(token_value)
         if existing_token:
             if not update_if_exists:
-                raise ValueError(f"Token already exists (email: {existing_token.email}). To update, please delete the old token or use the update function.")
+                raise ValueError(f"Token already exists (Email: {existing_token.email}). To update, please delete the old Token first or use the update function.")
             # Update existing token
             return await self.update_existing_token(existing_token.id, token_value, st, rt, remark)
 
@@ -649,6 +711,10 @@ class TokenManager:
                 from dateutil import parser
                 subscription_end = parser.parse(sub_info["subscription_end"])
         except Exception as e:
+            error_msg = str(e)
+            # Re-raise if it's a critical error (token expired)
+            if "Token expired" in error_msg:
+                raise
             # If API call fails, subscription info will be None
             print(f"Failed to get subscription info: {e}")
 
@@ -675,6 +741,10 @@ class TokenManager:
                 except Exception as e:
                     print(f"Failed to get Sora2 remaining count: {e}")
         except Exception as e:
+            error_msg = str(e)
+            # Re-raise if it's a critical error (unsupported country)
+            if "Sora is not available in your country/region" in error_msg:
+                raise
             # If API call fails, Sora2 info will be None
             print(f"Failed to get Sora2 info: {e}")
 
@@ -686,13 +756,13 @@ class TokenManager:
 
             # If username is null, need to set one
             if username is None:
-                print(f"⚠️  Detected username is null, need to set username")
+                print(f"⚠️  Username detected as null, need to set username")
 
                 # Generate random username
                 max_attempts = 5
                 for attempt in range(max_attempts):
                     generated_username = self._generate_random_username()
-                    print(f"🔄 Trying username ({attempt + 1}/{max_attempts}): {generated_username}")
+                    print(f"🔄 Attempting username ({attempt + 1}/{max_attempts}): {generated_username}")
 
                     # Check if username is available
                     if await self.check_username_available(token_value, generated_username):
@@ -702,17 +772,17 @@ class TokenManager:
                             print(f"✅ Username set successfully: {generated_username}")
                             break
                         except Exception as e:
-                            print(f"❌ Username setting failed: {e}")
+                            print(f"❌ Username set failed: {e}")
                             if attempt == max_attempts - 1:
-                                print(f"⚠️  Maximum attempts reached, skipping username setting")
+                                print(f"⚠️  Reached max attempts, skipping username setting")
                     else:
                         print(f"⚠️  Username {generated_username} is taken, trying next")
                         if attempt == max_attempts - 1:
-                            print(f"⚠️  Maximum attempts reached, skipping username setting")
+                            print(f"⚠️  Reached max attempts, skipping username setting")
             else:
                 print(f"✅ Username already set: {username}")
         except Exception as e:
-            print(f"⚠️  Error during username check/setting: {e}")
+            print(f"⚠️  Error during username check/set: {e}")
 
         # Create token object
         token = Token(
@@ -721,6 +791,7 @@ class TokenManager:
             name=name,
             st=st,
             rt=rt,
+            client_id=client_id,
             remark=remark,
             expiry_time=expiry_time,
             is_active=True,
@@ -805,12 +876,13 @@ class TokenManager:
                           token: Optional[str] = None,
                           st: Optional[str] = None,
                           rt: Optional[str] = None,
+                          client_id: Optional[str] = None,
                           remark: Optional[str] = None,
                           image_enabled: Optional[bool] = None,
                           video_enabled: Optional[bool] = None,
                           image_concurrency: Optional[int] = None,
                           video_concurrency: Optional[int] = None):
-        """Update token (AT, ST, RT, remark, image_enabled, video_enabled, concurrency limits)"""
+        """Update token (AT, ST, RT, client_id, remark, image_enabled, video_enabled, concurrency limits)"""
         # If token (AT) is updated, decode JWT to get new expiry time
         expiry_time = None
         if token:
@@ -820,7 +892,7 @@ class TokenManager:
             except Exception:
                 pass  # If JWT decode fails, keep expiry_time as None
 
-        await self.db.update_token(token_id, token=token, st=st, rt=rt, remark=remark, expiry_time=expiry_time,
+        await self.db.update_token(token_id, token=token, st=st, rt=rt, client_id=client_id, remark=remark, expiry_time=expiry_time,
                                    image_enabled=image_enabled, video_enabled=video_enabled,
                                    image_concurrency=image_concurrency, video_concurrency=video_concurrency)
 
@@ -913,12 +985,12 @@ class TokenManager:
     async def record_error(self, token_id: int):
         """Record token error"""
         await self.db.increment_error_count(token_id)
-        
+
         # Check if should ban
         stats = await self.db.get_token_stats(token_id)
         admin_config = await self.db.get_admin_config()
-        
-        if stats and stats.error_count >= admin_config.error_ban_threshold:
+
+        if stats and stats.consecutive_error_count >= admin_config.error_ban_threshold:
             await self.db.update_token_status(token_id, False)
     
     async def record_success(self, token_id: int, is_video: bool = False):
@@ -934,7 +1006,7 @@ class TokenManager:
                     if remaining_info.get("success"):
                         remaining_count = remaining_info.get("remaining_count", 0)
                         await self.db.update_token_sora2_remaining(token_id, remaining_count)
-                        print(f"✅ Updated Token {token_id} Sora2 remaining count: {remaining_count}")
+                        print(f"✅ Updated Sora2 remaining count for Token {token_id}: {remaining_count}")
 
                         # If remaining count is 0, set cooldown
                         if remaining_count == 0:
@@ -986,7 +1058,7 @@ class TokenManager:
                 debug_logger.log_info(f"[AUTO_REFRESH] ❌ Token {token_id} does not exist")
                 return False
 
-            # 📍 Step 2: Check if has expiry time
+            # 📍 Step 2: Check for expiry time
             if not token_data.expiry_time:
                 debug_logger.log_info(f"[AUTO_REFRESH] ⏭️  Token {token_id} has no expiry time, skipping refresh")
                 return False  # No expiry time set
@@ -995,10 +1067,10 @@ class TokenManager:
             time_until_expiry = token_data.expiry_time - datetime.now()
             hours_until_expiry = time_until_expiry.total_seconds() / 3600
 
-            debug_logger.log_info(f"[AUTO_REFRESH] ⏰ Token {token_id} info:")
+            debug_logger.log_info(f"[AUTO_REFRESH] ⏰ Token {token_id} Info:")
             debug_logger.log_info(f"  - Email: {token_data.email}")
             debug_logger.log_info(f"  - Expiry time: {token_data.expiry_time.strftime('%Y-%m-%d %H:%M:%S')}")
-            debug_logger.log_info(f"  - Remaining time: {hours_until_expiry:.2f} hours")
+            debug_logger.log_info(f"  - Time remaining: {hours_until_expiry:.2f} hours")
             debug_logger.log_info(f"  - Is active: {token_data.is_active}")
             debug_logger.log_info(f"  - Has ST: {'Yes' if token_data.st else 'No'}")
             debug_logger.log_info(f"  - Has RT: {'Yes' if token_data.rt else 'No'}")
@@ -1020,33 +1092,33 @@ class TokenManager:
             new_rt = None
             refresh_method = None
 
-            # 📍 Step 6: Try using ST to refresh
+            # 📍 Step 6: Attempt refresh with ST
             if token_data.st:
                 try:
-                    debug_logger.log_info(f"[AUTO_REFRESH] 📝 Token {token_id}: Trying to refresh using ST...")
+                    debug_logger.log_info(f"[AUTO_REFRESH] 📝 Token {token_id}: Attempting refresh with ST...")
                     result = await self.st_to_at(token_data.st)
                     new_at = result.get("access_token")
                     new_st = token_data.st  # ST refresh doesn't return new ST, so keep the old one
                     refresh_method = "ST"
-                    debug_logger.log_info(f"[AUTO_REFRESH] ✅ Token {token_id}: ST refresh successful")
+                    debug_logger.log_info(f"[AUTO_REFRESH] ✅ Token {token_id}: Refresh with ST successful")
                 except Exception as e:
-                    debug_logger.log_info(f"[AUTO_REFRESH] ❌ Token {token_id}: ST refresh failed - {str(e)}")
+                    debug_logger.log_info(f"[AUTO_REFRESH] ❌ Token {token_id}: Refresh with ST failed - {str(e)}")
                     new_at = None
 
-            # 📍 Step 7: If ST fails, try using RT
+            # 📍 Step 7: If ST fails, attempt refresh with RT
             if not new_at and token_data.rt:
                 try:
-                    debug_logger.log_info(f"[AUTO_REFRESH] 📝 Token {token_id}: Trying to refresh using RT...")
-                    result = await self.rt_to_at(token_data.rt)
+                    debug_logger.log_info(f"[AUTO_REFRESH] 📝 Token {token_id}: Attempting refresh with RT...")
+                    result = await self.rt_to_at(token_data.rt, client_id=token_data.client_id)
                     new_at = result.get("access_token")
                     new_rt = result.get("refresh_token", token_data.rt)  # RT might be updated
                     refresh_method = "RT"
-                    debug_logger.log_info(f"[AUTO_REFRESH] ✅ Token {token_id}: RT refresh successful")
+                    debug_logger.log_info(f"[AUTO_REFRESH] ✅ Token {token_id}: Refresh with RT successful")
                 except Exception as e:
-                    debug_logger.log_info(f"[AUTO_REFRESH] ❌ Token {token_id}: RT refresh failed - {str(e)}")
+                    debug_logger.log_info(f"[AUTO_REFRESH] ❌ Token {token_id}: Refresh with RT failed - {str(e)}")
                     new_at = None
 
-            # 📍 Step 8: Handle refresh result
+            # 📍 Step 8: Process refresh result
             if new_at:
                 # Refresh successful: Update Token
                 debug_logger.log_info(f"[AUTO_REFRESH] 💾 Token {token_id}: Saving new Access Token...")

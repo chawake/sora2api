@@ -11,6 +11,7 @@ class Token(BaseModel):
     name: Optional[str] = ""
     st: Optional[str] = None
     rt: Optional[str] = None
+    client_id: Optional[str] = None
     remark: Optional[str] = None
     expiry_time: Optional[datetime] = None
     is_active: bool = True
@@ -19,23 +20,23 @@ class Token(BaseModel):
     last_used_at: Optional[datetime] = None
     use_count: int = 0
     # Subscription information
-    plan_type: Optional[str] = None  # Account type, e.g., chatgpt_team 
-    plan_title: Optional[str] = None  # Plan name, e.g., ChatGPT Business
-    subscription_end: Optional[datetime] = None  # Plan expiry time
+    plan_type: Optional[str] = None  # Account type, e.g. chatgpt_team
+    plan_title: Optional[str] = None  # Plan name, e.g. ChatGPT Business
+    subscription_end: Optional[datetime] = None  # Plan expiration time
     # Sora2 support information
     sora2_supported: Optional[bool] = None  # Whether Sora2 is supported
     sora2_invite_code: Optional[str] = None  # Sora2 invite code
     sora2_redeemed_count: int = 0  # Sora2 used count
     sora2_total_count: int = 0  # Sora2 total count
-    # Sora2 remaining count
+    # Sora2 remaining quota
     sora2_remaining_count: int = 0  # Sora2 remaining available count
-    sora2_cooldown_until: Optional[datetime] = None  # Sora2 cooldown time
-    # Feature switches
-    image_enabled: bool = True  # Whether to enable image generation
-    video_enabled: bool = True  # Whether to enable video generation
+    sora2_cooldown_until: Optional[datetime] = None  # Sora2 cooldown until
+    # Feature toggles
+    image_enabled: bool = True  # Whether image generation is enabled
+    video_enabled: bool = True  # Whether video generation is enabled
     # Concurrency limits
-    image_concurrency: int = -1  # Image concurrency limit, -1 means no limit
-    video_concurrency: int = -1  # Video concurrency limit, -1 means no limit
+    image_concurrency: int = -1  # Image concurrency limit; -1 means no limit
+    video_concurrency: int = -1  # Video concurrency limit; -1 means no limit
 
 class TokenStats(BaseModel):
     """Token statistics"""
@@ -43,12 +44,13 @@ class TokenStats(BaseModel):
     token_id: int
     image_count: int = 0
     video_count: int = 0
-    error_count: int = 0
+    error_count: int = 0  # Historical total errors (never reset)
     last_error_at: Optional[datetime] = None
     today_image_count: int = 0
     today_video_count: int = 0
     today_error_count: int = 0
     today_date: Optional[str] = None
+    consecutive_error_count: int = 0  # Consecutive errors for auto-disable
 
 class Task(BaseModel):
     """Task model"""
@@ -73,7 +75,6 @@ class RequestLog(BaseModel):
     response_body: Optional[str] = None
     status_code: int
     duration: float
-    watermark_method: Optional[str] = None
     created_at: Optional[datetime] = None
 
 class AdminConfig(BaseModel):
@@ -81,6 +82,7 @@ class AdminConfig(BaseModel):
     id: int = 1
     admin_username: str  # Read from database, initialized from setting.toml on first startup
     admin_password: str  # Read from database, initialized from setting.toml on first startup
+    api_key: str  # Read from database, initialized from setting.toml on first startup
     error_ban_threshold: int = 3
     updated_at: Optional[datetime] = None
 

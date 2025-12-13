@@ -211,6 +211,7 @@ class Database:
                     ("video_enabled", "BOOLEAN DEFAULT 1"),
                     ("image_concurrency", "INTEGER DEFAULT -1"),
                     ("video_concurrency", "INTEGER DEFAULT -1"),
+                    ("client_id", "TEXT"),
                 ]
 
                 for col_name, col_type in columns_to_add:
@@ -218,6 +219,19 @@ class Database:
                         try:
                             await db.execute(f"ALTER TABLE tokens ADD COLUMN {col_name} {col_type}")
                             print(f"  ✓ Added column '{col_name}' to tokens table")
+                        except Exception as e:
+                            print(f"  ✗ Failed to add column '{col_name}': {e}")
+            # Check and add missing columns to token_stats table
+            if await self._table_exists(db, "token_stats"):
+                columns_to_add = [
+                    ("consecutive_error_count", "INTEGER DEFAULT 0"),
+                ]
+
+                for col_name, col_type in columns_to_add:
+                    if not await self._column_exists(db, "token_stats", col_name):
+                        try:
+                            await db.execute(f"ALTER TABLE token_stats ADD COLUMN {col_name} {col_type}")
+                            print(f"  ✓ Added column '{col_name}' to token_stats table")
                         except Exception as e:
                             print(f"  ✗ Failed to add column '{col_name}': {e}")
 
@@ -280,6 +294,7 @@ class Database:
                     name TEXT NOT NULL,
                     st TEXT,
                     rt TEXT,
+                    client_id TEXT,
                     remark TEXT,
                     expiry_time TIMESTAMP,
                     is_active BOOLEAN DEFAULT 1,
@@ -316,6 +331,7 @@ class Database:
                     today_video_count INTEGER DEFAULT 0,
                     today_error_count INTEGER DEFAULT 0,
                     today_date DATE,
+                    consecutive_error_count INTEGER DEFAULT 0,
                     FOREIGN KEY (token_id) REFERENCES tokens(id)
                 )
             """)
@@ -584,12 +600,12 @@ class Database:
         """Add a new token"""
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute("""
-                INSERT INTO tokens (token, email, username, name, st, rt, remark, expiry_time, is_active,
+                INSERT INTO tokens (token, email, username, name, st, rt, client_id, remark, expiry_time, is_active,
                                    plan_type, plan_title, subscription_end, sora2_supported, sora2_invite_code,
                                    sora2_redeemed_count, sora2_total_count, sora2_remaining_count, sora2_cooldown_until,
                                    image_enabled, video_enabled, image_concurrency, video_concurrency)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (token.token, token.email, "", token.name, token.st, token.rt,
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (token.token, token.email, "", token.name, token.st, token.rt, token.client_id,
                   token.remark, token.expiry_time, token.is_active,
                   token.plan_type, token.plan_title, token.subscription_end,
                   token.sora2_supported, token.sora2_invite_code,
@@ -724,6 +740,7 @@ class Database:
                           token: Optional[str] = None,
                           st: Optional[str] = None,
                           rt: Optional[str] = None,
+                          client_id: Optional[str] = None,
                           remark: Optional[str] = None,
                           expiry_time: Optional[datetime] = None,
                           plan_type: Optional[str] = None,
@@ -733,7 +750,7 @@ class Database:
                           video_enabled: Optional[bool] = None,
                           image_concurrency: Optional[int] = None,
                           video_concurrency: Optional[int] = None):
-        """Update token (AT, ST, RT, remark, expiry_time, subscription info, image_enabled, video_enabled)"""
+        """Update token (AT, ST, RT, client_id, remark, expiry_time, subscription info, image_enabled, video_enabled)"""
         async with aiosqlite.connect(self.db_path) as db:
             # Build dynamic update query
             updates = []
@@ -750,6 +767,10 @@ class Database:
             if rt is not None:
                 updates.append("rt = ?")
                 params.append(rt)
+
+            if client_id is not None:
+                updates.append("client_id = ?")
+                params.append(client_id)
 
             if remark is not None:
                 updates.append("remark = ?")
@@ -863,7 +884,7 @@ class Database:
             await db.commit()
     
     async def increment_error_count(self, token_id: int):
-        """Increment error count"""
+         """Increment error count (both total and consecutive)"""
         from datetime import date
         async with aiosqlite.connect(self.db_path) as db:
             today = str(date.today())
@@ -876,16 +897,18 @@ class Database:
                 await db.execute("""
                     UPDATE token_stats
                     SET error_count = error_count + 1,
+                        consecutive_error_count = consecutive_error_count + 1,
                         today_error_count = 1,
                         today_date = ?,
                         last_error_at = CURRENT_TIMESTAMP
                     WHERE token_id = ?
                 """, (today, token_id))
             else:
-                # Same day, just increment both
+                # Same day, just increment all counters
                 await db.execute("""
                     UPDATE token_stats
                     SET error_count = error_count + 1,
+                        consecutive_error_count = consecutive_error_count + 1,
                         today_error_count = today_error_count + 1,
                         today_date = ?,
                         last_error_at = CURRENT_TIMESTAMP
@@ -894,10 +917,10 @@ class Database:
             await db.commit()
     
     async def reset_error_count(self, token_id: int):
-        """Reset error count"""
+        """Reset consecutive error count (keep total error_count)"""
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("""
-                UPDATE token_stats SET error_count = 0 WHERE token_id = ?
+               UPDATE token_stats SET consecutive_error_count = 0 WHERE token_id = ?
             """, (token_id,))
             await db.commit()
     

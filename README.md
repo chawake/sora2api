@@ -7,7 +7,7 @@
 [![FastAPI](https://img.shields.io/badge/fastapi-0.119.0-green.svg)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/docker-supported-blue.svg)](https://www.docker.com/)
 
-**A fully featured OpenAI-compatible API service that provides a unified interface for Sora**
+**A full-featured OpenAI-compatible API service providing a unified interface for Sora**
 
 </div>
 
@@ -17,36 +17,36 @@
 
 - [Features](#features)
 - [Quick Start](#quick-start)
-- [Usage Guide](#usage-guide)
+  - [First Run](#first-run)
   - [Quick Reference](#quick-reference)
-  - [Admin Dashboard](#admin-dashboard)
-  - [API Calls](#api-calls)
+  - [API Usage](#api-usage)
   - [Video Character Feature](#video-character-feature)
-- [FAQ](#faq)
 - [License](#license)
+- [Acknowledgements](#acknowledgements)
+- [Contact](#contact)
 
 ---
 
 ## ✨ Features
 
 ### Core Features
-- 🎨 **Text-to-Image** – Generate images from text descriptions
-- 🖼️ **Image-to-Image** – Apply creative transformations based on an uploaded image
-- 🎬 **Text-to-Video** – Generate videos from text descriptions
-- 🎥 **Image-to-Video** – Generate related videos from an image
-- 📊 **Multiple Aspect Ratios** – Landscape, portrait, and more
-- 🎭 **Video Character Feature** – Create characters and generate character videos
-- 🎬 **Remix Feature** – Continue creation based on an existing video
+- 🎨 **Text-to-Image** - Generate images from text prompts
+- 🖼️ **Image-to-Image** - Creative transformations based on uploaded images
+- 🎬 **Text-to-Video** - Generate videos from text prompts
+- 🎥 **Image-to-Video** - Generate related videos from images
+- 📊 **Multiple aspect ratios** - Landscape, portrait, and more
+- 🎭 **Video Characters** - Create a character and generate character videos
+- 🎬 **Remix** - Continue creating from an existing video
 
 ### Advanced Features
-- 🔐 **Token Management** – Manage multiple tokens with round-robin load balancing
-- 🌐 **Proxy Support** – HTTP and SOCKS5 proxies
-- 📝 **Detailed Logging** – Full request/response logs
-- 🔄 **Asynchronous Processing** – Efficient async task handling
-- 💾 **Data Persistence** – SQLite database storage
-- 🎯 **OpenAI Compatible** – Fully compatible with the OpenAI API format
-- 🛡️ **Secure Authentication** – API key verification and permission management
-- 📱 **Web Admin UI** – Intuitive management dashboard
+- 🔐 **Token Management** - Manage multiple tokens with round-robin load balancing
+- 🌐 **Proxy Support** - HTTP and SOCKS5 proxies supported
+- 📝 **Detailed Logs** - Complete request/response logging
+- 🔄 **Async Processing** - Efficient asynchronous task handling
+- 💾 **Persistence** - SQLite-backed data storage
+- 🎯 **OpenAI Compatible** - Fully compatible with the OpenAI API format
+- 🛡️ **Security & Auth** - API key validation and permission management
+- 📱 **Web Admin UI** - An intuitive admin dashboard
 
 ---
 
@@ -55,11 +55,11 @@
 ### Prerequisites
 
 - Docker and Docker Compose (recommended)
-- Or Python 3.8+
+- or Python 3.8+
 
-### Option 1: Docker Deployment (Recommended)
+### Method 1: Docker Deployment (recommended)
 
-#### Standard Mode (no proxy)
+#### Standard Mode (No Proxy)
 
 ```bash
 # Clone the project
@@ -73,7 +73,7 @@ docker-compose up -d
 docker-compose logs -f
 ```
 
-#### WARP Mode (with proxy)
+#### WARP Mode (Using Proxy)
 
 ```bash
 # Start with WARP proxy
@@ -83,7 +83,7 @@ docker-compose -f docker-compose.warp.yml up -d
 docker-compose -f docker-compose.warp.yml logs -f
 ```
 
-### Option 2: Local Deployment
+### Method 2: Local Deployment
 
 ```bash
 # Clone the project
@@ -108,58 +108,59 @@ python main.py
 
 ### First Run
 
-After the service starts, open the admin dashboard to perform the initial configuration:
+After the service starts, open the admin panel to complete initial setup:
 
 - **URL**: http://localhost:8000
 - **Username**: `admin`
 - **Password**: `admin`
 
-⚠️ **Important**: Please change the password immediately after your first login!
+⚠️ **Important**: Change the password immediately after your first login!
 
 ---
 
 ### Quick Reference
 
-| Feature              | Model          | Notes                                        |
-|----------------------|----------------|----------------------------------------------|
-| Text-to-Image        | `sora-image*`  | Use `content` as a string                    |
-| Image-to-Image       | `sora-image*`  | Use `content` as an array + `image_url`      |
-| Text-to-Video        | `sora-video*`  | Use `content` as a string                    |
-| Image-to-Video       | `sora-video*`  | Use `content` as an array + `image_url`      |
-| Create Character     | `sora-video*`  | Use `content` as an array + `video_url`      |
-| Character Video      | `sora-video*`  | Use `content` as an array + `video_url` + text |
-| Remix                | `sora-video*`  | Include Remix ID in `content`                |
+| Feature | Model | Notes |
+|------|------|------|
+| Text-to-Image | `sora-image*` | Use `content` as a string |
+| Image-to-Image | `sora-image*` | Use a `content` array + `image_url` |
+| Text-to-Video | `sora-video*` | Use `content` as a string |
+| Image-to-Video | `sora-video*` | Use a `content` array + `image_url` |
+| Create Character | `sora-video*` | Use a `content` array + `video_url` |
+| Generate Video with Character | `sora-video*` | Use a `content` array + `video_url` + text |
+| Remix | `sora-video*` | Include a Remix ID in `content` |
+| Video Storyboard | `sora-video*` | Use the ```[duration s]prompt``` format in `content` to trigger |
 
 ---
 
-### API Calls
+### API Usage
 
-#### Basics (OpenAI-compatible format, streaming required)
+#### Basic Info (OpenAI standard format; streaming required)
 
 - **Endpoint**: `http://localhost:8000/v1/chat/completions`
-- **Authentication**: Add `Authorization: Bearer YOUR_API_KEY` to the request headers
-- **Default API key**: `han1234` (change it in production)
+- **Authentication**: Add `Authorization: Bearer YOUR_API_KEY` to request headers
+- **Default API Key**: `han1234` (recommended to change)
 
 #### Supported Models
 
 **Image Models**
 
-| Model                  | Description                 | Size    |
-|------------------------|-----------------------------|---------|
-| `sora-image`           | Text-to-image (default)     | 360×360 |
-| `sora-image-landscape` | Text-to-image (landscape)   | 540×360 |
-| `sora-image-portrait`  | Text-to-image (portrait)    | 360×540 |
+| Model | Description | Size |
+|------|------|------|
+| `sora-image` | Text-to-Image (default) | 360×360 |
+| `sora-image-landscape` | Text-to-Image (landscape) | 540×360 |
+| `sora-image-portrait` | Text-to-Image (portrait) | 360×540 |
 
 **Video Models**
 
-| Model                         | Duration | Orientation | Description                       |
-|------------------------------|----------|-------------|-----------------------------------|
-| `sora-video-10s`             | 10s      | Landscape   | Text-to-video / image-to-video   |
-| `sora-video-15s`             | 15s      | Landscape   | Text-to-video / image-to-video   |
-| `sora-video-landscape-10s`   | 10s      | Landscape   | Text-to-video / image-to-video   |
-| `sora-video-landscape-15s`   | 15s      | Landscape   | Text-to-video / image-to-video   |
-| `sora-video-portrait-10s`    | 10s      | Portrait    | Text-to-video / image-to-video   |
-| `sora-video-portrait-15s`    | 15s      | Portrait    | Text-to-video / image-to-video   |
+| Model | Duration | Orientation | Description |
+|------|------|------|------|
+| `sora-video-10s` | 10s | Landscape | Text-to-Video / Image-to-Video |
+| `sora-video-15s` | 15s | Landscape | Text-to-Video / Image-to-Video |
+| `sora-video-landscape-10s` | 10s | Landscape | Text-to-Video / Image-to-Video |
+| `sora-video-landscape-15s` | 15s | Landscape | Text-to-Video / Image-to-Video |
+| `sora-video-portrait-10s` | 10s | Portrait | Text-to-Video / Image-to-Video |
+| `sora-video-portrait-15s` | 15s | Portrait | Text-to-Video / Image-to-Video |
 
 #### Request Examples
 
@@ -174,7 +175,7 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
     "messages": [
       {
         "role": "user",
-        "content": "A cute little cat"
+        "content": "A cute kitten"
       }
     ]
   }'
@@ -220,7 +221,7 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
     "messages": [
       {
         "role": "user",
-        "content": "A small cat running on the grass"
+        "content": "A kitten running on the grass"
       }
     ],
     "stream": true
@@ -256,7 +257,9 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
   }'
 ```
 
-**Video Remix (continue creation from an existing video)**
+**Video Remix (continue creating from an existing video)**
+
+* Include the remix share link or ID in the prompt.
 
 ```bash
 curl -X POST "http://localhost:8000/v1/chat/completions" \
@@ -267,7 +270,33 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
     "messages": [
       {
         "role": "user",
-        "content": "https://sora.chatgpt.com/p/s_68e3a06dcd888191b150971da152c1f5 change to an ink painting style"
+        "content": "https://sora.chatgpt.com/p/s_68e3a06dcd888191b150971da152c1f5 change to ink-wash painting style"
+      }
+    ]
+  }'
+```
+
+**Video Storyboard**
+
+* Example trigger prompt:
+  ```[5.0s]The cat skydives from a plane [5.0s]The cat lands [10.0s]The cat runs in a field```
+* Or
+  ```text
+  [5.0s]The cat skydives from a plane
+  [5.0s]The cat lands
+  [10.0s]The cat runs in a field
+  ```
+
+```bash
+curl -X POST "http://localhost:8000/v1/chat/completions" \
+  -H "Authorization: Bearer han1234" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "sora-video-landscape-10s",
+    "messages": [
+      {
+        "role": "user",
+        "content": "[5.0s]The cat skydives from a plane [5.0s]The cat lands [10.0s]The cat runs in a field"
       }
     ]
   }'
@@ -277,12 +306,12 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
 
 Sora2API supports **video character generation**.
 
-#### Feature Description
+#### Overview
 
-- **Character Creation**: If there is only a video and no prompt, the service automatically extracts character information and returns the character name.
-- **Character Generation**: If both a video and a prompt are provided, upload the video to create a character, then use that character plus the prompt to generate a video.
+- **Character creation**: If you provide only a video (no prompt), the system automatically extracts character information and returns the character name
+- **Character-based generation**: If you provide a video + prompt, the system creates a character from the uploaded video and generates using the character + prompt, returning a video
 
-#### API Calls (OpenAI-compatible format, streaming required)
+#### API Usage (OpenAI standard format; streaming required)
 
 **Scenario 1: Create a character only (no video generation)**
 
@@ -333,7 +362,7 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
           },
           {
             "type": "text",
-            "text": "Make the character perform a dancing move"
+            "text": "Have the character do a dance move"
           }
         ]
       }
@@ -342,13 +371,13 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
   }'
 ```
 
-#### Python Code Example
+#### Python Example
 
 ```python
 import requests
 import base64
 
-# Read the video file and encode it as Base64
+# Read the video file and encode to Base64
 with open("video.mp4", "rb") as f:
     video_data = base64.b64encode(f.read()).decode("utf-8")
 
@@ -379,7 +408,7 @@ response = requests.post(
     stream=True
 )
 
-# Handle streaming responses
+# Handle streaming response
 for line in response.iter_lines():
     if line:
         print(line.decode("utf-8"))
@@ -395,15 +424,15 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## 🙏 Acknowledgements
 
-Thanks to all contributors and users for your support!
+Thanks to all contributors and users for their support!
 
 ---
 
 ## 📞 Contact
 
-- Issues: [GitHub Issues](https://github.com/TheSmallHanCat/sora2api/issues)
+- File an issue: [GitHub Issues](https://github.com/TheSmallHanCat/sora2api/issues)
 - Discussions: [GitHub Discussions](https://github.com/TheSmallHanCat/sora2api/discussions)
 
 ---
 
-**⭐ If this project is helpful to you, please give it a Star!**
+**⭐ If this project helps you, please give it a Star!**

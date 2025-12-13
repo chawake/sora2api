@@ -1,10 +1,11 @@
-"""Sora API client module""" 
+"""Sora API client module"""
 import base64
 import io
 import time
 import random
 import string
-from typing import Optional, Dict, Any
+import re
+from typing import Optional, Dict, Any, Tuple
 from curl_cffi.requests import AsyncSession
 from curl_cffi import CurlMime
 from .proxy_manager import ProxyManager
@@ -22,14 +23,76 @@ class SoraClient:
     @staticmethod
     def _generate_sentinel_token() -> str:
         """
-        Generate openai-sentinel-token
-        According to test file logic, any random characters will work
-        Generate 10-20 character random string (letters + digits)
+        生成 openai-sentinel-token
+        根据测试文件的逻辑，传入任意随机字符即可
+        生成10-20个字符的随机字符串（字母+数字）
         """
         length = random.randint(10, 20)
         random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=length))
         return random_str
-    
+
+    @staticmethod
+    def is_storyboard_prompt(prompt: str) -> bool:
+        """检测提示词是否为分镜模式格式
+
+        格式: [time]prompt 或 [time]prompt\n[time]prompt
+        例如: [5.0s]猫猫从飞机上跳伞 [5.0s]猫猫降落
+
+        Args:
+            prompt: 用户输入的提示词
+
+        Returns:
+            True if prompt matches storyboard format
+        """
+        if not prompt:
+            return False
+        # 匹配格式: [数字s] 或 [数字.数字s]
+        pattern = r'\[\d+(?:\.\d+)?s\]'
+        matches = re.findall(pattern, prompt)
+        # 至少包含一个时间标记才认为是分镜模式
+        return len(matches) >= 1
+
+    @staticmethod
+    def format_storyboard_prompt(prompt: str) -> str:
+        """将分镜格式提示词转换为API所需格式
+
+        输入: 猫猫的奇妙冒险\n[5.0s]猫猫从飞机上跳伞 [5.0s]猫猫降落
+        输出: current timeline:\nShot 1:...\n\ninstructions:\n猫猫的奇妙冒险
+
+        Args:
+            prompt: 原始分镜格式提示词
+
+        Returns:
+            格式化后的API提示词
+        """
+        # 匹配 [时间]内容 的模式
+        pattern = r'\[(\d+(?:\.\d+)?)s\]\s*([^\[]+)'
+        matches = re.findall(pattern, prompt)
+
+        if not matches:
+            return prompt
+
+        # 提取总述(第一个[时间]之前的内容)
+        first_bracket_pos = prompt.find('[')
+        instructions = ""
+        if first_bracket_pos > 0:
+            instructions = prompt[:first_bracket_pos].strip()
+
+        # 格式化分镜
+        formatted_shots = []
+        for idx, (duration, scene) in enumerate(matches, 1):
+            scene = scene.strip()
+            shot = f"Shot {idx}:\nduration: {duration}sec\nScene: {scene}"
+            formatted_shots.append(shot)
+
+        timeline = "\n\n".join(formatted_shots)
+
+        # 如果有总述,添加instructions部分
+        if instructions:
+            return f"current timeline:\n{timeline}\n\ninstructions:\n{instructions}"
+        else:
+            return timeline
+
     async def _make_request(self, method: str, endpoint: str, token: str,
                            json_data: Optional[Dict] = None,
                            multipart: Optional[Dict] = None,
@@ -50,7 +113,7 @@ class SoraClient:
             "Authorization": f"Bearer {token}"
         }
 
-        # Only add sentinel token for generation requests
+        # 只在生成请求时添加 sentinel token
         if add_sentinel_token:
             headers["openai-sentinel-token"] = self._generate_sentinel_token()
 
@@ -63,7 +126,7 @@ class SoraClient:
             kwargs = {
                 "headers": headers,
                 "timeout": self.timeout,
-                "impersonate": "chrome"  # Automatically generate User-Agent and browser fingerprint
+                "impersonate": "chrome"  # 自动生成 User-Agent 和浏览器指纹
             }
 
             if proxy_url:
@@ -132,20 +195,20 @@ class SoraClient:
     async def upload_image(self, image_data: bytes, token: str, filename: str = "image.png") -> str:
         """Upload image and return media_id
 
-        Use CurlMime object to upload files (correct way for curl_cffi)
-        Reference: https://curl-cffi.readthedocs.io/en/latest/quick_start.html#uploads
+        使用 CurlMime 对象上传文件（curl_cffi 的正确方式）
+        参考：https://curl-cffi.readthedocs.io/en/latest/quick_start.html#uploads
         """
-        # Detect image type
+        # 检测图片类型
         mime_type = "image/png"
         if filename.lower().endswith('.jpg') or filename.lower().endswith('.jpeg'):
             mime_type = "image/jpeg"
         elif filename.lower().endswith('.webp'):
             mime_type = "image/webp"
 
-        # Create CurlMime object
+        # 创建 CurlMime 对象
         mp = CurlMime()
 
-        # Add file part
+        # 添加文件部分
         mp.addpart(
             name="file",
             content_type=mime_type,
@@ -153,7 +216,7 @@ class SoraClient:
             data=image_data
         )
 
-        # Add filename field
+        # 添加文件名字段
         mp.addpart(
             name="file_name",
             data=filename.encode('utf-8')
@@ -186,7 +249,7 @@ class SoraClient:
             "inpaint_items": inpaint_items
         }
 
-        # Generation requests need sentinel token
+        # 生成请求需要添加 sentinel token
         result = await self._make_request("POST", "/video_gen", token, json_data=json_data, add_sentinel_token=True)
         return result["id"]
     
@@ -210,7 +273,7 @@ class SoraClient:
             "inpaint_items": inpaint_items
         }
 
-        # Generation requests need sentinel token
+        # 生成请求需要添加 sentinel token
         result = await self._make_request("POST", "/nf/create", token, json_data=json_data, add_sentinel_token=True)
         return result["id"]
     
@@ -250,13 +313,13 @@ class SoraClient:
                     "kind": "sora"
                 }
             ],
-            "post_text": prompt
+            "post_text": ""
         }
 
-        # Post request needs sentinel token
+        # 发布请求需要添加 sentinel token
         result = await self._make_request("POST", "/project_y/post", token, json_data=json_data, add_sentinel_token=True)
 
-        # Return post.id
+        # 返回 post.id
         return result.get("post", {}).get("id", "")
 
     async def delete_post(self, post_id: str, token: str) -> bool:
@@ -611,4 +674,48 @@ class SoraClient:
         }
 
         result = await self._make_request("POST", "/nf/create", token, json_data=json_data, add_sentinel_token=True)
+        return result.get("id")
+
+    async def generate_storyboard(self, prompt: str, token: str, orientation: str = "landscape",
+                                 media_id: Optional[str] = None, n_frames: int = 450) -> str:
+        """Generate video using storyboard mode
+
+        Args:
+            prompt: Formatted storyboard prompt (Shot 1:\nduration: 5.0sec\nScene: ...)
+            token: Access token
+            orientation: Video orientation (portrait/landscape)
+            media_id: Optional image media_id for image-to-video
+            n_frames: Number of frames
+
+        Returns:
+            task_id
+        """
+        inpaint_items = []
+        if media_id:
+            inpaint_items = [{
+                "kind": "upload",
+                "upload_id": media_id
+            }]
+
+        json_data = {
+            "kind": "video",
+            "prompt": prompt,
+            "title": "Draft your video",
+            "orientation": orientation,
+            "size": "small",
+            "n_frames": n_frames,
+            "storyboard_id": None,
+            "inpaint_items": inpaint_items,
+            "remix_target_id": None,
+            "model": "sy_8",
+            "metadata": None,
+            "style_id": None,
+            "cameo_ids": None,
+            "cameo_replacements": None,
+            "audio_caption": None,
+            "audio_transcript": None,
+            "video_caption": None
+        }
+
+        result = await self._make_request("POST", "/nf/create/storyboard", token, json_data=json_data, add_sentinel_token=True)
         return result.get("id")
