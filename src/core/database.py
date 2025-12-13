@@ -884,7 +884,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             await db.commit()
     
     async def increment_error_count(self, token_id: int):
-         """Increment error count (both total and consecutive)"""
+        """Increment error count (both total and consecutive)"""
         from datetime import date
         async with aiosqlite.connect(self.db_path) as db:
             today = str(date.today())
