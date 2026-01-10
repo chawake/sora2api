@@ -68,7 +68,6 @@ class AddTokenRequest(BaseModel):
     video_enabled: bool = True  # Enable video generation
     image_concurrency: int = -1  # Image concurrency limit (-1 for no limit)
     video_concurrency: int = -1  # Video concurrency limit (-1 for no limit)
-    sentinel_token: Optional[str] = None  # OpenAI Sentinel Token (PoW)
 
 class ST2ATRequest(BaseModel):
     st: str  # Session Token
@@ -89,7 +88,6 @@ class UpdateTokenRequest(BaseModel):
     video_enabled: Optional[bool] = None  # Enable video generation
     image_concurrency: Optional[int] = None  # Image concurrency limit
     video_concurrency: Optional[int] = None  # Video concurrency limit
-    sentinel_token: Optional[str] = None  # OpenAI Sentinel Token
 
 class ImportTokenItem(BaseModel):
     email: str  # Email (primary key)
@@ -101,7 +99,6 @@ class ImportTokenItem(BaseModel):
     video_enabled: bool = True  # Enable video generation
     image_concurrency: int = -1  # Image concurrency limit
     video_concurrency: int = -1  # Video concurrency limit
-    sentinel_token: Optional[str] = None  # OpenAI Sentinel Token
 
 class ImportTokensRequest(BaseModel):
     tokens: List[ImportTokenItem]
@@ -174,13 +171,12 @@ async def get_tokens(token: str = Depends(verify_admin_token)) -> List[dict]:
             "token": token.token,  # Complete Access Token
             "st": token.st,  # Complete Session Token
             "rt": token.rt,  # Complete Refresh Token
-            "sentinel_token": token.sentinel_token,  # Sentinel Token
             "client_id": token.client_id,  # Client ID
             "email": token.email,
             "name": token.name,
             "remark": token.remark,
             "expiry_time": token.expiry_time.isoformat() if token.expiry_time else None,
-
+            "is_active": token.is_active,
             "cooled_until": token.cooled_until.isoformat() if token.cooled_until else None,
             "created_at": token.created_at.isoformat() if token.created_at else None,
             "last_used_at": token.last_used_at.isoformat() if token.last_used_at else None,
@@ -223,8 +219,7 @@ async def add_token(request: AddTokenRequest, token: str = Depends(verify_admin_
             image_enabled=request.image_enabled,
             video_enabled=request.video_enabled,
             image_concurrency=request.image_concurrency,
-            video_concurrency=request.video_concurrency,
-            sentinel_token=request.sentinel_token
+            video_concurrency=request.video_concurrency
         )
         # Initialize concurrency counters for the new token
         if concurrency_manager:
@@ -363,8 +358,7 @@ async def import_tokens(request: ImportTokensRequest, token: str = Depends(verif
                     image_enabled=import_item.image_enabled,
                     video_enabled=import_item.video_enabled,
                     image_concurrency=import_item.image_concurrency,
-                    video_concurrency=import_item.video_concurrency,
-                    sentinel_token=import_item.sentinel_token
+                    video_concurrency=import_item.video_concurrency
                 )
                 # Update active status
                 await token_manager.update_token_status(existing_token.id, import_item.is_active)
@@ -386,8 +380,7 @@ async def import_tokens(request: ImportTokensRequest, token: str = Depends(verif
                     image_enabled=import_item.image_enabled,
                     video_enabled=import_item.video_enabled,
                     image_concurrency=import_item.image_concurrency,
-                    video_concurrency=import_item.video_concurrency,
-                    sentinel_token=import_item.sentinel_token
+                    video_concurrency=import_item.video_concurrency
                 )
                 # Set active status
                 if not import_item.is_active:
@@ -428,8 +421,7 @@ async def update_token(
             image_enabled=request.image_enabled,
             video_enabled=request.video_enabled,
             image_concurrency=request.image_concurrency,
-            video_concurrency=request.video_concurrency,
-            sentinel_token=request.sentinel_token
+            video_concurrency=request.video_concurrency
         )
         # Reset concurrency counters if they were updated
         if concurrency_manager and (request.image_concurrency is not None or request.video_concurrency is not None):

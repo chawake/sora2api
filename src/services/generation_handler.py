@@ -283,9 +283,6 @@ class GenerationHandler:
             else:
                 raise Exception("No available tokens for video generation. All tokens are either disabled, cooling down, Sora2 quota exhausted, don't support Sora2, or expired.")
 
-        # Get sentinel token from token object
-        sentinel_token = token_obj.sentinel_token
-
         # Acquire lock for image generation
         if is_image:
             lock_acquired = await self.load_balancer.token_lock.acquire_lock(token_obj.id)
@@ -359,9 +356,7 @@ class GenerationHandler:
                         formatted_prompt, token_obj.token,
                         orientation=model_config["orientation"],
                         media_id=media_id,
-                        n_frames=n_frames,
-                        model_version=upstream_model,
-                        sentinel_token=sentinel_token
+                        n_frames=n_frames
                     )
                 else:
                     # Normal video generation
@@ -369,17 +364,14 @@ class GenerationHandler:
                         prompt, token_obj.token,
                         orientation=model_config["orientation"],
                         media_id=media_id,
-                        n_frames=n_frames,
-                        model_version=upstream_model,
-                        sentinel_token=sentinel_token
+                        n_frames=n_frames
                     )
             else:
                 task_id = await self.sora_client.generate_image(
                     prompt, token_obj.token,
                     width=model_config["width"],
                     height=model_config["height"],
-                    media_id=media_id,
-                    sentinel_token=sentinel_token
+                    media_id=media_id
                 )
             
             # Save task to database
