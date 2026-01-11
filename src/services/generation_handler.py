@@ -16,6 +16,8 @@ from ..core.database import Database
 from ..core.models import Task, RequestLog
 from ..core.config import config
 from ..core.logger import debug_logger
+import traceback
+import sys
 
 # Model configuration
 MODEL_CONFIG = {
@@ -1098,7 +1100,20 @@ class GenerationHandler:
                         )
             
             except Exception as e:
-                debug_logger.log_info(f"Polling attempt {attempt + 1}/{max_attempts} failed: {str(e)}")
+                # Log full traceback
+                error_msg = f"Polling attempt {attempt + 1}/{max_attempts} failed: {str(e)}"
+                print(f"ERROR: {error_msg}", file=sys.stderr)
+                traceback.print_exc()
+                debug_logger.log_info(error_msg)
+                
+                # Critical error check
+                if "Android API" in str(e) or "parse" in str(e).lower():
+                     print("CRITICAL ERROR DETECTED: Aborting loop.", file=sys.stderr)
+                     if stream:
+                        yield self._format_stream_chunk(content=f"❌ Critical Error: {str(e)}", finish_reason="STOP")
+                        yield "data: [DONE]\n\n"
+                     return
+
                 if attempt >= max_attempts - 1:
                     raise e
                 continue

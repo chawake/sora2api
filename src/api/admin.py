@@ -831,6 +831,20 @@ async def clear_logs(token: str = Depends(verify_admin_token)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/api/admin/logs/download")
+async def download_logs(token: str = Depends(verify_admin_token)):
+    """Download system logs"""
+    log_file = Path("logs.txt")
+    if not log_file.exists():
+        # Create empty log file if it doesn't exist
+        log_file.touch()
+    
+    return FileResponse(
+        log_file, 
+        media_type="text/plain", 
+        filename=f"logs_{datetime.now().strftime('%Y%m%d')}.txt"
+    )
+
 # Cache config endpoints
 @router.post("/api/cache/config")
 async def update_cache_timeout(
