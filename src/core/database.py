@@ -955,7 +955,8 @@ class Database:
             return cursor.lastrowid
 
     async def update_request_log(self, log_id: int, response_body: Optional[str] = None,
-                                 status_code: Optional[int] = None, duration: Optional[float] = None):
+                                 status_code: Optional[int] = None, duration: Optional[float] = None,
+                                 watermark_method: Optional[str] = None):
         """Update request log with completion data"""
         async with aiosqlite.connect(self.db_path) as db:
             updates = []
@@ -970,6 +971,9 @@ class Database:
             if duration is not None:
                 updates.append("duration = ?")
                 params.append(duration)
+            if watermark_method is not None:
+                updates.append("watermark_method = ?")
+                params.append(watermark_method)
 
             if updates:
                 updates.append("updated_at = CURRENT_TIMESTAMP")

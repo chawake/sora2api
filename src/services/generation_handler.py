@@ -537,7 +537,7 @@ class GenerationHandler:
             await self.token_manager.record_usage(token_obj.id, is_video=is_video)
             
             # Poll for results with timeout
-            async for chunk in self._poll_task_result(task_id, token_obj.token, is_video, stream, prompt, token_obj.id):
+            async for chunk in self._poll_task_result(task_id, token_obj.token, is_video, stream, prompt, token_obj.id, watermark_info):
                 yield chunk
             
             # Record success
@@ -580,7 +580,8 @@ class GenerationHandler:
                     log_id,
                     response_body=json.dumps(response_data),
                     status_code=200,
-                    duration=duration
+                    duration=duration,
+                    watermark_method=watermark_info.get("method")
                 )
 
         except Exception as e:
@@ -630,7 +631,8 @@ class GenerationHandler:
             raise e
     
     async def _poll_task_result(self, task_id: str, token: str, is_video: bool,
-                                stream: bool, prompt: str, token_id: int = None) -> AsyncGenerator[str, None]:
+                                stream: bool, prompt: str, token_id: int = None,
+                                watermark_info: Optional[Dict[str, Any]] = None) -> AsyncGenerator[str, None]:
         """Poll for task result with timeout"""
         # Get timeout from config
         timeout = config.video_timeout if is_video else config.image_timeout
@@ -638,7 +640,7 @@ class GenerationHandler:
         max_attempts = int(timeout / poll_interval)  # Calculate max attempts based on timeout
         last_progress = 0
         start_time = time.time()
-        watermark_info = {"method": None}
+        # watermark_info is passed from caller, don't re-initialize
         last_heartbeat_time = start_time  # Track last heartbeat for image generation
         heartbeat_interval = 10  # Send heartbeat every 10 seconds for image generation
         last_status_output_time = start_time  # Track last status output time for video generation

@@ -514,6 +514,9 @@
                                     Duration(s)</th>
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground w-44">Time
                                 </th>
+                                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground w-24">
+                                    Method
+                                </th>
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground w-20">
                                     Details
                                 </th>
@@ -1012,8 +1015,8 @@
                     <td class="p-3 align-middle text-sm text-center"><span class="inline-flex items-center rounded px-2 py-0.5 text-xs ${statusClass}">${statusText}</span></td>
                     <td class="p-3 align-middle text-sm text-center">${duration}</td>
                     <td class="p-3 align-middle text-sm text-center">${l.created_at ? new Date(l.created_at).toLocaleTimeString() : '-'}</td>
+                    <td class="p-3 align-middle text-sm text-center">${watermark}</td>
                     <td class="p-3 align-middle text-sm text-right">
-                        ${watermark}
                         <button onclick="showLogDetail(${l.id})" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3">Detail</button>
                     </td>
                 </tr>`
