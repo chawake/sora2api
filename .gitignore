@@ -20,6 +20,9 @@ wheels/
 .installed.cfg
 *.egg
 
+# Patch
+patch_v1/
+
 # Virtual Environment
 venv/
 ENV/
