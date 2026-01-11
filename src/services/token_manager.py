@@ -683,9 +683,7 @@ class TokenManager:
                        video_concurrency: int = -1,
                        skip_status_update: bool = False,
                        email: Optional[str] = None) -> Token:
-                       video_concurrency: int = -1,
-                       skip_status_update: bool = False,
-                       email: Optional[str] = None) -> Token:
+
         """Add a new Access Token to database
 
         Args:

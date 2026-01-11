@@ -215,10 +215,6 @@ class Database:
                     ("video_concurrency", "INTEGER DEFAULT -1"),
                     ("client_id", "TEXT"),
                     ("proxy_url", "TEXT"),
-<<<<<<< HEAD
-=======
-                    ("is_expired", "BOOLEAN DEFAULT 0"),
->>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
                 ]
 
                 for col_name, col_type in columns_to_add:
@@ -288,7 +284,6 @@ class Database:
                         except Exception as e:
                             print(f"  ✗ Failed to add column '{col_name}': {e}")
 
-<<<<<<< HEAD
             if await self._table_exists(db, "request_logs"):
                 if not await self._column_exists(db, "request_logs", "watermark_method"):
                     try:
@@ -296,22 +291,6 @@ class Database:
                         print("  ✓ Added column 'watermark_method' to request_logs table")
                     except Exception as e:
                         print(f"  ✗ Failed to add column 'watermark_method': {e}")
-=======
-            # Check and add missing columns to request_logs table
-            if await self._table_exists(db, "request_logs"):
-                columns_to_add = [
-                    ("task_id", "TEXT"),
-                    ("updated_at", "TIMESTAMP"),
-                ]
-
-                for col_name, col_type in columns_to_add:
-                    if not await self._column_exists(db, "request_logs", col_name):
-                        try:
-                            await db.execute(f"ALTER TABLE request_logs ADD COLUMN {col_name} {col_type}")
-                            print(f"  ✓ Added column '{col_name}' to request_logs table")
-                        except Exception as e:
-                            print(f"  ✗ Failed to add column '{col_name}': {e}")
->>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
 
             # Ensure all config tables have their default rows
             # Pass config_dict if available to initialize from setting.toml
@@ -518,20 +497,12 @@ class Database:
         Args:
             config_dict: Configuration dictionary from setting.toml
             is_first_startup: If True, initialize all config rows from setting.toml.
-<<<<<<< HEAD
                 If False (upgrade mode), only ensure missing config rows exist with default values.
-=======
-                            If False (upgrade mode), only ensure missing config rows exist with default values.
->>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         """
         async with aiosqlite.connect(self.db_path) as db:
             if is_first_startup:
                 # First startup: Initialize all config tables with values from setting.toml
                 await self._ensure_config_rows(db, config_dict)
-<<<<<<< HEAD
-
-=======
->>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
             else:
                 # Upgrade mode: Only ensure missing config rows exist (with default values, not from TOML)
                 await self._ensure_config_rows(db, config_dict=None)
@@ -863,10 +834,7 @@ class Database:
 
             # If date changed, reset today's error count
             if row and row[0] != today:
-<<<<<<< HEAD
                 
-=======
->>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
                 if increment_consecutive:
                     await db.execute("""
                         UPDATE token_stats
@@ -913,11 +881,7 @@ class Database:
         """Reset consecutive error count (keep total error_count)"""
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("""
-<<<<<<< HEAD
                UPDATE token_stats SET consecutive_error_count = 0 WHERE token_id = ?
-=======
-                UPDATE token_stats SET consecutive_error_count = 0 WHERE token_id = ?
->>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
             """, (token_id,))
             await db.commit()
     
@@ -958,7 +922,6 @@ class Database:
     async def log_request(self, log: RequestLog) -> int:
         """Log a request and return log ID"""
         async with aiosqlite.connect(self.db_path) as db:
-<<<<<<< HEAD
             await db.execute("""
                 INSERT INTO request_logs (token_id, operation, request_body, response_body, status_code, duration, watermark_method)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -971,13 +934,6 @@ class Database:
                 log.duration,
                 log.watermark_method,
             ))
-=======
-            cursor = await db.execute("""
-                INSERT INTO request_logs (token_id, task_id, operation, request_body, response_body, status_code, duration)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (log.token_id, log.task_id, log.operation, log.request_body, log.response_body,
-                  log.status_code, log.duration))
->>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
             await db.commit()
             return cursor.lastrowid
 
@@ -1030,11 +986,7 @@ class Database:
             """, (limit,))
             rows = await cursor.fetchall()
             return [dict(row) for row in rows]
-<<<<<<< HEAD
     
-=======
-
->>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
     async def clear_all_logs(self):
         """Clear all request logs"""
         async with aiosqlite.connect(self.db_path) as db:
