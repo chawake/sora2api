@@ -931,11 +931,12 @@ class Database:
     async def log_request(self, log: RequestLog) -> int:
         """Log a request and return log ID"""
         async with aiosqlite.connect(self.db_path) as db:
-            await db.execute("""
-                INSERT INTO request_logs (token_id, operation, request_body, response_body, status_code, duration, watermark_method)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+            cursor = await db.execute("""
+                INSERT INTO request_logs (token_id, task_id, operation, request_body, response_body, status_code, duration, watermark_method)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 log.token_id,
+                log.task_id,
                 log.operation,
                 log.request_body,
                 log.response_body,
