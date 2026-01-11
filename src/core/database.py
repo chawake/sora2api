@@ -215,6 +215,7 @@ class Database:
                     ("video_concurrency", "INTEGER DEFAULT -1"),
                     ("client_id", "TEXT"),
                     ("proxy_url", "TEXT"),
+                    ("is_expired", "BOOLEAN DEFAULT 0"),
                 ]
 
                 for col_name, col_type in columns_to_add:
