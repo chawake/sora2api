@@ -1098,6 +1098,7 @@ class GenerationHandler:
                         )
             
             except Exception as e:
+                debug_logger.log_info(f"Polling attempt {attempt + 1}/{max_attempts} failed: {str(e)}")
                 if attempt >= max_attempts - 1:
                     raise e
                 continue
