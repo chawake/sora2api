@@ -999,7 +999,7 @@
             loadStats = async () => { try { const r = await apiRequest('/api/stats'); if (!r) return; const d = await r.json(); $('statTotal').textContent = d.total_tokens || 0; $('statActive').textContent = d.active_tokens || 0; $('statImages').textContent = (d.today_images || 0) + '/' + (d.total_images || 0); $('statVideos').textContent = (d.today_videos || 0) + '/' + (d.total_videos || 0); $('statErrors').textContent = (d.today_errors || 0) + '/' + (d.total_errors || 0) } catch (e) { console.error('Failed to load stats:', e) } },
             loadLogs = async () => { try { const r = await apiRequest('/api/logs'); if (!r) return; window.allLogs = await r.json(); renderLogs() } catch (e) { console.error('Failed to load logs:', e) } },
             renderLogs = () => {
-                const tb = $('logTableBody'); if (!tb) return; tb.innerHTML = window.allLogs.map(l => {
+                const tb = $('logsTableBody'); if (!tb) return; tb.innerHTML = window.allLogs.map(l => {
                     const statusClass = l.status_code === 200 ? 'bg-green-50 text-green-700' : (l.status_code === -1 ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700');
                     const statusText = l.status_code === -1 ? 'Generating' : l.status_code;
                     const duration = l.duration === -1 ? '-' : l.duration.toFixed(1) + 's';
