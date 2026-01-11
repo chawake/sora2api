@@ -3203,7 +3203,7 @@
     batchModeBar.querySelectorAll('input[name="batchType"]').forEach((r) => {
       r.checked = r.value === val;
     });
-    // 切换到新模式时，恢复该模式自己的默认份数：分镜默认=1，多提示默认=2，其它默认=2
+    // Switch mode: Restore default copies (Storyboard=1, Multi=2, Others=2)
     try {
       const next = getBatchConcurrencyForType(val);
       if (batchConcurrencyInput) batchConcurrencyInput.value = String(next);
@@ -3213,7 +3213,7 @@
     }
     toggleBatchTextarea();
 
-    // 角色卡模式：隐藏提示词输入框
+    // Character Mode: Hide prompt input
     const promptBlock = document.getElementById('promptBlock');
     if (promptBlock) {
       if (val === 'character') {
@@ -3232,7 +3232,7 @@
     return checked ? checked.value : 'single';
   };
 
-  // ===== 单次 / 同提示批量：主上传区状态管理 =====
+  // ===== Single/Same-Prompt Batch: Main Upload Area Management =====
   const getMainFiles = () => Array.from((fileInput && fileInput.files ? fileInput.files : []) || []);
 
   const setMainFiles = (files) => {
@@ -3244,7 +3244,7 @@
       applyingMainFiles = true;
       fileInput.files = dt.files;
     } catch (_) {
-      // 某些环境不允许程序化设置 files；至少支持“清空”场景
+      // Some environments block programmatic 'files' set; at least support 'clear'
       if (!list.length) fileInput.value = '';
     } finally {
       applyingMainFiles = false;
@@ -3255,7 +3255,7 @@
     const t = bt || getBatchType();
     if (t === 'multi_prompt') return attachedRolesMulti;
     if (t === 'storyboard') return attachedRolesStoryboard;
-    // 单次/同提示：主提示框下方的全局挂载
+    // Single/Same: Global mount below main prompt box
     return attachedRoles;
   };
 
@@ -3279,7 +3279,7 @@
 
   const ensureMainFilePickerMode = (t, opts = { quiet: false }) => {
     if (!fileInput) return;
-    // 主上传区仅服务于「单次 / 同提示批量」；其它模式有自己的文件输入，不在这里做“裁剪/提示”
+    // Main Upload: Only for Single/Same-Prompt; Others have own inputs
     if (t !== 'single' && t !== 'same_prompt_files') return;
     const wantMulti = t === 'same_prompt_files';
     try {
@@ -3287,12 +3287,12 @@
     } catch (_) {
       /* ignore */
     }
-    // 单次模式：强制只保留 1 个文件（避免“选了多个但只用第一个”的幽灵误解）
+    // Single Mode: Force keep 1 file (Avoid 'selected multiple but used first' confusion)
     const files = getMainFiles();
     if (!wantMulti && files.length > 1) {
       setMainFiles([files[0]]);
       if (!opts.quiet) {
-        showToast('单次模式只会使用第 1 个文件，已自动保留第 1 个。需要多文件请切到“同提示批量”。', 'warn', {
+        showToast('Single Mode uses 1st file only. Switched to 1 file. Use "Same Prompt Batch" for multiple.', 'warn', {
           duration: 3600
         });
       }
@@ -3306,16 +3306,16 @@
     if (!files.length) {
       dropzone.textContent =
         t === 'single'
-          ? '拖拽文件到这里，或点击选择（单次仅 1 个文件）'
-          : '拖拽文件到这里，或点击选择（支持多文件）';
+          ? 'Drag files here, or click to select (Single file only)'
+          : 'Drag files here, or click to select (Multiple files)';
       return;
     }
     const first = files[0];
     if (files.length === 1) {
-      dropzone.textContent = `已选择：${first.name}`;
+      dropzone.textContent = `Selected: ${first.name}`;
       return;
     }
-    dropzone.textContent = `已选择：${files.length} 个文件（第 1 个：${first.name}）`;
+    dropzone.textContent = `Selected: ${files.length} files (1st: ${first.name})`;
   };
 
   const renderMainFileList = () => {
@@ -3325,7 +3325,7 @@
 
     if (btnClearFiles) btnClearFiles.style.display = files.length ? 'inline-flex' : 'none';
 
-    // 仅在“同提示批量”下展示完整文件清单（单次会被强制为 1 个文件）
+    // Show full file list only in "Same Prompt Batch" (Single forced to 1)
     if (t !== 'same_prompt_files' || !files.length) {
       filePreviewList.style.display = 'none';
       filePreviewList.innerHTML = '';
@@ -3334,9 +3334,9 @@
 
     const kindShort = (f) => {
       const tp = String((f && f.type) || '');
-      if (tp.startsWith('image')) return '图';
-      if (tp.startsWith('video')) return '视频';
-      return '文件';
+      if (tp.startsWith('image')) return 'Img';
+      if (tp.startsWith('video')) return 'Vid';
+      return 'File';
     };
 
     filePreviewList.style.display = 'flex';
@@ -3346,7 +3346,7 @@
         <span class="file-chip" title="${escapeAttr(f.name)}">
           <span class="kind">${kindShort(f)}</span>
           <span class="name">${escapeHtml(f.name)}</span>
-          <button type="button" class="close" data-remove-main-file="${idx}" aria-label="移除该文件">×</button>
+          <button type="button" class="close" data-remove-main-file="${idx}" aria-label="Remove File">×</button>
         </span>`
       )
       .join('');
@@ -3371,68 +3371,68 @@
     const generationCountFallback = t === 'storyboard' ? 1 : 2;
     const perFileCount = t === 'single' ? 1 : normalizeTimes(batchConcurrencyInput?.value || String(generationCountFallback), generationCountFallback);
 
-    // 快捷份数：仅同提示批量展示
+    // Quick Copies: Show only in "Same Prompt Batch"
     if (quickCountWrap) quickCountWrap.style.display = t === 'same_prompt_files' ? 'inline-flex' : 'none';
     if (quickCountInput && t === 'same_prompt_files' && document.activeElement !== quickCountInput) {
       quickCountInput.value = String(perFileCount);
     }
 
-    // 预计任务数（仅单次/同提示批量展示；多提示/分镜有自己的编辑器逻辑）
+    // Planned Tasks (Single/Same only; Multi/Storyboard have own logic)
     let planned = 0;
     let reason = '';
     if (t === 'single') {
       planned = promptForSend || files.length ? 1 : 0;
-      if (!planned) reason = '请填写提示词或选择一个文件';
+      if (!planned) reason = 'Please enter prompt or select a file';
     } else if (t === 'same_prompt_files') {
       if (!promptForSend && !files.length) {
         planned = 0;
-        reason = '需要提示词或至少 1 个文件';
+        reason = 'Need prompt or at least 1 file';
       } else {
         planned = files.length ? files.length * perFileCount : perFileCount;
       }
     } else {
-      // 其他模式：uploadCard 会被隐藏；这里保持最小副作用
+      // Other modes: uploadCard hidden; keep minimal side effect
       planned = 0;
     }
 
-    // quickPlan：用 chip 输出“公式”，让用户一眼知道将发生什么
+    // quickPlan: Output "Formula" via chips
     if (quickPlan) {
       const chips = [];
-      if (t === 'single') chips.push({ text: '单次', kind: 'info' });
-      if (t === 'same_prompt_files') chips.push({ text: '同提示批量', kind: 'info' });
-      if (files.length) chips.push({ text: `${files.length} 文件`, kind: 'info' });
-      if (t === 'same_prompt_files') chips.push({ text: `每文件 ${perFileCount} 份`, kind: 'info' });
+      if (t === 'single') chips.push({ text: 'Single', kind: 'info' });
+      if (t === 'same_prompt_files') chips.push({ text: 'Same Prompt Batch', kind: 'info' });
+      if (files.length) chips.push({ text: `${files.length} Files`, kind: 'info' });
+      if (t === 'same_prompt_files') chips.push({ text: `${perFileCount} per file`, kind: 'info' });
 
       if (!apiKey) {
-        chips.push({ text: '未填写 API Key', kind: 'warn' });
+        chips.push({ text: 'Missing API Key', kind: 'warn' });
       } else if (!planned) {
-        chips.push({ text: reason || '未就绪', kind: 'warn' });
+        chips.push({ text: reason || 'Not Ready', kind: 'warn' });
       } else {
         const kind = planned >= 30 ? 'warn' : 'ok';
-        chips.push({ text: `预计 ${planned} 任务`, kind });
+        chips.push({ text: `Plan: ${planned} Tasks`, kind });
       }
 
       quickPlan.innerHTML = chips.map((c) => `<span class="chip ${c.kind}">${escapeHtml(c.text)}</span>`).join('');
     }
 
-    // 主按钮：把“预计任务数”带到按钮文案里，减少误点
+    // Main Button: Include plan count in text
     if (btnSendPrimary) {
-      const base = planned && t === 'same_prompt_files' ? `开始生成（${planned}）` : '开始生成';
+      const base = planned && t === 'same_prompt_files' ? `Generate (${planned})` : 'Generate';
       btnSendPrimary.textContent = base;
       const prevDisabled = !!btnSendPrimary.disabled;
       const nextDisabled = !apiKey || (t === 'single' || t === 'same_prompt_files' ? planned === 0 : false);
       btnSendPrimary.disabled = nextDisabled;
-      btnSendPrimary.title = !apiKey ? '请先填写 API Key' : planned === 0 ? reason : '';
+      btnSendPrimary.title = !apiKey ? 'Please enter API Key first' : planned === 0 ? reason : '';
       if (prevDisabled && !nextDisabled) flashReadyButton(btnSendPrimary);
     }
   };
 
-  // 多提示 / 分镜：把“将创建多少任务”显式体现在按钮上，避免用户以为会生成 12 条但实际只跑了 1 条
+  // Multi/Storyboard: Explicit task count on button
   const syncBatchEditorPlanUI = () => {
     if (!btnSend) return;
     const t = getBatchType();
     if (t !== 'multi_prompt' && t !== 'storyboard') {
-      btnSend.textContent = '开始生成';
+      btnSend.textContent = 'Generate';
       btnSend.disabled = false;
       btnSend.title = '';
       return;
@@ -3459,11 +3459,11 @@
         .filter((s) => s.text || s.fileDataUrl);
       planned = rows.reduce((sum, s) => sum + normalizeTimes(s.count, 1), 0);
     }
-    btnSend.textContent = planned ? `开始生成（${planned}）` : '开始生成';
+    btnSend.textContent = planned ? `Generate (${planned})` : 'Generate';
     const prevDisabled = !!btnSend.disabled;
     const nextDisabled = !apiKey || planned === 0;
     btnSend.disabled = nextDisabled;
-    btnSend.title = !apiKey ? '请先填写 API Key' : planned === 0 ? '请至少填写一条提示（或选择文件）' : `将创建 ${planned} 条任务`;
+    btnSend.title = !apiKey ? 'Please enter API Key first' : planned === 0 ? 'Please enter at least one prompt (or select file)' : `Will create ${planned} tasks`;
     if (prevDisabled && !nextDisabled) flashReadyButton(btnSend);
   };
   let batchPlanSyncQueued = false;
@@ -3487,12 +3487,12 @@
       if (reduce) return;
       const now = Date.now();
       const last = parseInt(btn.getAttribute('data-ready-ts') || '0', 10) || 0;
-      // 轻防抖：避免短时间重复闪烁
+      // Light debounce: Avoid rapid flicker
       if (last && now - last < 700) return;
       btn.setAttribute('data-ready-ts', String(now));
 
       btn.classList.remove('btn-ready');
-      // 强制 reflow，确保动画可重播
+      // Force reflow, ensure animation replay
       void btn.offsetWidth;
       btn.classList.add('btn-ready');
 
@@ -3519,7 +3519,7 @@
     syncSingleSamePlanUI();
   };
 
-  // 只刷新“多提示每行下方的角色 chips”，不重建 textarea（避免用户编辑时丢光标）
+  // Refresh "Role Chips" under Multi-Prompt rows only (No textarea rebuild)
   const renderMultiPromptRoleChipsOnly = () => {
     if (!multiPromptList) return;
     const globals = Array.isArray(attachedRolesMulti) ? attachedRolesMulti : [];
@@ -3531,7 +3531,7 @@
         .map((r) => {
           const name = String(r?.display || r?.username || '').trim();
           if (!name) return '';
-          return `<span class="chip info" title="全局角色（多提示模式）：会应用到每一行">@${escapeHtml(name)}</span>`;
+          return `<span class="chip info" title="Global Role (Multi Mode): Applies to every row">@${escapeHtml(name)}</span>`;
         })
         .join('');
       const roles = multiPromptRoles[idx] || [];
@@ -3542,8 +3542,8 @@
             if (uname && globalUserSet.has(uname)) return '';
             return `<span class="chip" data-row-role="${idx}:${i}" style="display:inline-flex;align-items:center;gap:6px;">
               ${r.avatar ? `<img src="${r.avatar}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;">` : ''}
-              @${escapeHtml(r.display || r.username || '角色')}
-              <button class="chip-close" type="button" aria-label="移除角色" title="移除" style="border:none;background:transparent;cursor:pointer;">×</button>
+              @${escapeHtml(r.display || r.username || 'Role')}
+              <button class="chip-close" type="button" aria-label="Remove Role" title="Remove" style="border:none;background:transparent;cursor:pointer;">×</button>
             </span>`;
           })
           .join('');
@@ -3580,26 +3580,26 @@
           return `
       <div class="multi-row" data-idx="${idx}">
         <div class="multi-row-top">
-          <span class="sb-index-pill">提示 ${idx + 1}</span>
-          <span class="muted">份数</span>
-          <input class="input multi-prompt-count" data-idx="${idx}" type="number" min="1" max="9999" step="1" value="${p.count}" title="该提示生成份数">
+          <span class="sb-index-pill">Prompt ${idx + 1}</span>
+          <span class="muted">Copies</span>
+          <input class="input multi-prompt-count" data-idx="${idx}" type="number" min="1" max="9999" step="1" value="${p.count}" title="Copies for this prompt">
            <label class="pill-btn multi-file-label">
-             选择文件
+             Select File
              <input type="file" class="multi-prompt-file" data-idx="${idx}">
            </label>
            <span class="multi-file-name" data-file-label="${idx}">
-             ${p.fileName ? escapeHtml(p.fileName) : '未选择'}
+             ${p.fileName ? escapeHtml(p.fileName) : 'None'}
            </span>
-           <button type="button" class="pill-btn multi-file-clear" data-idx="${idx}" ${p.fileName ? '' : 'disabled'} title="清除该提示的参考文件">清文件</button>
-           <button type="button" class="pill-btn multi-remove multi-prompt-remove" data-idx="${idx}">删除</button>
+           <button type="button" class="pill-btn multi-file-clear" data-idx="${idx}" ${p.fileName ? '' : 'disabled'} title="Clear file for this prompt">Clear File</button>
+           <button type="button" class="pill-btn multi-remove multi-prompt-remove" data-idx="${idx}">Delete</button>
          </div>
-         <textarea class="input multi-prompt-input multi-prompt-textarea" data-idx="${idx}" placeholder="提示词 ${idx + 1}（可多行，建议描述镜头/主体/动作/风格）">${escapeHtml(
+         <textarea class="input multi-prompt-input multi-prompt-textarea" data-idx="${idx}" placeholder="Prompt ${idx + 1} (Multi-line, describe shot/subject/action/style)">${escapeHtml(
             p.text ?? ''
           )}</textarea>
         <div class="multi-row-roles" data-row-roles="${idx}"></div>
       </div>`;
         })
-        .join('') || '<div class="muted">暂无提示，点击“新增提示”添加</div>';
+        .join('') || '<div class="muted">No prompts. Click "Add Prompt" to add.</div>';
 
     multiPromptList.querySelectorAll('.multi-prompt-input').forEach((inp) =>
       inp.addEventListener('input', (e) => {
@@ -3611,7 +3611,7 @@
         }
       })
     );
-    // 支持把角色卡拖拽到多提示输入框，挂载到该行
+    // Support dragging Role Card to Multi-Prompt Input
     multiPromptList.querySelectorAll('.multi-prompt-input').forEach((inp) => {
       inp.addEventListener('dragover', (e) => e.preventDefault());
       inp.addEventListener('drop', (e) => {
@@ -3627,7 +3627,7 @@
               username: obj.username || '',
               avatar: obj.avatar || obj.avatar_path || ''
             });
-            showToast('已挂载到该提示');
+            showToast('Attached to this prompt');
             return;
           }
         } catch (_) {
@@ -3653,7 +3653,7 @@
       btn.addEventListener('click', (e) => {
         const idx = parseInt(e.target.getAttribute('data-idx'), 10);
         multiPrompts.splice(idx, 1);
-        // 删除后需要重排行角色索引，否则会“角色挂到别行”
+        // Re-index roles after deletion to avoid mismatch
         const nextMap = {};
         Object.keys(multiPromptRoles || {}).forEach((k) => {
           const i = parseInt(k, 10);
@@ -3677,16 +3677,16 @@
           const dataUrl = await fileToDataUrl(file);
           multiPrompts[idx].fileDataUrl = dataUrl;
           multiPrompts[idx].fileName = file.name;
-          // 允许再次选择同一个文件也触发 change
+          // Allow re-selecting same file to trigger change
           try {
             inputEl.value = '';
           } catch (_) {
             /* ignore */
           }
-          renderMultiPrompts(); // 同步“清文件”按钮状态
+          renderMultiPrompts(); // Sync "Clear File" button state
           saveForm();
         } catch (err) {
-          showToast('读取文件失败');
+          showToast('Read File Failed');
         }
       })
     );
@@ -3698,11 +3698,11 @@
         multiPrompts[idx].fileName = '';
         renderMultiPrompts();
         saveForm();
-        showToast('已清除该提示的文件', 'success');
+        showToast('File cleared for this prompt', 'success');
       })
     );
 
-    // 渲染每行挂载的角色 chips（全局 + 单行）
+    // Render Role Chips (Global + Row)
     renderMultiPromptRoleChipsOnly();
 
     syncBatchEditorPlanUI();
@@ -3716,7 +3716,7 @@
   };
 
   // =========================
-  // 分镜（Storyboard）模式
+  // Storyboard Mode
   // =========================
   const clampInt = (val, { min = 1, max = 99, fallback = 1 } = {}) => {
     const n = parseInt(val, 10);
@@ -3724,11 +3724,11 @@
     return Math.max(min, Math.min(max, n));
   };
 
-  // 生成份数/重复次数：不做人为档位限制，仅做最小值保护；上限设为很大避免误输入炸掉页面。
+  // Copies/Repeats: No artificial limit, just min guard; high max to prevent typo crashes.
   const normalizeTimes = (val, fallback = 1) => clampInt(val, { min: 1, max: 9999, fallback });
 
-  // 分镜：非阻塞“撤销”机制（替代 confirm 弹窗）
-  // 只保留 1 步撤销：够用且不复杂，避免堆栈带来的内存与一致性问题
+  // Storyboard: Non-blocking "Undo" (Replaces confirm dialog)
+  // Keep 1 step undo only: Sufficient, avoids complex stack issues
   let storyboardUndo = null; // { shots, shotCountValue, shotCountDirty, batchType, ts, reason }
   const cloneStoryboardRoles = (rolesArr) =>
     Array.isArray(rolesArr)
@@ -3761,7 +3761,7 @@
   };
   const undoStoryboardOnce = () => {
     if (!storyboardUndo) {
-      showToast('没有可撤销的分镜操作', 'warn', { title: '撤销' });
+      showToast('Nothing to undo', 'warn', { title: 'Undo' });
       return;
     }
     const snap = storyboardUndo;
@@ -3784,16 +3784,16 @@
     renderStoryboardShots();
     syncStoryboardCountSelect();
     saveForm();
-    showToast('已撤销上一步分镜操作', 'success', { title: '已撤销', duration: 2400 });
+    showToast('Undo successful', 'success', { title: 'Undone', duration: 2400 });
   };
 
   const getStoryboardShotLabel = (_runNo, idx1, total = null) =>
-    total ? `分镜${idx1}/${total}` : `分镜${idx1}`;
+    total ? `Shot ${idx1}/${total}` : `Shot ${idx1}`;
 
   const syncStoryboardCountSelect = () => {
     if (!storyboardShotCount) return;
-    if (document.activeElement === storyboardShotCount) return; // 不与用户输入抢焦点
-    if (storyboardShotCount.getAttribute('data-dirty') === '1') return; // 用户还没点“应用”
+    if (document.activeElement === storyboardShotCount) return; // Don't steal focus from user
+    if (storyboardShotCount.getAttribute('data-dirty') === '1') return; // User hasn't clicked "Apply"
     const n = storyboardShots.length || 0;
     if (n > 0) storyboardShotCount.value = String(n);
   };
@@ -3811,16 +3811,16 @@
     const total = storyboardShots.length || 0;
     const excluded = storyboardShots.filter((s) => s && s.useGlobalRoles === false).length;
     btnStoryboardScopeRoles.disabled = total === 0;
-    btnStoryboardScopeRoles.textContent = excluded > 0 ? `排除分镜 · ${excluded}` : '排除分镜';
+    btnStoryboardScopeRoles.textContent = excluded > 0 ? `Excluded Shots · ${excluded}` : 'Exclude Shots';
     btnStoryboardScopeRoles.title =
       total === 0
-        ? '暂无分镜：请先设置镜头数并“应用”'
+        ? 'No shots: Set shot count and apply first'
         : excluded > 0
-          ? `已排除 ${excluded}/${total} 镜（这些分镜不再受全局自动挂载控制）`
-          : '将“全局角色”从某些分镜中排除（这些分镜后续不再受全局自动挂载控制）';
+          ? `Excluded ${excluded}/${total} shots (Not affected by Global Mounts)`
+          : 'Exclude "Global Roles" from specific shots (Won\'t affect them)';
   };
 
-  // 只刷新“分镜行下方的角色 chips”，不重建 textarea（避免用户编辑时丢光标）
+  // Refresh "Role Chips" under Storyboard rows only (No textarea rebuild)
   const renderStoryboardRoleChipsOnly = () => {
     if (!storyboardList) return;
 
@@ -3833,26 +3833,26 @@
 
       const shot = storyboardShots[idx] || {};
       const useGlobal = shot.useGlobalRoles !== false;
-      const globalUserSet = useGlobal ? globalUserSetAll : new Set(); // 取消全局后：不要隐藏“与全局重复”的本地角色
+      const globalUserSet = useGlobal ? globalUserSetAll : new Set(); // If global off, show local duplicates
 
-      // 全局角色 chips：默认每镜都显示；若该镜被手动排除，则提供“恢复全局”
+      // Global Chips: Shown by default; offer "Restore Global" if manually excluded
       let globalHtml = '';
       if (globals.length) {
         if (!useGlobal) {
           globalHtml = `
-            <span class="chip warn" title="该分镜已手动排除：不再自动挂载全局角色">已取消全局角色</span>
-            <button type="button" class="chip info" data-sb-global-on="${idx}" title="恢复该分镜使用全局角色" style="cursor:pointer;">恢复全局</button>
+            <span class="chip warn" title="Manually excluded: Global Roles not mounted">Global Roles Cancelled</span>
+            <button type="button" class="chip info" data-sb-global-on="${idx}" title="Restore Global Roles for this shot" style="cursor:pointer;">Restore Global</button>
           `;
         } else {
           const chips = globals
             .map((r) => {
               const name = String(r?.display || r?.username || '').trim();
               if (!name) return '';
-              return `<span class="chip info" title="全局角色（分镜模式）：会自动应用到每一镜">@${escapeHtml(name)}</span>`;
+              return `<span class="chip info" title="Global Role (Storyboard): Applies to every shot">@${escapeHtml(name)}</span>`;
             })
             .join('');
-          // “一键把该分镜从全局自动挂载里排除”
-          const offBtn = `<button type="button" class="chip warn" data-sb-global-off="${idx}" title="取消该分镜使用全局角色（后续不再受全局自动挂载控制）" style="cursor:pointer;">× 取消全局</button>`;
+          // "Exclude this shot from global mount"
+          const offBtn = `<button type="button" class="chip warn" data-sb-global-off="${idx}" title="Exclude Global Roles for this shot" style="cursor:pointer;">× Exclude Global</button>`;
           globalHtml = chips + offBtn;
         }
       }
@@ -3866,8 +3866,8 @@
             if (uname && globalUserSet.has(uname)) return '';
             return `<span class="chip" data-sb-role="${idx}:${i}" style="display:inline-flex;align-items:center;gap:6px;">
               ${r.avatar ? `<img src="${r.avatar}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;">` : ''}
-              @${escapeHtml(r.display || r.username || '角色')}
-              <button class="chip-close" type="button" aria-label="移除角色" title="移除" style="border:none;background:transparent;cursor:pointer;">×</button>
+              @${escapeHtml(r.display || r.username || 'Role')}
+              <button class="chip-close" type="button" aria-label="Remove Role" title="Remove" style="border:none;background:transparent;cursor:pointer;">×</button>
             </span>`;
           })
           .join('');
@@ -3899,7 +3899,7 @@
         setStoryboardShotUseGlobalRoles(idx, false);
         renderStoryboardRoleChipsOnly();
         saveForm();
-        showToast(`已将 分镜 ${idx + 1} 从全局角色中排除`, 'success', { duration: 2200 });
+        showToast(`Shot ${idx + 1} excluded from Global Roles`, 'success', { duration: 2200 });
       });
     });
 
@@ -3911,13 +3911,13 @@
         setStoryboardShotUseGlobalRoles(idx, true);
         renderStoryboardRoleChipsOnly();
         saveForm();
-        showToast(`已恢复 分镜 ${idx + 1} 使用全局角色`, 'success', { duration: 2200 });
+        showToast(`Shot ${idx + 1} restored to Global Roles`, 'success', { duration: 2200 });
       });
     });
 
     syncStoryboardScopeButton();
-    // 兜底：角色切换/排除范围等操作会触发该函数，但可能没触发到“按钮状态计算”
-    // 这里统一补一次，避免出现“分镜写了内容但提交按钮灰了”的交互断裂。
+    // Fallback: Role switch/scope change triggers this, ensure button state recalculated
+    // Recalculate once to avoid "Shot content filled but button gray" issue.
     scheduleBatchEditorPlanUI();
   };
 
@@ -3925,7 +3925,7 @@
     if (!anchorEl) return;
     const total = storyboardShots.length || 0;
     if (!total) {
-      showToast('暂无分镜：请先设置镜头数并“应用”', 'warn');
+      showToast('No shots: Set shot count and apply first', 'warn');
       return;
     }
 
@@ -3945,13 +3945,13 @@
     menu.style.top = `${Math.min(window.innerHeight - 20, rect.bottom + 8)}px`;
 
     const title = document.createElement('div');
-    title.textContent = '全局角色 · 作用范围';
+    title.textContent = 'Global Roles Scope';
     title.style.fontWeight = '900';
     title.style.padding = '2px 6px 8px';
     menu.appendChild(title);
 
     const tip = document.createElement('div');
-    tip.textContent = '被排除的分镜：不再自动挂载全局角色（后续全局变更也不会影响它）。';
+    tip.textContent = 'Excluded Shots: No longer auto-mount Global Roles (Future global changes ignored).';
     tip.style.fontSize = '12px';
     tip.style.opacity = '0.85';
     tip.style.padding = '0 6px 10px';
@@ -3994,7 +3994,7 @@
       return b;
     };
     bar.appendChild(
-      mkMini('全部使用', () => {
+      mkMini('Use All', () => {
         storyboardShots = storyboardShots.map((s) => ({ ...s, useGlobalRoles: true }));
         renderStoryboardRoleChipsOnly();
         saveForm();
