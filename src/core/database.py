@@ -53,22 +53,20 @@ class Database:
             # Get admin credentials from config_dict if provided, otherwise use defaults
             admin_username = "admin"
             admin_password = "admin"
-            api_key = "han1234"
             error_ban_threshold = 3
 
             if config_dict:
                 global_config = config_dict.get("global", {})
                 admin_username = global_config.get("admin_username", "admin")
                 admin_password = global_config.get("admin_password", "admin")
-                api_key = global_config.get("api_key", "han1234")
 
                 admin_config = config_dict.get("admin", {})
                 error_ban_threshold = admin_config.get("error_ban_threshold", 3)
 
             await db.execute("""
-                INSERT INTO admin_config (id, admin_username, admin_password, api_key, error_ban_threshold)
-                VALUES (1, ?, ?, ?, ?)
-            """, (admin_username, admin_password, api_key, error_ban_threshold))
+                INSERT INTO admin_config (id, admin_username, admin_password, error_ban_threshold)
+                VALUES (1, ?, ?, ?)
+            """, (admin_username, admin_password, error_ban_threshold))
 
         # Ensure proxy_config has a row
         cursor = await db.execute("SELECT COUNT(*) FROM proxy_config")
@@ -172,6 +170,23 @@ class Database:
                 VALUES (1, ?)
             """, (at_auto_refresh_enabled,))
 
+            # Initialize Android credentials if they don't exist
+            if config_dict and "android_credentials" in config_dict:
+                android_creds = config_dict.get("android_credentials", {})
+                sora_auth_token = android_creds.get("SORA_AUTH_TOKEN", "")
+                sora_refresh_token = android_creds.get("SORA_REFRESH_TOKEN", "")
+                sora_client_id = android_creds.get("SORA_CLIENT_ID", "app_OHnYmJt5u1XEdhDUx0ig1ziv")
+            else:
+                # Default empty credentials
+                sora_auth_token = ""
+                sora_refresh_token = ""
+                sora_client_id = "app_OHnYmJt5u1XEdhDUx0ig1ziv"
+
+            await db.execute("""
+                INSERT INTO android_credentials (id, sora_auth_token, sora_refresh_token, sora_client_id)
+                VALUES (1, ?, ?, ?)
+            """, (sora_auth_token, sora_refresh_token, sora_client_id))
+
 
     async def check_and_migrate_db(self, config_dict: dict = None):
         """Check database integrity and perform migrations if needed
@@ -198,7 +213,6 @@ class Database:
                     ("video_concurrency", "INTEGER DEFAULT -1"),
                     ("client_id", "TEXT"),
                     ("proxy_url", "TEXT"),
-                    ("is_expired", "BOOLEAN DEFAULT 0"),
                 ]
 
                 for col_name, col_type in columns_to_add:
@@ -208,7 +222,6 @@ class Database:
                             print(f"  ✓ Added column '{col_name}' to tokens table")
                         except Exception as e:
                             print(f"  ✗ Failed to add column '{col_name}': {e}")
-
             # Check and add missing columns to token_stats table
             if await self._table_exists(db, "token_stats"):
                 columns_to_add = [
@@ -228,7 +241,6 @@ class Database:
                 columns_to_add = [
                     ("admin_username", "TEXT DEFAULT 'admin'"),
                     ("admin_password", "TEXT DEFAULT 'admin'"),
-                    ("api_key", "TEXT DEFAULT 'han1234'"),
                 ]
 
                 for col_name, col_type in columns_to_add:
@@ -255,20 +267,13 @@ class Database:
                         except Exception as e:
                             print(f"  ✗ Failed to add column '{col_name}': {e}")
 
-            # Check and add missing columns to request_logs table
             if await self._table_exists(db, "request_logs"):
-                columns_to_add = [
-                    ("task_id", "TEXT"),
-                    ("updated_at", "TIMESTAMP"),
-                ]
-
-                for col_name, col_type in columns_to_add:
-                    if not await self._column_exists(db, "request_logs", col_name):
-                        try:
-                            await db.execute(f"ALTER TABLE request_logs ADD COLUMN {col_name} {col_type}")
-                            print(f"  ✓ Added column '{col_name}' to request_logs table")
-                        except Exception as e:
-                            print(f"  ✗ Failed to add column '{col_name}': {e}")
+                if not await self._column_exists(db, "request_logs", "watermark_method"):
+                    try:
+                        await db.execute("ALTER TABLE request_logs ADD COLUMN watermark_method TEXT")
+                        print("  ✓ Added column 'watermark_method' to request_logs table")
+                    except Exception as e:
+                        print(f"  ✗ Failed to add column 'watermark_method': {e}")
 
             # Ensure all config tables have their default rows
             # Pass config_dict if available to initialize from setting.toml
@@ -311,8 +316,7 @@ class Database:
                     image_enabled BOOLEAN DEFAULT 1,
                     video_enabled BOOLEAN DEFAULT 1,
                     image_concurrency INTEGER DEFAULT -1,
-                    video_concurrency INTEGER DEFAULT -1,
-                    is_expired BOOLEAN DEFAULT 0
+                    video_concurrency INTEGER DEFAULT -1
                 )
             """)
 
@@ -357,14 +361,13 @@ class Database:
                 CREATE TABLE IF NOT EXISTS request_logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     token_id INTEGER,
-                    task_id TEXT,
                     operation TEXT NOT NULL,
                     request_body TEXT,
                     response_body TEXT,
                     status_code INTEGER NOT NULL,
                     duration FLOAT NOT NULL,
+                    watermark_method TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP,
                     FOREIGN KEY (token_id) REFERENCES tokens(id)
                 )
             """)
@@ -375,7 +378,6 @@ class Database:
                     id INTEGER PRIMARY KEY DEFAULT 1,
                     admin_username TEXT DEFAULT 'admin',
                     admin_password TEXT DEFAULT 'admin',
-                    api_key TEXT DEFAULT 'han1234',
                     error_ban_threshold INTEGER DEFAULT 3,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -438,6 +440,18 @@ class Database:
                 )
             """)
 
+            # Android credentials table
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS android_credentials (
+                    id INTEGER PRIMARY KEY DEFAULT 1,
+                    sora_auth_token TEXT,
+                    sora_refresh_token TEXT,
+                    sora_client_id TEXT DEFAULT 'app_OHnYmJt5u1XEdhDUx0ig1ziv',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             # Create indexes
             await db.execute("CREATE INDEX IF NOT EXISTS idx_task_id ON tasks(task_id)")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_task_status ON tasks(status)")
@@ -462,12 +476,13 @@ class Database:
         Args:
             config_dict: Configuration dictionary from setting.toml
             is_first_startup: If True, initialize all config rows from setting.toml.
-                            If False (upgrade mode), only ensure missing config rows exist with default values.
+                If False (upgrade mode), only ensure missing config rows exist with default values.
         """
         async with aiosqlite.connect(self.db_path) as db:
             if is_first_startup:
                 # First startup: Initialize all config tables with values from setting.toml
                 await self._ensure_config_rows(db, config_dict)
+
             else:
                 # Upgrade mode: Only ensure missing config rows exist (with default values, not from TOML)
                 await self._ensure_config_rows(db, config_dict=None)
@@ -572,23 +587,7 @@ class Database:
                 UPDATE tokens SET is_active = ? WHERE id = ?
             """, (is_active, token_id))
             await db.commit()
-
-    async def mark_token_expired(self, token_id: int):
-        """Mark token as expired and disable it"""
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute("""
-                UPDATE tokens SET is_expired = 1, is_active = 0 WHERE id = ?
-            """, (token_id,))
-            await db.commit()
-
-    async def clear_token_expired(self, token_id: int):
-        """Clear token expired flag"""
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute("""
-                UPDATE tokens SET is_expired = 0 WHERE id = ?
-            """, (token_id,))
-            await db.commit()
-
+    
     async def update_token_sora2(self, token_id: int, supported: bool, invite_code: Optional[str] = None,
                                 redeemed_count: int = 0, total_count: int = 0, remaining_count: int = 0):
         """Update token Sora2 support info"""
@@ -799,6 +798,7 @@ class Database:
 
             # If date changed, reset today's error count
             if row and row[0] != today:
+                
                 if increment_consecutive:
                     await db.execute("""
                         UPDATE token_stats
@@ -845,7 +845,7 @@ class Database:
         """Reset consecutive error count (keep total error_count)"""
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("""
-                UPDATE token_stats SET consecutive_error_count = 0 WHERE token_id = ?
+               UPDATE token_stats SET consecutive_error_count = 0 WHERE token_id = ?
             """, (token_id,))
             await db.commit()
     
@@ -883,40 +883,22 @@ class Database:
             return None
     
     # Request log operations
-    async def log_request(self, log: RequestLog) -> int:
-        """Log a request and return log ID"""
+    async def log_request(self, log: RequestLog):
+        """Log a request"""
         async with aiosqlite.connect(self.db_path) as db:
-            cursor = await db.execute("""
-                INSERT INTO request_logs (token_id, task_id, operation, request_body, response_body, status_code, duration)
+            await db.execute("""
+                INSERT INTO request_logs (token_id, operation, request_body, response_body, status_code, duration, watermark_method)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (log.token_id, log.task_id, log.operation, log.request_body, log.response_body,
-                  log.status_code, log.duration))
+            """, (
+                log.token_id,
+                log.operation,
+                log.request_body,
+                log.response_body,
+                log.status_code,
+                log.duration,
+                log.watermark_method,
+            ))
             await db.commit()
-            return cursor.lastrowid
-
-    async def update_request_log(self, log_id: int, response_body: Optional[str] = None,
-                                 status_code: Optional[int] = None, duration: Optional[float] = None):
-        """Update request log with completion data"""
-        async with aiosqlite.connect(self.db_path) as db:
-            updates = []
-            params = []
-
-            if response_body is not None:
-                updates.append("response_body = ?")
-                params.append(response_body)
-            if status_code is not None:
-                updates.append("status_code = ?")
-                params.append(status_code)
-            if duration is not None:
-                updates.append("duration = ?")
-                params.append(duration)
-
-            if updates:
-                updates.append("updated_at = CURRENT_TIMESTAMP")
-                params.append(log_id)
-                query = f"UPDATE request_logs SET {', '.join(updates)} WHERE id = ?"
-                await db.execute(query, params)
-                await db.commit()
     
     async def get_recent_logs(self, limit: int = 100) -> List[dict]:
         """Get recent logs with token email"""
@@ -926,15 +908,14 @@ class Database:
                 SELECT
                     rl.id,
                     rl.token_id,
-                    rl.task_id,
                     rl.operation,
                     rl.request_body,
                     rl.response_body,
                     rl.status_code,
                     rl.duration,
+                    rl.watermark_method,
                     rl.created_at,
-                    t.email as token_email,
-                    t.username as token_username
+                    t.email as token_email
                 FROM request_logs rl
                 LEFT JOIN tokens t ON rl.token_id = t.id
                 ORDER BY rl.created_at DESC
@@ -942,7 +923,7 @@ class Database:
             """, (limit,))
             rows = await cursor.fetchall()
             return [dict(row) for row in rows]
-
+    
     async def clear_all_logs(self):
         """Clear all request logs"""
         async with aiosqlite.connect(self.db_path) as db:
@@ -960,16 +941,16 @@ class Database:
                 return AdminConfig(**dict(row))
             # If no row exists, return a default config with placeholder values
             # This should not happen in normal operation as _ensure_config_rows should create it
-            return AdminConfig(admin_username="admin", admin_password="admin", api_key="han1234")
+            return AdminConfig(admin_username="admin", admin_password="admin")
     
     async def update_admin_config(self, config: AdminConfig):
         """Update admin configuration"""
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("""
                 UPDATE admin_config
-                SET admin_username = ?, admin_password = ?, api_key = ?, error_ban_threshold = ?, updated_at = CURRENT_TIMESTAMP
+                SET admin_username = ?, admin_password = ?, error_ban_threshold = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = 1
-            """, (config.admin_username, config.admin_password, config.api_key, config.error_ban_threshold))
+            """, (config.admin_username, config.admin_password, config.error_ban_threshold))
             await db.commit()
     
     # Proxy config operations
@@ -1131,3 +1112,36 @@ class Database:
             """, (at_auto_refresh_enabled,))
             await db.commit()
 
+    async def get_android_credentials(self) -> dict:
+        """Get Android credentials from database"""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            cursor = await db.execute("SELECT * FROM android_credentials WHERE id = 1")
+            row = await cursor.fetchone()
+            if row:
+                return {
+                    'sora_auth_token': row['sora_auth_token'],
+                    'sora_refresh_token': row['sora_refresh_token'],
+                    'sora_client_id': row['sora_client_id']
+                }
+            # Return empty credentials if none exist
+            return {
+                'sora_auth_token': None,
+                'sora_refresh_token': None,
+                'sora_client_id': 'app_OHnYmJt5u1XEdhDUx0ig1ziv'
+            }
+
+    async def update_android_credentials(self, sora_auth_token: str, sora_refresh_token: str, sora_client_id: str = "app_OHnYmJt5u1XEdhDUx0ig1ziv"):
+        """Update Android credentials in database"""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("""
+                UPDATE android_credentials
+                SET sora_auth_token = ?, sora_refresh_token = ?, sora_client_id = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = 1
+            """, (sora_auth_token, sora_refresh_token, sora_client_id))
+            if cursor.rowcount == 0:
+                await db.execute("""
+                    INSERT INTO android_credentials (id, sora_auth_token, sora_refresh_token, sora_client_id)
+                    VALUES (1, ?, ?, ?)
+                """, (sora_auth_token, sora_refresh_token, sora_client_id))
+            await db.commit()
