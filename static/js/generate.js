@@ -4001,7 +4001,7 @@
       })
     );
     bar.appendChild(
-      mkMini('全部排除', () => {
+      mkMini('Exclude All', () => {
         storyboardShots = storyboardShots.map((s) => ({ ...s, useGlobalRoles: false }));
         renderStoryboardRoleChipsOnly();
         saveForm();
@@ -4018,13 +4018,13 @@
       listWrap.innerHTML = '';
       storyboardShots.forEach((s, idx) => {
         const on = s && s.useGlobalRoles !== false;
-        const label = on ? `✓ 分镜 ${idx + 1}：使用全局角色` : `分镜 ${idx + 1}：已排除（不自动挂载）`;
+        const label = on ? `✓ Shot ${idx + 1}: Global Roles On` : `Shot ${idx + 1}: Excluded (No Auto-mount)`;
         listWrap.appendChild(
           makeBtn(label, () => {
             setStoryboardShotUseGlobalRoles(idx, !on);
             renderStoryboardRoleChipsOnly();
             saveForm();
-            renderList(); // 保持菜单打开，允许连续点多个
+            renderList(); // Keep menu open for multiple selections
           })
         );
       });
@@ -4035,7 +4035,7 @@
     const foot = document.createElement('div');
     foot.style.padding = '10px 6px 2px';
     foot.appendChild(
-      makeBtn('关闭', () => {
+      makeBtn('Close', () => {
         try {
           document.body.removeChild(menu);
         } catch (_) { }
@@ -4081,7 +4081,7 @@
             fileDataUrl: raw.fileDataUrl || null,
             fileName: raw.fileName || '',
             roles: Array.isArray(raw.roles) ? raw.roles : [],
-            // 缺省为 true；兼容导入模板字段 use_global_roles
+            // Default true; Compat imported 'use_global_roles'
             useGlobalRoles: raw.useGlobalRoles === false || raw.use_global_roles === false ? false : true
           };
           storyboardShots[idx] = s;
@@ -4089,31 +4089,31 @@
           return `
         <div class="multi-row sb-row" data-sb-idx="${idx}">
           <div class="multi-row-top">
-            <span class="sb-index-pill">分镜 ${idx + 1}</span>
-            <input class="input sb-shot-count" data-idx="${idx}" type="number" min="1" max="9999" step="1" value="${s.count}" title="该分镜生成份数（多生成几份方便挑）" style="width:78px;">
-            <label class="pill-btn multi-file-label" title="可选：给该分镜附带一个参考文件（图片/视频）">
-              选择文件
+            <span class="sb-index-pill">Shot ${idx + 1}</span>
+            <input class="input sb-shot-count" data-idx="${idx}" type="number" min="1" max="9999" step="1" value="${s.count}" title="Copies for this Shot (Create multiple to cherry-pick)" style="width:78px;">
+            <label class="pill-btn multi-file-label" title="Optional: Attach ref file for this shot">
+              Select File
               <input type="file" class="sb-shot-file" data-idx="${idx}">
             </label>
             <span class="multi-file-name" data-sb-file-label="${idx}">
-              ${s.fileName ? escapeHtml(s.fileName) : '未选择'}
+              ${s.fileName ? escapeHtml(s.fileName) : 'None'}
             </span>
-            <button type="button" class="pill-btn sb-file-clear" data-idx="${idx}" ${s.fileName ? '' : 'disabled'} title="清除该分镜的参考文件">清文件</button>
-            <button type="button" class="pill-btn sb-move-up" data-idx="${idx}" title="上移">↑</button>
-            <button type="button" class="pill-btn sb-move-down" data-idx="${idx}" title="下移">↓</button>
-            <button type="button" class="pill-btn sb-copy-prev" data-idx="${idx}" title="把上一镜内容复制到这一镜（便于连续修改）">复制上一镜</button>
-            <button type="button" class="pill-btn multi-remove sb-remove" data-idx="${idx}">删除</button>
+            <button type="button" class="pill-btn sb-file-clear" data-idx="${idx}" ${s.fileName ? '' : 'disabled'} title="Clear file for this shot">Clear File</button>
+            <button type="button" class="pill-btn sb-move-up" data-idx="${idx}" title="Move Up">↑</button>
+            <button type="button" class="pill-btn sb-move-down" data-idx="${idx}" title="Move Down">↓</button>
+            <button type="button" class="pill-btn sb-copy-prev" data-idx="${idx}" title="Copy previous shot content">Copy Prev</button>
+            <button type="button" class="pill-btn multi-remove sb-remove" data-idx="${idx}">Delete</button>
           </div>
-          <textarea class="input sb-prompt-textarea" data-idx="${idx}" placeholder="分镜 ${idx + 1}：写镜头/动作/台词/镜头语言...">${escapeHtml(
+          <textarea class="input sb-prompt-textarea" data-idx="${idx}" placeholder="Shot ${idx + 1}: Describe Shot/Action/Dialog/Camera...">${escapeHtml(
             s.text
           )}</textarea>
           <div class="multi-row-roles" data-sb-roles="${idx}"></div>
         </div>
         `;
         })
-        .join('') || '<div class="muted">暂无分镜。可先选择“镜头数”并点击“应用”，或点击“新增分镜”。</div>';
+        .join('') || '<div class="muted">No shots. Set "Shot Count" and apply, or "Add Shot".</div>';
 
-    // 输入：文本
+    // Input: Text
     storyboardList.querySelectorAll('.sb-prompt-textarea').forEach((ta) => {
       ta.addEventListener('input', (e) => {
         const idx = parseInt(e.target.getAttribute('data-idx'), 10);
@@ -4123,7 +4123,7 @@
           scheduleBatchEditorPlanUI();
         }
       });
-      // 支持把角色卡拖拽到分镜文本框：给该镜追加角色
+      // Drag Role Card to Shot Textarea: Append Role
       ta.addEventListener('dragover', (e) => e.preventDefault());
       ta.addEventListener('drop', (e) => {
         e.preventDefault();
@@ -4138,7 +4138,7 @@
               username: obj.username || '',
               avatar: obj.avatar || obj.avatar_path || ''
             });
-            showToast('已挂载到该分镜');
+            showToast('Attached to this shot');
             return;
           }
         } catch (_) {
@@ -4147,7 +4147,7 @@
       });
     });
 
-    // 输入：份数
+    // Input: Copies
     storyboardList.querySelectorAll('.sb-shot-count').forEach((sel) =>
       sel.addEventListener('change', (e) => {
         const idx = parseInt(e.target.getAttribute('data-idx'), 10);
@@ -4163,7 +4163,7 @@
       })
     );
 
-    // 文件：每镜可选
+    // File: Per shot optional
     storyboardList.querySelectorAll('.sb-shot-file').forEach((inp) =>
       inp.addEventListener('change', async (e) => {
         const idx = parseInt(e.target.getAttribute('data-idx'), 10);
@@ -4174,16 +4174,16 @@
           const dataUrl = await fileToDataUrl(file);
           storyboardShots[idx].fileDataUrl = dataUrl;
           storyboardShots[idx].fileName = file.name;
-          // 允许再次选择同一个文件也触发 change
+          // Allow re-selecting same file to trigger change
           try {
             inputEl.value = '';
           } catch (_) {
             /* ignore */
           }
-          renderStoryboardShots(); // 同步“清文件”按钮状态
+          renderStoryboardShots(); // Sync "Clear File" button state
           saveForm();
         } catch (_) {
-          showToast('读取文件失败', 'error');
+          showToast('Read File Failed', 'error');
         }
       })
     );
@@ -4195,11 +4195,11 @@
         storyboardShots[idx].fileName = '';
         renderStoryboardShots();
         saveForm();
-        showToast('已清除该分镜的文件', 'success');
+        showToast('File cleared for this shot', 'success');
       })
     );
 
-    // 删除/移动/复制
+    // Delete/Move/Copy
     storyboardList.querySelectorAll('.sb-remove').forEach((btn) =>
       btn.addEventListener('click', (e) => {
         const idx = parseInt(e.target.getAttribute('data-idx'), 10);
@@ -4239,12 +4239,12 @@
         const prev = storyboardShots[idx - 1];
         const cur = storyboardShots[idx];
         if ((cur.text || '').trim() && !(prev.text || '').trim()) {
-          showToast('上一镜为空，无法复制', 'warn');
+          showToast('Previous shot empty, cannot copy', 'warn');
           return;
         }
         const curHasAny =
           !!(cur.text || '').trim() || (Array.isArray(cur.roles) && cur.roles.length) || !!cur.fileDataUrl;
-        captureStoryboardUndo(curHasAny ? '上一镜覆盖' : '上一镜复制');
+        captureStoryboardUndo(curHasAny ? 'Overwritten by Prev' : 'Copied from Prev');
         storyboardShots[idx] = {
           ...cur,
           text: prev.text || '',
@@ -4252,15 +4252,15 @@
         };
         renderStoryboardShots();
         saveForm();
-        showToast(curHasAny ? '已用“上一镜”覆盖当前分镜（可撤销）' : '已复制上一镜内容（可撤销）', 'success', {
-          title: '分镜已更新',
+        showToast(curHasAny ? 'Overwritten by Previous Shot (Undoable)' : 'Copied Previous Shot (Undoable)', 'success', {
+          title: 'Shot Updated',
           duration: 5200,
-          action: { text: '撤销', onClick: () => undoStoryboardOnce() }
+          action: { text: 'Undo', onClick: () => undoStoryboardOnce() }
         });
       })
     );
 
-    // 渲染每镜挂载角色 chips（全局角色+单镜角色；支持“分镜级排除全局角色”）
+    // Render Role Chips (Global + Shot; Support "Shot-level Exclude Global")
     renderStoryboardRoleChipsOnly();
 
     syncStoryboardCountSelect();
@@ -4298,7 +4298,7 @@
     if (n === cur) return;
     const willDelete = n < cur;
     if (willDelete && opts.confirmShrink) {
-      captureStoryboardUndo(`镜头数 ${cur}→${n}`);
+      captureStoryboardUndo(`Shot Count ${cur}→${n}`);
     }
     if (storyboardShotCount) storyboardShotCount.removeAttribute('data-dirty');
     if (n > cur) {
@@ -4311,10 +4311,10 @@
     if (storyboardShotCount) storyboardShotCount.removeAttribute('data-dirty');
     saveForm();
     if (willDelete && opts.confirmShrink) {
-      showToast(`镜头数已从 ${cur} 调整为 ${n}（已移除后面 ${cur - n} 镜，可撤销）`, 'warn', {
-        title: '镜头数已调整',
+      showToast(`Shot count changed ${cur}→${n} (Removed last ${cur - n}, Undoable)`, 'warn', {
+        title: 'Shots Adjusted',
         duration: 5200,
-        action: { text: '撤销', onClick: () => undoStoryboardOnce() }
+        action: { text: 'Undo', onClick: () => undoStoryboardOnce() }
       });
     }
   };
@@ -4325,7 +4325,7 @@
     saveForm();
   };
 
-  // 高级设置折叠：保证“多提示/分镜”时编辑器一定可见
+  // Advanced Settings Collapsing: Ensure editor visible for Multi/Storyboard
   const setAdvancedOpen = (nextOpen, opts = { scroll: false }) => {
     advancedOpen = !!nextOpen;
     try {
@@ -4334,7 +4334,7 @@
       /* ignore */
     }
     if (advancedBox) advancedBox.style.display = advancedOpen ? 'block' : 'none';
-    if (btnToggleAdvanced) btnToggleAdvanced.textContent = advancedOpen ? '收起高级设置' : '展开高级设置';
+    if (btnToggleAdvanced) btnToggleAdvanced.textContent = advancedOpen ? 'Hide Advanced Settings' : 'Show Advanced Settings';
     if (opts && opts.scroll && advancedBox && advancedOpen) {
       try {
         advancedBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4355,7 +4355,7 @@
     if (multiPromptList) multiPromptList.style.display = isMulti ? 'flex' : 'none';
     if (storyboardBox) storyboardBox.style.display = isStoryboard ? 'block' : 'none';
     if (multiPromptActions) multiPromptActions.style.display = isBatchEditor ? 'block' : 'none';
-    if (btnAddPrompt) btnAddPrompt.textContent = isStoryboard ? '新增分镜' : '新增提示';
+    if (btnAddPrompt) btnAddPrompt.textContent = isStoryboard ? 'Add Shot' : 'Add Prompt';
     if (uploadCard) uploadCard.style.display = isBatchEditor ? 'none' : 'flex';
     if (dropzoneWrap) dropzoneWrap.style.display = isBatchEditor ? 'none' : 'block';
     const promptBlock = document.getElementById('promptBlock');
@@ -4374,7 +4374,7 @@
       btnApplyGlobalCountToAll.style.display = isBatchEditor ? 'inline-flex' : 'none';
     }
     if (globalCountLabel) {
-      globalCountLabel.textContent = isBatchEditor ? '默认份数' : '生成份数';
+      globalCountLabel.textContent = isBatchEditor ? 'Default Copies' : 'Generations';
     }
     if (batchMetaActions) {
       batchMetaActions.style.display = showConcurrency ? 'flex' : 'none';
@@ -4387,14 +4387,14 @@
     }
     if (isStoryboard && storyboardShots.length === 0) {
       const n = clampInt(storyboardShotCount?.value || '8', { min: 1, max: 200, fallback: 8 });
-      // 进入分镜：默认先铺好 N 个输入框，便于一次性写完
+      // Enter Storyboard: Pre-fill N inputs
       appendStoryboardShots(Math.max(1, n), { text: '', count: normalizeTimes(batchConcurrencyInput?.value || '1', 1) });
     }
-    // 重要：不再在“退出多提示/分镜”时自动回写主提示（避免用户感觉输入被偷偷改动）
+    // Important: Do NOT auto-write back to Main Prompt on exit Multi/Storyboard (Avoid user confusion)
     syncGlobalCountHighlight();
     syncMainUploadUI({ quiet: false });
     renderFilePreview();
-    // 模式切换后，角色“已挂载”徽标/过滤与全局角色区需要同步到当前模式
+    // Mode Switched: Sync Role badges/filters/global area
     renderRoles();
     renderAttachedRoles();
     renderMultiAttachedRoles();
@@ -4423,7 +4423,7 @@
   };
 
   const saveForm = () => {
-    // 始终把当前模式的默认份数写入“按模式映射”，避免切换后默认被污染
+    // Always save default copies for current mode, avoid pollution on switch
     try {
       if (batchConcurrencyInput) rememberBatchConcurrencyForType(getBatchType(), batchConcurrencyInput.value);
     } catch (_) {
@@ -4459,7 +4459,7 @@
       }
     };
     localStorage.setItem(formStorageKey, JSON.stringify(data));
-    // 兜底：避免某些路径只保存了数据但没刷新按钮状态，导致“需要刷新页面按钮才可点”
+    // Fallback: Ensure button state refreshed if data saved but UI lag
     try {
       const bt = getBatchType();
       if (bt === 'multi_prompt' || bt === 'storyboard') scheduleBatchEditorPlanUI();
@@ -4472,11 +4472,11 @@
     try {
       const data = JSON.parse(localStorage.getItem(formStorageKey) || '{}');
 
-      // 先还原“按模式默认份数映射”，因为 setBatchType() 会用它来决定进入分镜时的默认份数
+      // Restore "Copies by Mode" map first, needed by setBatchType()
       const hasByType = data.batchConcurrencyByType && typeof data.batchConcurrencyByType === 'object';
       batchConcurrencyByType = hasByType ? data.batchConcurrencyByType : {};
-      // 兼容旧映射：历史版本可能把分镜默认份数存成 2（旧默认），这里统一回归为 1
-      // - 若用户后来明确改成非 2（例如 3/5），则保留
+      // Compat Legacy: Storyboard default copies might be 2, revert to 1
+      // - Keep if user explicitly changed to non-2
       try {
         if (hasByType && batchConcurrencyByType && batchConcurrencyByType.storyboard !== undefined) {
           const sb = parseInt(String(batchConcurrencyByType.storyboard ?? ''), 10);
@@ -4486,12 +4486,12 @@
         /* ignore */
       }
       const wantType = normalizeBatchType(data.batchType || getBatchType() || 'single');
-      // 兼容旧存储：旧版只有 batchConcurrency 一个值，会导致分镜默认=2；现在迁移成：分镜默认=1
+      // Compat Legacy: Old store had single batchConcurrency (SB=2); Migrating SB=1
       if (!hasByType) {
         const legacy = data.batchConcurrency;
         if (wantType === 'storyboard') {
           const legacyN = parseInt(String(legacy ?? ''), 10);
-          // 旧默认一般是 2：迁移时改为 1；若用户当时明确改成非 2，则尊重
+          // Legacy default 2 -> 1; Unless explicitly changed
           batchConcurrencyByType.storyboard = !isNaN(legacyN) && legacyN !== 2 ? legacyN : 1;
         } else if (legacy !== undefined && legacy !== null && legacy !== '') {
           batchConcurrencyByType[wantType] = legacy;
@@ -4508,7 +4508,7 @@
       }
       if (batchPromptList && data.batchPrompts) batchPromptList.value = data.batchPrompts;
       if (data.batchType) setBatchType(data.batchType);
-      // 同步一次当前模式的份数（避免旧字段/手动改输入导致不一致）
+      // Sync current mode copies once (Avoid legacy mismatch)
       try {
         const t = normalizeBatchType(data.batchType || getBatchType() || 'single');
         const next = rememberBatchConcurrencyForType(t, batchConcurrencyByType[t] ?? batchConcurrencyInput?.value);
@@ -4521,14 +4521,14 @@
         const fallback = normalizeTimes(batchConcurrencyInput?.value || '2', 2);
         multiPrompts = data.multiPrompts.map((p) => ({ text: p.text || '', count: normalizeTimes(p.count, fallback) }));
       } else if (batchPromptList && data.batchPrompts) {
-        // 兼容旧存储：按行导入
+        // Compat Legacy: Line-based import
         multiPrompts = data.batchPrompts
           .split('\n')
           .map((l) => l.trim())
           .filter(Boolean)
           .map((t) => ({ text: t, count: 2 }));
       }
-      // 复原多提示的“行角色”
+      // Restore Multi-Prompt "Row Roles"
       try {
         if (Array.isArray(data.multiPromptRoles) && data.multiPromptRoles.length) {
           Object.keys(multiPromptRoles).forEach((k) => delete multiPromptRoles[k]);
@@ -4548,7 +4548,7 @@
         /* ignore */
       }
 
-      // 复原分镜（Storyboard）
+      // Restore Storyboard
       try {
         const sb = data.storyboard || {};
         if (storyboardTitle && typeof sb.title === 'string') storyboardTitle.value = sb.title;
@@ -4609,51 +4609,51 @@
     const finalCount = batchType === 'single' ? 1 : generationCount;
 
     if (!apiKey) {
-      showToast('请先填写 API Key', 'error', { title: '缺少 API Key', duration: 3200 });
+      showToast('Please enter API Key', 'error', { title: 'Missing API Key', duration: 3200 });
       smoothFocus($('apiKey'));
       return;
     }
     if (!baseUrl) {
-      showToast('请先填写服务器地址（Base URL）', 'error', { title: '缺少服务器地址', duration: 3200 });
+      showToast('Please enter Server URL (Base URL)', 'error', { title: 'Missing Server URL', duration: 3200 });
       smoothFocus($('baseUrl'));
       return;
     }
 
-    // 仅在发送时拼接角色描述，界面不展示
+    // Append Role Description on Send (Hidden in UI)
     const roleContext = buildRoleContextText();
     const promptForSend = [roleContext, prompt].filter(Boolean).join('\n\n');
 
-    // ===== 发送前 UX 预检（自用优先：减少“选了素材但没生效”的误解） =====
+    // ===== Pre-send UX Check (Reduce "Asset ignored" confusion) =====
     const modelInfo = parseModelId(model);
     const hasVideoFile = files.some((f) => (f.type || '').startsWith('video'));
     const hasImageFile = files.some((f) => (f.type || '').startsWith('image'));
     const mixedFiles = hasVideoFile && hasImageFile;
 
-    // 混合文件：最容易导致“跑偏/忽略素材/批量难以预期”
+    // Mixed Files: Can cause "Drift/Ignored Asset/Unpredictable Batch"
     if ((batchType === 'single' || batchType === 'same_prompt_files') && files.length && mixedFiles) {
-      showToast('检测到图片+视频混合选择：已继续生成，但更建议分开跑（更稳定）', 'warn', {
-        title: '混合素材',
+      showToast('Mixed Image+Video detected: Proceeding, but separate runs recommended.', 'warn', {
+        title: 'Mixed Assets',
         duration: 4200
       });
     }
 
-    // 图片模型 + 视频文件：视频不会被后端用于图片生成（容易误会）
+    // Image Model + Video File: Video won't be used for Image Gen (Common confusion)
     if ((batchType === 'single' || batchType === 'same_prompt_files') && files.length && modelInfo.isImage && hasVideoFile) {
-      showToast('当前是图片模型，但你上传了视频：视频不会参与图片生成（已继续）', 'warn', {
-        title: '模型/素材不匹配',
+      showToast('Image Model with Video File: Video ignored for Image Gen (Proceeding)', 'warn', {
+        title: 'Model/Asset Mismatch',
         duration: 4200
       });
     }
 
-    // 视频模型 + 图片首帧 + 空提示：最典型“与图无关”触发条件
+    // Video Model + Image Frame + Empty Prompt: Common "Irrelevant to Image" trigger
     if ((batchType === 'single' || batchType === 'same_prompt_files') && files.length && modelInfo.isVideo && hasImageFile && !promptForSend) {
-      showToast('图片首帧但提示词为空：结果可能跑偏（已继续）', 'warn', { title: '空提示词', duration: 4200 });
+      showToast('Image Frame with Empty Prompt: Result may drift (Proceeding)', 'warn', { title: 'Empty Prompt', duration: 4200 });
     }
 
     const jobs = [];
     if (batchType === 'same_prompt_files') {
       if (!promptForSend && !files.length) {
-        showToast('同提示批量：请填写提示词或至少选择一个文件', 'warn', { title: '无法生成', duration: 3600 });
+        showToast('Same Prompt Batch: Enter prompt or select a file', 'warn', { title: 'Cannot Generate', duration: 3600 });
         smoothFocus(promptBox);
         return;
       }
@@ -4678,7 +4678,7 @@
         }))
         .filter((p) => p.text || p.fileDataUrl);
       if (!validPrompts.length) {
-        showToast('多提示：请至少添加一条提示（或给某行选择文件）', 'warn', { title: '无法生成', duration: 3600 });
+        showToast('Multi-Prompt: Add at least one prompt (or file)', 'warn', { title: 'Cannot Generate', duration: 3600 });
         return;
       }
       validPrompts.forEach((p) => {
@@ -4698,7 +4698,7 @@
       const sbContext = (storyboardContext && storyboardContext.value ? storyboardContext.value.trim() : '') || '';
       const totalShots = storyboardShots.length || 0;
       if (!totalShots) {
-        showToast('分镜为空：请先选择镜头数并“应用”，或点击“新增分镜”', 'warn', { title: '无法生成', duration: 3600 });
+        showToast('Storyboard Empty: Set shot count and apply, or add shot', 'warn', { title: 'Cannot Generate', duration: 3600 });
         return;
       }
 
@@ -4720,22 +4720,22 @@
         });
 
       if (!list.length) {
-        showToast('分镜：请至少填写一条分镜提示（或给某一镜选择文件）', 'warn', { title: '无法生成', duration: 3600 });
+        showToast('Storyboard: Enter at least one shot prompt (or file)', 'warn', { title: 'Cannot Generate', duration: 3600 });
         return;
       }
       if (emptyIdx.length) {
         const plannedTasks = list.reduce((sum, x) => sum + normalizeTimes(x.count, 1), 0);
         showToast(
-          `将跳过 ${emptyIdx.length} 个空分镜（${emptyIdx.slice(0, 12).join(', ')}${emptyIdx.length > 12 ? '...' : ''}），创建 ${plannedTasks} 条任务`,
+          `Skipping ${emptyIdx.length} empty shots (${emptyIdx.slice(0, 12).join(', ')}${emptyIdx.length > 12 ? '...' : ''}), creating ${plannedTasks} tasks`,
           'info',
-          { title: '分镜将跳过空镜', duration: 5200 }
+          { title: 'Skipping Empty Shots', duration: 5200 }
         );
       }
 
       storyboardRunCounter += 1;
       localStorage.setItem(STORYBOARD_RUN_KEY, String(storyboardRunCounter));
-      // 若用户未填标题，自动给一个可检索的分镜组名，避免后续任务堆积难找
-      const sbTitle = sbTitleRaw || `分镜组${storyboardRunCounter}`;
+      // Auto-title if empty, avoids unsearchable task pile
+      const sbTitle = sbTitleRaw || `Storyboard${storyboardRunCounter}`;
       if (storyboardTitle && !sbTitleRaw) storyboardTitle.value = sbTitle;
 
       list.forEach((shot) => {
@@ -4768,27 +4768,27 @@
         }
       });
     } else if (batchType === 'character') {
-      // 角色卡模式：只需要视频文件，不需要提示词
+      // Character Mode: Needs video file, logic handled by backend
       if (!files.length) {
-        showToast('角色卡模式：请上传视频文件', 'warn', { title: '缺少视频', duration: 3600 });
+        showToast('Character Mode: Please upload a video file', 'warn', { title: 'Missing Video', duration: 3600 });
         return;
       }
       const videoFile = files.find((f) => (f.type || '').startsWith('video'));
       if (!videoFile) {
-        showToast('角色卡模式：请上传视频文件（不支持图片）', 'warn', { title: '文件类型错误', duration: 3600 });
+        showToast('Character Mode: Video file required (Image not supported)', 'warn', { title: 'Invalid File Type', duration: 3600 });
         return;
       }
-      // 角色卡模式：prompt为空，只传视频，标记为角色卡任务
+      // Character Mode: Empty prompt, send video, mark as character task
       jobs.push({
         promptSend: '',
-        promptUser: '(创建角色卡)',
+        promptUser: '(Character Creation)',
         file: videoFile,
         model,
-        isCharacterCreation: true  // 标记为角色卡创建任务
+        isCharacterCreation: true  // Mark as character creation task
       });
     } else {
       if (!promptForSend && !files.length) {
-        showToast('请至少填写提示词或上传文件', 'warn', { title: '无法生成', duration: 3600 });
+        showToast('Please enter prompt or upload file', 'warn', { title: 'Cannot Generate', duration: 3600 });
         smoothFocus(promptBox);
         return;
       }
@@ -4797,39 +4797,39 @@
       }
     }
 
-    // 同提示批量：二次确认“大批量”，防止误触瞬间起飞
+    // Same Prompt Batch: Confirm "Large Batch" to prevent accidental massive run
     if (batchType === 'same_prompt_files' && jobs.length >= 30) {
       const fileCount = files.length;
       const explain = fileCount
-        ? `${fileCount} 个文件 × ${finalCount} 份 = ${jobs.length} 条任务`
-        : `纯文字 × ${finalCount} 份 = ${jobs.length} 条任务`;
-      showToast(`同提示批量较大：${explain}（已继续生成）`, 'warn', { title: '大批量提示', duration: 5200 });
+        ? `${fileCount} Files × ${finalCount} Copies = ${jobs.length} Tasks`
+        : `Text Only × ${finalCount} Copies = ${jobs.length} Tasks`;
+      showToast(`Large Batch: ${explain} (Proceeding)`, 'warn', { title: 'Large Batch Warning', duration: 5200 });
     }
 
-    // 轻提醒：不自动切 Tab，但给一个“查看任务”按钮（避免打断写提示的节奏）
+    // Light Notification: Don't auto-switch tab, but offer "View Tasks" button (Non-intrusive)
     if (jobs.length && currentRightTab !== 'tasks') {
-      showToast(`已创建 ${jobs.length} 条任务，正在生成…`, 'info', {
-        title: '任务已入队',
+      showToast(`Created ${jobs.length} tasks, generating...`, 'info', {
+        title: 'Tasks Queued',
         duration: 3600,
-        action: { text: '查看任务', onClick: () => setRightTab('tasks') }
+        action: { text: 'View Tasks', onClick: () => setRightTab('tasks') }
       });
     }
 
-    // 入队后立即解锁按钮，允许追加任务
+    // Unlock button immediately after queuing, allow appending tasks
     const setSendBusy = (busy) => {
       [btnSend, btnSendPrimary].filter(Boolean).forEach((b) => {
         b.disabled = !!busy;
-        if (busy) b.textContent = `生成中(${jobs.length}条)...`;
+        if (busy) b.textContent = `Generating (${jobs.length})...`;
       });
     };
     setSendBusy(true);
     const pool =
-      // 分镜不做“顺序生成/限流”：默认全部并发启动（任务会一次性出现）
+      // Storyboard: No sequencing/throttling; start all concurrent
       jobs.length;
-    const running = runJobs(jobs, apiKey, baseUrl, pool).catch((e) => log('错误: ' + e.message));
+    const running = runJobs(jobs, apiKey, baseUrl, pool).catch((e) => log('Error: ' + e.message));
     setSendBusy(false);
-    syncSingleSamePlanUI(); // 恢复主按钮上的“预计任务数”文案
-    syncBatchEditorPlanUI(); // 恢复批量编辑器按钮上的“预计任务数”文案
+    syncSingleSamePlanUI(); // Restore "Predicted Tasks" text on main button
+    syncBatchEditorPlanUI(); // Restore "Predicted Tasks" text on batch editor button
     await running;
   };
 
@@ -4841,7 +4841,7 @@
       reader.readAsDataURL(file);
     });
 
-  // 拖拽/选择文件
+  // Drag/Select File
   dropzone.addEventListener('click', () => fileInput.click());
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -4854,21 +4854,21 @@
     if (e.dataTransfer.files && e.dataTransfer.files.length) {
       const list = Array.from(e.dataTransfer.files || []);
       setMainFiles(list);
-      // 单次模式下拖进来多个：自动裁剪并提示（避免误以为“会批量”）
+      // Single Mode Drag Multiple: Auto-trim and warn
       ensureMainFilePickerMode(getBatchType(), { quiet: false });
       syncMainUploadUI({ quiet: true });
-      renderFilePreview(); // 更新预览/提示（不阻塞）
+      renderFilePreview(); // Update preview/hint (Non-blocking)
     }
   });
   fileInput.addEventListener('change', () => {
     if (applyingMainFiles) return;
-    // 用户通过文件选择器选中文件
+    // User selected via file picker
     ensureMainFilePickerMode(getBatchType(), { quiet: false });
     syncMainUploadUI({ quiet: true });
     renderFilePreview();
   });
 
-  // 文件清单：同提示批量下可逐个移除
+  // File List: Remove individually in Same Prompt Batch
   if (filePreviewList) {
     filePreviewList.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest ? e.target.closest('[data-remove-main-file]') : null;
@@ -4881,7 +4881,7 @@
       setMainFiles(files);
       syncMainUploadUI({ quiet: true });
       renderFilePreview();
-      showToast(`已移除：${removed?.name || '文件'}`, 'success');
+      showToast(`Removed: ${removed?.name || 'File'}`, 'success');
     });
   }
   if (btnClearFiles) {
@@ -4889,11 +4889,11 @@
       setMainFiles([]);
       syncMainUploadUI({ quiet: true });
       renderFilePreview();
-      showToast('已清空文件', 'success');
+      showToast('Files cleared', 'success');
     });
   }
 
-  // 快捷模式切换：把“单次/同提示批量”从高级设置里挪到主上传区
+  // Quick Mode Switch: "Single/Same Batch" moved from Advanced to Main Upload
   if (quickModeBar) {
     quickModeBar.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest ? e.target.closest('[data-quick-mode]') : null;
@@ -4915,7 +4915,7 @@
     });
   }
 
-  // 快捷份数（同提示批量）：与高级设置里的 batchConcurrencyInput 同步
+  // Quick Copies (Same Batch): Sync with Advanced batchConcurrencyInput
   const applyQuickCount = (next) => {
     if (!batchConcurrencyInput) return;
     const bt = getBatchType();
@@ -4926,7 +4926,7 @@
     saveForm();
     syncGlobalCountHighlight();
     syncSingleSamePlanUI();
-    // 快捷份数同样会影响多提示/分镜的“预计任务数”与按钮可用性
+    // Quick copies also affect Multi/Storyboard predicted task count and button availability
     scheduleBatchEditorPlanUI();
   };
   if (quickCountDec) {
@@ -4946,7 +4946,7 @@
     quickCountInput.addEventListener('input', () => syncSingleSamePlanUI());
   }
 
-  // 快捷标签
+  // Quick Tags
   tagBar.querySelectorAll('[data-snippet]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const snippet = btn.getAttribute('data-snippet');
@@ -4960,11 +4960,11 @@
     });
   });
 
-  // Prompt 变更
+  // Prompt Change
   promptBox.addEventListener('input', () => {
     analyzePromptHints();
     syncSingleSamePlanUI();
-    // 仅更新“提示词为空”等提示，不要每次输入都重建 objectURL
+    // Only update "Empty Prompt" hints, don't rebuild objectURL every input
     if (previewHintTimer) clearTimeout(previewHintTimer);
     previewHintTimer = setTimeout(() => renderFilePreview(), 180);
   });
@@ -4984,12 +4984,12 @@
           return;
         }
       } catch (_) {
-        // 非 JSON 文本则忽略
+        // Ignore non-JSON text
       }
     }
   });
 
-  // 角色卡挂载区
+  // Role Card Mount Area
   const renderAttachedRoles = () => {
     attachedRolesBox.innerHTML =
       attachedRoles
@@ -4997,13 +4997,13 @@
           (r, idx) =>
             `<span class="chip" data-attached="${idx}" draggable="true" style="display:inline-flex;align-items:center;gap:6px;">
                 ${r.avatar ? `<img src="${r.avatar}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;">` : ''}
-                @${escapeHtml(r.display || r.username || '角色')}
-                <button class="chip-close" type="button" aria-label="移除角色" title="移除" style="margin-left:6px;cursor:pointer;border:none;background:transparent;font-weight:600;color:#64748b;line-height:1;">×</button>
+                @${escapeHtml(r.display || r.username || 'Role')}
+                <button class="chip-close" type="button" aria-label="Remove Role" title="Remove" style="margin-left:6px;cursor:pointer;border:none;background:transparent;font-weight:600;color:#64748b;line-height:1;">×</button>
              </span>`
         )
         .join('') || '';
 
-    // 一键清空：没有角色时禁用，避免“点了没反应”的困惑
+    // Clear All: Disable if empty to avoid confusion
     if (btnClearMainRoles) {
       const has = Array.isArray(attachedRoles) && attachedRoles.length > 0;
       btnClearMainRoles.disabled = !has;
@@ -5038,11 +5038,11 @@
         renderRoles();
       });
     });
-    // 角色挂载会改变 promptForSend，可影响“是否就绪 / 预计任务数”
+    // Role mount changes promptForSend, affecting "Ready / Predicted Tasks"
     syncSingleSamePlanUI();
   };
 
-  // 多提示模式：本模式全局角色（不会影响单次/同提示）
+  // Multi-Prompt Mode: Global Roles (Won't affect Single/Same)
   const renderMultiAttachedRoles = () => {
     if (!multiAttachedRolesBox) return;
     multiAttachedRolesBox.innerHTML =
@@ -5051,8 +5051,8 @@
           (r, idx) =>
             `<span class="chip" data-multi-attached="${idx}" style="display:inline-flex;align-items:center;gap:6px;">
                 ${r.avatar ? `<img src="${r.avatar}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;">` : ''}
-                @${escapeHtml(r.display || r.username || '角色')}
-                <button class="chip-close" type="button" aria-label="移除角色" title="移除" style="margin-left:6px;cursor:pointer;border:none;background:transparent;font-weight:600;color:#64748b;line-height:1;">×</button>
+                @${escapeHtml(r.display || r.username || 'Role')}
+                <button class="chip-close" type="button" aria-label="Remove Role" title="Remove" style="margin-left:6px;cursor:pointer;border:none;background:transparent;font-weight:600;color:#64748b;line-height:1;">×</button>
              </span>`
         )
         .join('') || '';
@@ -5071,11 +5071,11 @@
       });
     });
 
-    // 同步刷新每一行下方的角色展示（否则会出现“挂载全局但行下看不到”的错觉）
+    // Sync role display under each row (Avoid "Global mounted but invisible in row" illusion)
     renderMultiPromptRoleChipsOnly();
-    // 兜底：避免某些边界情况下按钮状态没被重新计算
+    // Fallback: Ensure button state recalculated
     scheduleBatchEditorPlanUI();
-    // 再兜底：某些环境/iframe 下 rAF 可能被节流，直接同步一次避免“按钮灰了只能刷新”
+    // Fallback again: rAF might be throttled, sync once to prevent "Gray button stuck"
     try {
       syncBatchEditorPlanUI();
     } catch (_) {
@@ -5083,7 +5083,7 @@
     }
   };
 
-  // 分镜模式：本模式全局角色（不会影响单次/同提示）
+  // Storyboard Mode: Global Roles (Won't affect Single/Same)
   const renderStoryboardAttachedRoles = () => {
     if (!storyboardAttachedRolesBox) return;
     storyboardAttachedRolesBox.innerHTML =
@@ -5092,8 +5092,8 @@
           (r, idx) =>
             `<span class="chip" data-sb-attached="${idx}" style="display:inline-flex;align-items:center;gap:6px;">
                 ${r.avatar ? `<img src="${r.avatar}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;">` : ''}
-                @${escapeHtml(r.display || r.username || '角色')}
-                <button class="chip-close" type="button" aria-label="移除角色" title="移除" style="margin-left:6px;cursor:pointer;border:none;background:transparent;font-weight:600;color:#64748b;line-height:1;">×</button>
+                @${escapeHtml(r.display || r.username || 'Role')}
+                <button class="chip-close" type="button" aria-label="Remove Role" title="Remove" style="margin-left:6px;cursor:pointer;border:none;background:transparent;font-weight:600;color:#64748b;line-height:1;">×</button>
              </span>`
         )
         .join('') || '';
@@ -5112,11 +5112,11 @@
       });
     });
 
-    // 关键：全局角色变更后，同步刷新每一镜下方的角色展示（否则会出现“挂载全部但分镜下看不到”的错觉）
+    // Critical: Sync role display under each shot after global change
     renderStoryboardRoleChipsOnly();
-    // 兜底：全局角色切换不应影响“开始生成”可用性，但需要强制刷新按钮状态（避免卡死需要刷新页面）
+    // Fallback: Global role switch shouldn't block "Generate", but force refresh button state
     scheduleBatchEditorPlanUI();
-    // 再兜底：某些环境/iframe 下 rAF 可能被节流，直接同步一次避免“按钮灰了只能刷新”
+    // Fallback again: rAF throttled, sync once
     try {
       syncBatchEditorPlanUI();
     } catch (_) {
@@ -5133,7 +5133,7 @@
     markRoleUsed(u);
     renderAttachedRoles();
     persistRoles();
-    renderRoles(); // 同步“已挂载”徽标/过滤统计
+    renderRoles(); // Sync "Mounted" badge / filter stats
   };
 
   const addAttachedRoleMulti = (roleObj) => {
@@ -5351,36 +5351,36 @@
     const bt = getBatchType();
     const uname = String(roleObj?.username || '').trim();
 
-    // “全局（本模式）”：用于人物一致性，但不污染单次/同提示
+    // "Global (This Mode)": For consistency, avoiding pollution of Single/Same
     if (bt === 'multi_prompt') {
       const inGlobal = uname ? attachedRolesMulti.some((r) => String(r?.username || '').trim() === uname) : false;
       menu.appendChild(
         makeBtn(inGlobal ? '全局（本模式）：已挂载（点此取消）' : '全局（本模式）：挂载到所有提示', () => toggleAttachedRoleMulti(roleObj))
       );
-      menu.appendChild(makeBtn('—— 挂载到单行 ——', () => { })).disabled = true;
+      menu.appendChild(makeBtn('—— Mount to Row ——', () => { })).disabled = true;
       multiPrompts.forEach((p, idx) => {
         const row = multiPromptRoles[idx] || [];
         const inRow = uname ? row.some((r) => String(r?.username || '').trim() === uname) : false;
-        menu.appendChild(makeBtn(inRow ? `提示 ${idx + 1}：已挂载（点此取消）` : `提示 ${idx + 1}`, () => toggleRoleOnRow(idx, roleObj)));
+        menu.appendChild(makeBtn(inRow ? `Prompt ${idx + 1}: Mounted (Click to Remove)` : `Prompt ${idx + 1}`, () => toggleRoleOnRow(idx, roleObj)));
       });
     } else if (bt === 'storyboard') {
       const inGlobal = uname ? attachedRolesStoryboard.some((r) => String(r?.username || '').trim() === uname) : false;
       menu.appendChild(
-        makeBtn(inGlobal ? '全局（本模式）：已挂载（点此取消）' : '全局（本模式）：挂载到所有分镜', () =>
+        makeBtn(inGlobal ? 'Global (Mode): Mounted (Click to Remove)' : 'Global (Mode): Mount to All Shots', () =>
           toggleAttachedRoleStoryboard(roleObj)
         )
       );
-      menu.appendChild(makeBtn('—— 挂载到单镜 ——', () => { })).disabled = true;
+      menu.appendChild(makeBtn('—— Mount to Shot ——', () => { })).disabled = true;
       storyboardShots.forEach((s, idx) => {
         const roles = (s && Array.isArray(s.roles) ? s.roles : []) || [];
         const inShot = uname ? roles.some((r) => String(r?.username || '').trim() === uname) : false;
         menu.appendChild(
-          makeBtn(inShot ? `分镜 ${idx + 1}：已挂载（点此取消）` : `分镜 ${idx + 1}`, () => toggleRoleOnStoryboardShot(idx, roleObj))
+          makeBtn(inShot ? `Shot ${idx + 1}: Mounted (Click to Remove)` : `Shot ${idx + 1}`, () => toggleRoleOnStoryboardShot(idx, roleObj))
         );
       });
     } else {
-      // 兜底：非批量模式不应该走到这里；按主提示挂载
-      menu.appendChild(makeBtn('挂载到提示词下方', () => addAttachedRole(roleObj)));
+      // Fallback: Non-batch mode shouldn't reach here; mount to main prompt
+      menu.appendChild(makeBtn('Mount to Prompt Below', () => addAttachedRole(roleObj)));
     }
     document.body.appendChild(menu);
     const dismiss = (e) => {
@@ -5507,7 +5507,7 @@
     const bt = getBatchType();
     if (bt === 'multi_prompt') return isRoleAttachedMultiGlobal(username) || isRoleAttachedInAnyMultiRow(username);
     if (bt === 'storyboard') return isRoleAttachedStoryboardGlobal(username) || isRoleAttachedInAnyStoryboardShot(username);
-    // 单次/同提示
+    // Single/Same Prompt
     return isRoleAttachedMain(username);
   };
 
@@ -5525,7 +5525,7 @@
   const syncRoleDenseButton = () => {
     if (!btnRoleDense || !roleList) return;
     btnRoleDense.classList.toggle('active', !!roleUi.dense);
-    btnRoleDense.textContent = roleUi.dense ? '密集 ✓' : '密集';
+    btnRoleDense.textContent = roleUi.dense ? 'Compact ✓' : 'Compact';
     roleList.classList.toggle('dense', !!roleUi.dense);
   };
 
@@ -5538,8 +5538,8 @@
     if (!roleCountEl) return;
     if (!total) roleCountEl.textContent = '0';
     else if (visible === total && !roleUi.query && (roleUi.filter === 'all' || !roleUi.filter))
-      roleCountEl.textContent = `共 ${total}`;
-    else roleCountEl.textContent = `显示 ${visible}/${total}`;
+      roleCountEl.textContent = `Total ${total}`;
+    else roleCountEl.textContent = `Shown ${visible}/${total}`;
   };
 
   const renderRoleSkeleton = (n = 6) => {
@@ -5559,14 +5559,14 @@
           </div>`
       )
       .join('');
-    if (roleCountEl) roleCountEl.textContent = '加载中…';
+    if (roleCountEl) roleCountEl.textContent = 'Loading...';
     notifyHeight();
   };
 
   const getRoleDisplayName = (r) => {
     const a = String(r?.display_name || '').trim();
     const b = String(r?.username || '').trim();
-    return a || b || '角色';
+    return a || b || 'Role';
   };
 
   const normalizeKeyword = (raw) => {
@@ -5578,7 +5578,7 @@
     if (!roleList) return;
     roleList.setAttribute('aria-busy', 'false');
 
-    // UI 同步（避免外部状态与 DOM 脱节）
+    // UI Sync (Avoid external state mismatch)
     syncRoleFilterButtons();
     syncRoleDenseButton();
     syncRoleClearButton();
@@ -5588,7 +5588,7 @@
     const total = all.length;
     const keyword = normalizeKeyword(roleSearch?.value || roleUi.query || '');
 
-    // 过滤：关键词 + 筛选器
+    // Filter: Keyword + Filter
     let list = all.filter((r) => {
       if (!keyword) return true;
       const hay = [
@@ -5611,9 +5611,9 @@
       list = list.filter((r) => roleFavs.has(String(r?.username || '').trim()));
     }
 
-    // 排序
+    // Sort
     const byName = (a, b) =>
-      getRoleDisplayName(a).localeCompare(getRoleDisplayName(b), 'zh-CN', { numeric: true, sensitivity: 'base' });
+      getRoleDisplayName(a).localeCompare(getRoleDisplayName(b), 'en', { numeric: true, sensitivity: 'base' });
     const byCreatedDesc = (a, b) => (Date.parse(b?.created_at || '') || 0) - (Date.parse(a?.created_at || '') || 0);
     const byCreatedAsc = (a, b) => -byCreatedDesc(a, b);
 
@@ -5622,7 +5622,7 @@
     else if (roleUi.sort === 'name_asc') list.sort(byName);
     else if (roleUi.sort === 'name_desc') list.sort((a, b) => -byName(a, b));
     else {
-      // smart：收藏 > 最近使用 > 创建时间 > 名称
+      // smart: Fav > Recent > Created > Name
       list.sort((a, b) => {
         const ua = String(a?.username || '').trim();
         const ub = String(b?.username || '').trim();
@@ -5644,10 +5644,10 @@
     if (!total) {
       roleList.innerHTML = `
         <div class="role-empty">
-          <div class="title">暂无角色卡</div>
-          <div class="desc">可以先在管理台/生成流程创建角色卡，然后回到这里点击“刷新”。</div>
+          <div class="title">No Role Cards</div>
+          <div class="desc">Create role cards in Admin/Creation Flow, then click "Reload" here.</div>
           <div class="actions">
-            <button class="pill-btn" type="button" data-role-action="reload">刷新</button>
+            <button class="pill-btn" type="button" data-role-action="reload">Reload</button>
           </div>
         </div>
       `;
@@ -5657,18 +5657,18 @@
 
     if (!list.length) {
       const parts = [];
-      if (keyword) parts.push('搜索无结果');
-      if (roleUi.filter === 'attached') parts.push('当前没有“已挂载”的角色');
-      if (roleUi.filter === 'fav') parts.push('当前没有“收藏”的角色');
-      const tip = parts.length ? parts.join('，') : '没有匹配的角色';
+      if (keyword) parts.push('No search results');
+      if (roleUi.filter === 'attached') parts.push('No "Mounted" roles');
+      if (roleUi.filter === 'fav') parts.push('No "Favorites" roles');
+      const tip = parts.length ? parts.join(', ') : 'No matching roles';
       roleList.innerHTML = `
         <div class="role-empty">
           <div class="title">${escapeHtml(tip)}</div>
-          <div class="desc">可以清空搜索/切回“全部”，或直接刷新重新加载角色卡。</div>
+          <div class="desc">Clear search / Switch to "All", or Reload.</div>
           <div class="actions">
-            ${keyword ? '<button class="pill-btn" type="button" data-role-action="clear-search">清空搜索</button>' : ''}
-            ${roleUi.filter !== 'all' ? '<button class="pill-btn" type="button" data-role-action="show-all">显示全部</button>' : ''}
-            <button class="pill-btn" type="button" data-role-action="reload">刷新</button>
+            ${keyword ? '<button class="pill-btn" type="button" data-role-action="clear-search">Clear Search</button>' : ''}
+            ${roleUi.filter !== 'all' ? '<button class="pill-btn" type="button" data-role-action="show-all">Show All</button>' : ''}
+            <button class="pill-btn" type="button" data-role-action="reload">Reload</button>
           </div>
         </div>
       `;
@@ -5684,7 +5684,7 @@
         const username = String(r?.username || '').trim();
         const display = getRoleDisplayName(r);
         const full = String(r?.description || r?.bio || '').trim();
-        const text = full ? full.replace(/\s+/g, ' ') : '暂无描述';
+        const text = full ? full.replace(/\s+/g, ' ') : 'No description';
         const short = text.length > 88 ? text.slice(0, 88) + '…' : text;
         const avatar = String(r?.avatar_path || '').trim();
         const avatarSrc = avatar || DEFAULT_ROLE_AVATAR;
@@ -5711,16 +5711,16 @@
 
         const chips = [
           cameo
-            ? `<button class="role-chip" type="button" data-role-action="copy" data-copy="${escapeAttr(cameo)}" title="复制 cameo_id: ${escapeAttr(cameo)}">cameo: ${escapeHtml(cameoShort)}</button>`
+            ? `<button class="role-chip" type="button" data-role-action="copy" data-copy="${escapeAttr(cameo)}" title="Copy cameo_id: ${escapeAttr(cameo)}">cameo: ${escapeHtml(cameoShort)}</button>`
             : '',
           charId
-            ? `<button class="role-chip" type="button" data-role-action="copy" data-copy="${escapeAttr(charId)}" title="复制 character_id: ${escapeAttr(charId)}">char: ${escapeHtml(charShort)}</button>`
+            ? `<button class="role-chip" type="button" data-role-action="copy" data-copy="${escapeAttr(charId)}" title="Copy character_id: ${escapeAttr(charId)}">char: ${escapeHtml(charShort)}</button>`
             : ''
         ].join('');
 
         return `
           <div class="role-card ${attached ? 'attached' : ''} ${fav ? 'fav' : ''}" draggable="true" data-role="${roleJson}" title="${escapeAttr(full || short || display)}">
-            <button class="role-star ${fav ? 'fav' : ''}" type="button" data-role-action="fav" aria-label="${fav ? '取消收藏' : '收藏'}" title="${fav ? '取消收藏' : '收藏'}">
+            <button class="role-star ${fav ? 'fav' : ''}" type="button" data-role-action="fav" aria-label="${fav ? 'Unfavorite' : 'Favorite'}" title="${fav ? 'Unfavorite' : 'Favorite'}">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
               </svg>
@@ -5729,15 +5729,15 @@
             <div class="role-meta">
               <div class="role-top">
                 <div class="role-name">${escapeHtml(display)}</div>
-                ${attached ? '<span class="role-badge attached" title="当前模式已挂载">已挂载</span>' : ''}
+                ${attached ? '<span class="role-badge attached" title="Mounted in current mode">Mounted</span>' : ''}
               </div>
               <div class="role-username">${username ? '@' + escapeHtml(username) : ''}</div>
               <div class="role-desc">${escapeHtml(short)}</div>
               ${chips ? `<div class="role-chips">${chips}</div>` : ''}
               <div class="role-actions">
-                <button class="pill-btn role-attach ${attached ? 'active' : ''}" type="button" data-role-action="attach" title="${isBatch ? '挂载到本模式（可选全局/单行/单镜）' : attached ? '取消挂载' : '挂载到提示词下方'}">${isBatch ? '挂载' : attached ? '取消挂载' : '挂载'}</button>
-                <button class="pill-btn role-copy" type="button" data-role-action="copy-username">复制 @username</button>
-                <button class="pill-btn role-delete" type="button" data-role-action="delete" style="color:#ef4444;" title="删除角色卡">删除</button>
+                <button class="pill-btn role-attach ${attached ? 'active' : ''}" type="button" data-role-action="attach" title="${isBatch ? 'Mount to Mode (Global/Row/Shot)' : attached ? 'Unmount' : 'Mount to Prompt'}">${isBatch ? 'Mount' : attached ? 'Unmount' : 'Mount'}</button>
+                <button class="pill-btn role-copy" type="button" data-role-action="copy-username">Copy @username</button>
+                <button class="pill-btn role-delete" type="button" data-role-action="delete" style="color:#ef4444;" title="Delete Role">Delete</button>
               </div>
             </div>
           </div>
@@ -5760,20 +5760,20 @@
   const loadRoles = async () => {
     renderRoleSkeleton(6);
     try {
-      // 从localStorage读取角色卡列表
+      // Load roles from localStorage
       const stored = localStorage.getItem('character_cards');
       const data = stored ? JSON.parse(stored) : [];
       roles = Array.isArray(data) ? data : [];
     } catch (e) {
       roles = [];
-      log('角色卡加载失败');
+      log('Failed to load role cards');
     }
     renderRoles();
   };
 
-  // baseUrl 输入时自动刷新角色卡：避免必须“失焦(change)”才生效的交互割裂
-  // - input：防抖（避免每个字符都打一次请求）
-  // - change：更快触发（粘贴/回车后立刻生效）
+  // Auto-reload roles on baseUrl input: Avoid interaction gap
+  // - input: Debounce
+  // - change: Immediate trigger (Paste/Enter)
   let rolesAutoReloadTimer = null;
   let rolesAutoReloadLastBaseUrl = '';
   const scheduleLoadRoles = (opts = { force: false }) => {
@@ -5783,7 +5783,7 @@
       () => {
         rolesAutoReloadTimer = null;
         const baseUrl = getBaseUrl();
-        // baseUrl 还没填完整时不要吵（避免输入过程中频繁 toast）
+        // Don't nag when baseUrl incomplete (Avoid frequent toasts during typing)
         if (!baseUrl || baseUrl.length < 8 || !/^https?:\/\//i.test(baseUrl)) return;
         if (!force && baseUrl === rolesAutoReloadLastBaseUrl) return;
         rolesAutoReloadLastBaseUrl = baseUrl;
@@ -5804,7 +5804,7 @@
     syncRoleSortSelect();
   };
 
-  // 事件绑定
+  // Event Binding
   rightTabButtons.forEach((btn) =>
     btn.addEventListener('click', () => setRightTab(btn.getAttribute('data-tab')))
   );
@@ -5815,16 +5815,16 @@
       setPreviewFilter(btn.getAttribute('data-preview-filter') || 'all', { toast: false });
     });
   }
-  // 预览：批量下载（当前过滤）
+  // Preview: Batch Download (Current Filter)
   let previewBatchDownloading = false;
   if (btnPreviewBatchDownload) {
     btnPreviewBatchDownload.addEventListener('click', async (e) => {
       if (previewBatchDownloading) return;
 
-      // 只下载“当前过滤”可见结果：用户可先切换到“分镜/视频/图片”后再点
+      // Download "Visible Filtered" results only: User can switch filter first
       const fullList = (Array.isArray(tasks) ? tasks : []).filter((t) => t && t.url && isValidMediaUrl(t.url));
       const filtered = fullList.filter((t) => taskMatchesPreviewFilter(t, previewFilter));
-      // URL 去重：避免同一结果在 tasks 里出现多次导致重复下载
+      // URL Dedup: Avoid duplicate download
       const seen = new Set();
       const list = [];
       filtered.forEach((t) => {
@@ -5835,11 +5835,11 @@
       });
 
       if (!list.length) {
-        showToast('当前过滤条件下暂无可下载的结果', 'warn', { title: '批量下载' });
+        showToast('No downloadable results under current filter', 'warn', { title: 'Batch Download' });
         return;
       }
 
-      // 排序：分镜优先按镜号/份数排序，其它按任务 id 递增（下载后更整齐）
+      // Sort: Storyboard shot/take first, others by task ID
       const sorted = list.slice().sort((a, b) => {
         const sa = a && a.storyboard ? a.storyboard : null;
         const sb = b && b.storyboard ? b.storyboard : null;
@@ -5863,22 +5863,22 @@
       const wantDirectMulti = !!(e && e.shiftKey); // Shift+Click => multi-files
       showToast(
         wantDirectMulti
-          ? `将触发 ${n} 个下载（若浏览器提示“是否允许多文件下载”，请选择“允许”）。`
-          : `将把 ${n} 个结果打包成 1 个 ZIP 并下载（更适配 IDM/拦截器，且文件名更友好）。`,
+          ? `Triggering ${n} downloads (Allow "Multiple file downloads" if prompted).`
+          : `Packing ${n} results into 1 ZIP (Better for IDM/Interceptors, friendly filenames).`,
         'info',
-        { title: wantDirectMulti ? '多文件下载' : '打包 ZIP', duration: n >= 12 ? 5200 : 4200 }
+        { title: wantDirectMulti ? 'Multi-File DL' : 'ZIP Pack', duration: n >= 12 ? 5200 : 4200 }
       );
 
       previewBatchDownloading = true;
-      const oldText = btnPreviewBatchDownload.textContent || '批量下载';
+      const oldText = btnPreviewBatchDownload.textContent || 'Batch DL';
       btnPreviewBatchDownload.setAttribute('data-loading', '1');
-      btnPreviewBatchDownload.textContent = wantDirectMulti ? `下载中(${n})…` : `打包中(${n})…`;
+      btnPreviewBatchDownload.textContent = wantDirectMulti ? `Downloading(${n})...` : `Packing(${n})...`;
 
       let okCount = 0;
       try {
         if (wantDirectMulti) {
-          // 注意：不要 await/定时器拆分，否则容易被浏览器当作“非用户手势”拦截。
-          // 这里一次性同步触发，首次会询问“允许多文件下载”。
+          // Note: Don't use await/timer, or browser may block as "non-user gesture".
+          // Trigger sync at once.
           sorted.forEach((t, idx) => {
             const u = String(t.url || '');
             if (!u) return;
@@ -5887,7 +5887,7 @@
             if (ok) okCount += 1;
           });
         } else {
-          // ZIP 打包：后端把 /tmp 文件打包成 zip，然后前端触发一次下载
+          // ZIP Pack: Backend packs /tmp files, frontend triggers download
           const items = sorted
             .map((t, idx) => {
               const u = String(t.url || '');
@@ -5900,7 +5900,7 @@
 
           const skipped = n - items.length;
           if (!items.length) {
-            throw new Error('当前结果没有可打包的 /tmp 本地缓存文件（请确认输出链接为 /tmp/...）');
+            throw new Error('No local /tmp files to pack (Ensure output links are /tmp/...)');
           }
 
           const titleFromShot =
@@ -5922,7 +5922,7 @@
           try {
             data = text ? JSON.parse(text) : null;
           } catch (err) {
-            throw new Error(`响应解析失败（可能被浏览器插件/拦截器改写）：${(err && err.message) || String(err)}`);
+            throw new Error(`Response Parse Failed (Check plugins/interceptors): ${(err && err.message) || String(err)}`);
           }
           if (!resp.ok || !data || data.success !== true) {
             const detail = (data && (data.detail || data.message)) || text || `HTTP ${resp.status}`;
@@ -5931,24 +5931,24 @@
 
           const zipUrl = data.url ? String(data.url) : '';
           const zipName = data.filename ? String(data.filename) : '';
-          if (!zipUrl) throw new Error('打包成功但缺少下载链接');
+          if (!zipUrl) throw new Error('Pack success but missing download URL');
 
           const okDl = triggerBrowserDownload(zipUrl, zipName);
           okCount = okDl ? 1 : 0;
 
           showToast(
-            `已打包 ${data.count || items.length} 个文件${skipped ? `（跳过 ${skipped} 个非本地链接）` : ''}。\n若未自动开始下载：点击此提示里的“下载ZIP”。`,
+            `Packed ${data.count || items.length} files${skipped ? ` (Skipped ${skipped} non-local links)` : ''}.\nIf download didn't start: Click "Download ZIP" here.`,
             'success',
             {
-              title: '打包完成',
+              title: 'Pack Complete',
               duration: 7200,
-              action: { text: '下载ZIP', onClick: () => triggerBrowserDownload(zipUrl, zipName) }
+              action: { text: 'Download ZIP', onClick: () => triggerBrowserDownload(zipUrl, zipName) }
             }
           );
         }
       } catch (err) {
-        showToast(`批量下载失败：${(err && err.message) || String(err)}`, 'error', {
-          title: '批量下载失败',
+        showToast(`Batch Download Failed: ${(err && err.message) || String(err)}`, 'error', {
+          title: 'Batch DL Failed',
           duration: 5200
         });
       } finally {
@@ -5965,9 +5965,9 @@
 
       if (wantDirectMulti) {
         showToast(
-          `已触发 ${okCount}/${n} 个下载。\n若被拦截：请在浏览器提示中允许“多文件下载”。\n若使用 IDM 且无反应：建议直接点“批量下载”（打包ZIP）。`,
+          `Triggered ${okCount}/${n} downloads.\nIf blocked: Allow "Multi-file DL".\nIDM users: Use "Batch DL" (ZIP) mode.`,
           okCount ? 'success' : 'warn',
-          { title: '多文件下载', duration: n >= 10 ? 5200 : 4200 }
+          { title: 'Multi-File DL', duration: n >= 10 ? 5200 : 4200 }
         );
       }
     });
@@ -5976,7 +5976,7 @@
     btnOnlyRunning.addEventListener('click', () => {
       onlyRunning = !onlyRunning;
       btnOnlyRunning.classList.toggle('active', onlyRunning);
-      btnOnlyRunning.textContent = onlyRunning ? '仅运行中 ?' : '仅运行中';
+      btnOnlyRunning.textContent = onlyRunning ? 'Running Only ?' : 'Running Only';
       renderTasks();
     });
   }
@@ -5990,12 +5990,12 @@
       }
       if (previewGrid) previewGrid.classList.toggle('dense', densePreview);
       btnPreviewDense.classList.toggle('active', densePreview);
-      btnPreviewDense.textContent = densePreview ? '预览密集 ✓' : '预览密集';
+      btnPreviewDense.textContent = densePreview ? 'Compact ✓' : 'Compact';
     });
     // 初始化同步（持久化）
     if (previewGrid) previewGrid.classList.toggle('dense', densePreview);
     btnPreviewDense.classList.toggle('active', densePreview);
-    btnPreviewDense.textContent = densePreview ? '预览密集 ✓' : '预览密集';
+    btnPreviewDense.textContent = densePreview ? 'Compact ✓' : 'Compact';
   }
   if (btnLogBottom) {
     btnLogBottom.addEventListener('click', () => {
@@ -6019,7 +6019,7 @@
     batchConcurrencyInput.addEventListener('change', syncConcurrency);
   }
 
-  // 预览弹窗（大图/大屏查看）
+  // Preview Modal (Large View)
   if (previewModal) {
     previewModal.addEventListener('click', (e) => {
       const target = e.target;
@@ -6042,7 +6042,7 @@
     btnPreviewCopyLink.addEventListener('click', async (e) => {
       const u = previewModalState && previewModalState.url ? String(previewModalState.url) : '';
       const ok = await copyTextSafe(u);
-      showBubble(ok ? '已复制链接' : '复制失败', e.currentTarget);
+      showBubble(ok ? 'Link Copied' : 'Copy Failed', e.currentTarget);
     });
   }
   if (btnPreviewCopyHtml) {
@@ -6051,7 +6051,7 @@
       const t = previewModalState && previewModalState.type ? String(previewModalState.type) : 'video';
       const html = buildEmbedHtml(u, t === 'image' ? 'image' : 'video');
       const ok = await copyTextSafe(html);
-      showBubble(ok ? '已复制HTML' : '复制失败', e.currentTarget);
+      showBubble(ok ? 'HTML Copied' : 'Copy Failed', e.currentTarget);
     });
   }
   if (btnPreviewLocateTask) {
@@ -6070,7 +6070,7 @@
     });
   }
 
-  // 分镜审查兜底：修改分镜提示词弹窗
+  // Storyboard Edit Fallback: Toggle Edit Modal
   if (editStoryboardModal) {
     editStoryboardModal.addEventListener('click', (e) => {
       const target = e.target;
@@ -6086,7 +6086,7 @@
     btnEditStoryboardRetry.addEventListener('click', submitEditStoryboardModal);
   }
 
-  // 来自管理页（任务球/抽屉）的控制：定位任务、打开预览
+  // Control from Admin Page: Locate task, open preview
   window.addEventListener('message', (event) => {
     try {
       if (event && event.origin && event.origin !== window.location.origin) return;
@@ -6125,7 +6125,7 @@
       /* ignore */
     }
   });
-  // 快捷键
+  // Shortcuts
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       if (editStoryboardModal && editStoryboardModal.classList.contains('open')) {
@@ -6154,26 +6154,26 @@
     }
   });
 
-  // 清空“输出/任务”统一入口：避免只清 DOM 导致 tasks 与 UI 脱钩（红点/预览会反复异常）
+  // Clear "Output/Tasks" Unified: Avoid UI mismatch
   const clearAllOutputs = (opts = { toast: true }) => {
-    // 如果正在预览，先关闭，避免“清空后仍显示旧视频”的错觉
+    // If previewing, close first
     try {
       if (previewModal && previewModal.classList.contains('open')) closePreviewModal();
       if (editStoryboardModal && editStoryboardModal.classList.contains('open')) closeEditStoryboardModal();
     } catch (_) {
       /* ignore */
     }
-    // 1) 清理任务数组
+    // 1) Clear task array
     tasks = [];
     unread.tasks = false;
-    // 2) 清理预览未读集合
+    // 2) Clear unread set
     previewSeenTaskIds = new Set();
     try {
       localStorage.removeItem(PREVIEW_SEEN_KEY);
     } catch (_) {
       /* ignore */
     }
-    // 3) 清理预览去重集合/日志缓存，释放内存
+    // 3) Clear dedup set / log buffer, free memory
     try {
       previewKnown.clear();
     } catch (_) {
@@ -6185,7 +6185,7 @@
     logSeenVersion = 0;
     out.textContent = '';
 
-    // 4) 清理“完成后自动折叠”的定时器，避免清空后还在后台改 tasks
+    // 4) Clear "Auto-collapse" timers
     try {
       collapseTimers.forEach((timer) => clearTimeout(timer));
       collapseTimers.clear();
@@ -6195,7 +6195,7 @@
 
     scheduleRender({ tasks: true, previews: true });
     schedulePersistTasks({ immediate: true });
-    if (opts && opts.toast) showToast('已清空输出（任务/预览/日志）', 'success');
+    if (opts && opts.toast) showToast('Outputs Cleared (Tasks/Previews/Logs)', 'success');
   };
 
   btnSend.addEventListener('click', handleSend);
@@ -6208,7 +6208,7 @@
     persistPreviewSeenTaskIds();
     scheduleRender({ tasks: true, previews: true });
     schedulePersistTasks({ immediate: true });
-    showToast('已清理失败任务', 'success');
+    showToast('Failed Tasks Cleared', 'success');
   });
   btnClearAll.addEventListener('click', () => {
     clearAllOutputs({ toast: false });
@@ -6216,7 +6216,7 @@
   if (btnCopyLog) {
     btnCopyLog.addEventListener('click', async (e) => {
       const ok = await copyTextSafe(out.textContent || '');
-      showBubble(ok ? '已复制日志' : '复制失败', e.currentTarget);
+      showBubble(ok ? 'Log Copied' : 'Copy Failed', e.currentTarget);
       if (ok) {
         logSeenVersion = logVersion;
         updateUnreadDots();
@@ -6229,11 +6229,11 @@
         currentLogTaskId !== null ? tasks.find((x) => x.id === currentLogTaskId) : tasks.length ? tasks[0] : null;
       const content = t ? getTaskLogText(t) : '';
       const ok = await copyTextSafe(content);
-      showBubble(ok ? '已复制该任务日志' : '复制失败', e.currentTarget);
+      showBubble(ok ? 'Task Log Copied' : 'Copy Failed', e.currentTarget);
     });
   }
 
-  // 角色卡 UI（搜索/过滤/排序/密集）
+  // Role Card UI (Search/Filter/Sort/Compact)
   if (roleSearch) {
     roleSearch.addEventListener('input', () => {
       roleUi.query = roleSearch.value || '';
@@ -6290,7 +6290,7 @@
   }
   if (btnReloadRoles) btnReloadRoles.addEventListener('click', loadRoles);
 
-  // 角色卡列表：事件委托（避免每次 renderRoles 都重新绑监听）
+  // Role List: Event Delegation
   if (roleList) {
     roleList.addEventListener(
       'error',
@@ -6347,7 +6347,7 @@
         markRoleUsed(data.username || '');
         const roleObj = { display: data.display || data.username || '', username: data.username || '', avatar: data.avatar || '' };
         const bt = getBatchType();
-        // 单次/同提示：按钮可直接“取消挂载”，避免只能逐个点 chip 关闭
+        // Single/Same: Button can "Unmount" directly
         if (bt !== 'multi_prompt' && bt !== 'storyboard') {
           const u = String(roleObj.username || '').trim();
           if (u && isRoleAttachedMain(u)) {
@@ -6355,38 +6355,38 @@
             renderAttachedRoles();
             persistRoles();
             renderRoles();
-            showBubble('已取消挂载', actionBtn);
+            showBubble('Unmounted', actionBtn);
             return;
           }
         }
         handleRoleAttach(roleObj, e);
-        // 单次模式会立刻 addAttachedRole()，那边会 renderRoles；批量模式由菜单回调触发 renderRoles
+        // Single adds immediately; Batch uses menu callback
         return;
       }
       if (action === 'copy-username') {
         const ok = await copyTextSafe(`@${data.username || data.display}`);
-        showBubble(ok ? '已复制 @username' : '复制失败', actionBtn);
+        showBubble(ok ? 'Copied @username' : 'Copy Failed', actionBtn);
         return;
       }
       if (action === 'copy') {
         const v = actionBtn.getAttribute('data-copy') || '';
         if (!v) return;
         const ok = await copyTextSafe(v);
-        showBubble(ok ? '已复制' : '复制失败', actionBtn);
+        showBubble(ok ? 'Copied' : 'Copy Failed', actionBtn);
         return;
       }
       if (action === 'fav') {
         const u = String(data.username || '').trim();
         if (!u) {
-          showBubble('缺少 username，无法收藏', actionBtn);
+          showBubble('No username, cannot fav', actionBtn);
           return;
         }
         if (roleFavs.has(u)) {
           roleFavs.delete(u);
-          showBubble('已取消收藏', actionBtn);
+          showBubble('Unfavorited', actionBtn);
         } else {
           roleFavs.add(u);
-          showBubble('已收藏', actionBtn);
+          showBubble('Favorited', actionBtn);
         }
         saveRoleFavsToStorage();
         renderRoles();
@@ -6394,26 +6394,26 @@
       }
       if (action === 'delete') {
         const u = String(data.username || '').trim();
-        const displayName = data.display || u || '此角色';
+        const displayName = data.display || u || 'this role';
 
         // 二次确认
-        if (!confirm(`确定要删除角色卡 "${displayName}" 吗？\n\n删除后将无法恢复。`)) {
+        if (!confirm(`Delete role card "${displayName}"?\n\nCannot be undone.`)) {
           return;
         }
 
         try {
-          // 从localStorage删除
+          // Delete from localStorage
           const stored = localStorage.getItem('character_cards');
           const cards = stored ? JSON.parse(stored) : [];
           const filtered = cards.filter(c => c.username !== u);
           localStorage.setItem('character_cards', JSON.stringify(filtered));
 
-          // 刷新显示
+          // Refresh Display
           loadRoles();
-          showToast('角色卡已删除', 'success');
+          showToast('Role card deleted', 'success');
         } catch (e) {
-          console.error('删除角色卡失败:', e);
-          showToast('删除失败', 'error');
+          console.error('Failed to delete role card:', e);
+          showToast('Delete failed', 'error');
         }
         return;
       }
@@ -6423,7 +6423,7 @@
   $('apiKey').addEventListener('input', () => {
     saveForm();
     syncSingleSamePlanUI();
-    // 分镜/多提示使用的是 btnSend：这里也要同步按钮状态，避免“填了 key 但按钮仍灰”的错觉
+    // Storyboard/Multi-prompt use btnSend: Sync state to avoid "Key filled but button gray" illusion
     scheduleBatchEditorPlanUI();
   });
   $('baseUrl').addEventListener('input', () => {
@@ -6437,13 +6437,13 @@
   if (btnUseRecommendedModel) {
     btnUseRecommendedModel.addEventListener('click', () => {
       if (!currentRecommendedModel) {
-        showToast('暂无可用的推荐模型', 'warn');
+        showToast('No recommended models available', 'warn');
         return;
       }
       $('model').value = currentRecommendedModel;
       saveForm();
       renderFilePreview();
-      showToast('已切换到推荐模型', 'success');
+      showToast('Switched to recommended model', 'success');
     });
   }
   promptBox.addEventListener('input', saveForm);
@@ -6462,7 +6462,7 @@
       saveForm();
       syncGlobalCountHighlight();
       syncSingleSamePlanUI();
-      // 多提示/分镜的“开始生成（N）”依赖默认份数：这里也要同步，避免按钮文案/禁用状态滞后
+      // Multi/Storyboard "Generate (N)" depends on default copies: Sync to prevent lag
       scheduleBatchEditorPlanUI();
     });
   if (btnApplyGlobalCountToAll)
@@ -6482,12 +6482,12 @@
       saveForm();
       syncGlobalCountHighlight();
       scheduleBatchEditorPlanUI();
-      showToast('已套用到全部', 'success');
+      showToast('Applied to all', 'success');
     });
   batchModeBar.querySelectorAll('input[name="batchType"]').forEach((r) =>
     r.addEventListener('change', () => setBatchType(r.value))
   );
-  // 模式条：窗口缩放/折叠展开会导致布局变化，需要重算“滑动高亮”位置
+  // Mode Bar: Window resize/re-layout changes "Slide Highlight"
   window.addEventListener('resize', scheduleBatchModeIndicator);
   if (btnAddPrompt)
     btnAddPrompt.addEventListener('click', () => {
@@ -6507,7 +6507,7 @@
       renderMultiAttachedRoles();
       persistRolesMulti();
       renderRoles();
-      showToast('已清空多提示全局角色', 'success');
+      showToast('Multi-Prompt Global Roles cleared', 'success');
     });
   if (btnClearMainRoles)
     btnClearMainRoles.addEventListener('click', () => {
@@ -6515,7 +6515,7 @@
       renderAttachedRoles();
       persistRoles();
       renderRoles();
-      showToast('已清空提示词下方的角色挂载', 'success');
+      showToast('Prompt Role Mounts cleared', 'success');
     });
   if (btnStoryboardClearRoles)
     btnStoryboardClearRoles.addEventListener('click', () => {
@@ -6523,7 +6523,7 @@
       renderStoryboardAttachedRoles();
       persistRolesStoryboard();
       renderRoles();
-      showToast('已清空分镜全局角色', 'success');
+      showToast('Storyboard Global Roles cleared', 'success');
     });
   if (btnStoryboardScopeRoles)
     btnStoryboardScopeRoles.addEventListener('click', (e) => {
@@ -6551,13 +6551,13 @@
     btnStoryboardFromPrompt.addEventListener('click', () => {
       const raw = (promptBox.value || '').split('\n').map((l) => l.trim()).filter(Boolean);
       if (!raw.length) {
-        showToast('主提示为空：无法导入分镜', 'warn');
+        showToast('Main Prompt Empty: Cannot import shots', 'warn');
         return;
       }
       const hasContent = storyboardShots.some(
         (s) => (s.text || '').trim() || (Array.isArray(s.roles) && s.roles.length) || s.fileDataUrl
       );
-      if (hasContent) captureStoryboardUndo('主提示按行导入覆盖');
+      if (hasContent) captureStoryboardUndo('Main Prompt Overwrite');
       setBatchType('storyboard');
       const defaultCount = normalizeTimes(batchConcurrencyInput?.value || '1', 1);
       storyboardShots = raw.map((t) => ({
@@ -6574,10 +6574,10 @@
       }
       renderStoryboardShots();
       saveForm();
-      showToast(`已导入 ${storyboardShots.length} 条分镜${hasContent ? '（已覆盖原内容，可撤销）' : ''}`, 'success', {
-        title: '分镜已导入',
+      showToast(`Imported ${storyboardShots.length} shots${hasContent ? ' (Overwritten, can undo)' : ''}`, 'success', {
+        title: 'Storyboard Imported',
         duration: hasContent ? 5200 : 2400,
-        action: hasContent ? { text: '撤销', onClick: () => undoStoryboardOnce() } : null
+        action: hasContent ? { text: 'Undo', onClick: () => undoStoryboardOnce() } : null
       });
     });
   if (btnStoryboardClear)
@@ -6585,13 +6585,13 @@
       const n = storyboardShots.length || parseInt(storyboardShotCount?.value || '8', 10) || 8;
       const hasContent = storyboardShots.some((s) => (s.text || '').trim() || (Array.isArray(s.roles) && s.roles.length) || s.fileDataUrl);
       if (!hasContent) {
-        // 没内容也照样铺好输入框，保持“可立即写”
+        // Even if empty, layout input boxes for immediate writing
         storyboardShots = [];
         appendStoryboardShots(Math.max(1, n), { text: '', count: normalizeTimes(batchConcurrencyInput?.value || '1', 1) });
-        showToast('已重置分镜为空白', 'success');
+        showToast('Storyboard reset to blank', 'success');
         return;
       }
-      captureStoryboardUndo('清空分镜');
+      captureStoryboardUndo('Clear Storyboard');
       const defaultCount = normalizeTimes(batchConcurrencyInput?.value || '1', 1);
       const prev = storyboardShots;
       storyboardShots = Array.from({ length: Math.max(1, n) }).map((_, i) => ({
@@ -6604,10 +6604,10 @@
       }));
       renderStoryboardShots();
       saveForm();
-      showToast('分镜已清空（可撤销）', 'success', {
-        title: '分镜已清空',
+      showToast('Storyboard cleared (Can Undo)', 'success', {
+        title: 'Storyboard Cleared',
         duration: 5200,
-        action: { text: '撤销', onClick: () => undoStoryboardOnce() }
+        action: { text: 'Undo', onClick: () => undoStoryboardOnce() }
       });
     });
   if (btnSendPrimary) btnSendPrimary.addEventListener('click', handleSend);
@@ -6641,7 +6641,7 @@
       };
       filename = 'storyboard.json';
     } else {
-      // 多提示模板（对象格式）：包含“全局角色”，同时兼容旧 array 导入
+      // Multi-Prompt Template (Object): Includes "Global Roles", compatible with old array
       const rows = (Array.isArray(multiPrompts) ? multiPrompts : [])
         .map((p, idx) => ({
           prompt: (p?.text || '').trim(),
@@ -6650,7 +6650,7 @@
         }))
         .filter((x) => x.prompt || (Array.isArray(x.roles) && x.roles.length));
       if (!rows.length) {
-        showToast('暂无可导出的批量内容', 'warn');
+        showToast('No exportable batch content', 'warn');
         return;
       }
       payload = {
@@ -6678,7 +6678,7 @@
     try {
       const data = JSON.parse(text);
 
-      // 分镜模板（对象）
+      // Storyboard Template (Object)
       if (data && typeof data === 'object' && data.kind === 'storyboard' && Array.isArray(data.shots)) {
         if (storyboardTitle) storyboardTitle.value = (data.title || '').trim();
         if (storyboardContext) storyboardContext.value = (data.context || '').trim();
@@ -6720,11 +6720,11 @@
         setBatchType('storyboard');
         saveForm();
         importBatchFile.value = '';
-        showToast('已导入分镜模板', 'success');
+        showToast('Storyboard Template Imported', 'success');
         return;
       }
 
-      // 多提示模板（对象）
+      // Multi-Prompt Template (Object)
       if (data && typeof data === 'object' && data.kind === 'multi_prompt' && Array.isArray(data.rows)) {
         if (Array.isArray(data.global_roles)) {
           attachedRolesMulti = data.global_roles
@@ -6746,7 +6746,7 @@
           }))
           .filter((x) => x.text);
 
-        // 同步行角色（可选）
+        // Sync Row Roles (Optional)
         Object.keys(multiPromptRoles).forEach((k) => delete multiPromptRoles[k]);
         data.rows.forEach((x, idx) => {
           if (Array.isArray(x.roles) && x.roles.length) {
@@ -6764,11 +6764,11 @@
         setBatchType('multi_prompt');
         saveForm();
         importBatchFile.value = '';
-        showToast('已导入多提示模板', 'success');
+        showToast('Multi-Prompt Template Imported', 'success');
         return;
       }
 
-      // 多提示模板：兼容 array 旧格式
+      // Multi-Prompt Template: Compatible with old array format
       if (Array.isArray(data)) {
         multiPrompts = data
           .map((x) => ({
@@ -6777,7 +6777,7 @@
           }))
           .filter((x) => x.text);
 
-        // 同步行角色（可选）
+        // Sync Row Roles (Optional)
         Object.keys(multiPromptRoles).forEach((k) => delete multiPromptRoles[k]);
         data.forEach((x, idx) => {
           if (Array.isArray(x.roles) && x.roles.length) {
@@ -6795,18 +6795,18 @@
         setBatchType('multi_prompt');
         saveForm();
         importBatchFile.value = '';
-        showToast('已导入批量模板', 'success');
+        showToast('Batch Template Imported', 'success');
         return;
       }
 
-      showToast('导入失败：不支持的模板格式', 'error');
+      showToast('Import Failed: Unsupported Format', 'error');
     } catch (_) {
-      showToast('导入失败：格式错误');
+      showToast('Import Failed: Format Error');
     }
     importBatchFile.value = '';
   });
 
-  // 初始化
+  // Initialize
   setAdvancedOpen(advancedOpen);
   initRoleUi();
   loadForm();
@@ -6823,6 +6823,6 @@
   renderStoryboardAttachedRoles();
   renderTasks();
   renderPreviews();
-  setRightTab(currentRightTab); // 应用持久化 tab
+  setRightTab(currentRightTab); // Apply persisted tab
   loadRoles();
 })();
