@@ -279,6 +279,7 @@
       const take = parseInt(String(sb.take || '1'), 10) || 1;
       const takes = parseInt(String(sb.takes || '1'), 10) || 1;
 
+<<<<<<< HEAD
       const titleRaw = String(sb.title || (run ? `StoryboardGroup${run}` : 'Storyboard')).trim();
       const title = sanitizeFilename(titleRaw, run ? `StoryboardGroup${run}` : 'Storyboard');
       const shotPart = idx ? `Shot${padNum(idx, 2)}${total ? `of${padNum(total, 2)}` : ''}` : `Shot${padNum(ordinal, 2)}`;
@@ -290,6 +291,19 @@
 
     // 普通任务：任务ID + 提示词片段（可选）
     const prefix = id ? `Task${id}` : `${ty === 'image' ? 'Image' : 'Video'}${padNum(ordinal, 3)}`;
+=======
+      const titleRaw = String(sb.title || (run ? `分镜组${run}` : '分镜')).trim();
+      const title = sanitizeFilename(titleRaw, run ? `分镜组${run}` : '分镜');
+      const shotPart = idx ? `分镜${padNum(idx, 2)}${total ? `of${padNum(total, 2)}` : ''}` : `分镜${padNum(ordinal, 2)}`;
+      const takePart = takes > 1 ? `第${take}份` : '';
+      const idPart = id ? `T${id}` : '';
+      const parts = [title, shotPart, takePart, idPart].filter(Boolean);
+      return `${sanitizeFilename(parts.join('_'), '分镜')}.${ext}`;
+    }
+
+    // 普通任务：任务ID + 提示词片段（可选）
+    const prefix = id ? `任务${id}` : `${ty === 'image' ? '图片' : '视频'}${padNum(ordinal, 3)}`;
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
     const hintRaw = task && task.promptSnippet ? String(task.promptSnippet).trim() : '';
     const hint = hintRaw ? sanitizeFilename(hintRaw.slice(0, 26), '') : '';
     return `${sanitizeFilename(hint ? `${prefix}_${hint}` : prefix, prefix)}.${ext}`;
@@ -325,7 +339,11 @@
     title.className = 'title';
     title.textContent =
       opts.title ||
+<<<<<<< HEAD
       (safeType === 'success' ? 'Success' : safeType === 'error' ? 'Error' : safeType === 'warn' ? 'Warning' : 'Info');
+=======
+      (safeType === 'success' ? '成功' : safeType === 'error' ? '出错了' : safeType === 'warn' ? '注意' : '提示');
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
 
     const desc = document.createElement('div');
     desc.className = 'desc';
@@ -427,7 +445,11 @@
   const openPreviewModal = (url, type = 'video', taskId = null) => {
     if (!previewModal || !previewModalMedia) return;
     if (!url || !isValidMediaUrl(url)) {
+<<<<<<< HEAD
       showToast('Invalid preview link', 'warn');
+=======
+      showToast('无效的预览链接', 'warn');
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       return;
     }
 
@@ -444,7 +466,11 @@
     if (previewModalTaskId) {
       if (tid) {
         previewModalTaskId.style.display = 'inline-flex';
+<<<<<<< HEAD
         previewModalTaskId.textContent = `Task ${tid}`;
+=======
+        previewModalTaskId.textContent = `任务 ${tid}`;
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       } else {
         previewModalTaskId.style.display = 'none';
         previewModalTaskId.textContent = '';
@@ -465,10 +491,17 @@
         previewModalWatermark.style.display = 'inline-flex';
         previewModalWatermark.textContent =
           stage === 'cancelled'
+<<<<<<< HEAD
             ? 'Watermark Cancelled'
             : stage === 'ready'
               ? 'No Watermark'
               : `Removing Watermark${attempt > 0 ? ` · ${attempt}` : ''}`;
+=======
+            ? '已取消去水印'
+            : stage === 'ready'
+              ? '无水印'
+              : `去水印中${attempt > 0 ? ` · ${attempt}` : ''}`;
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       } else {
         previewModalWatermark.style.display = 'none';
         previewModalWatermark.textContent = '';
@@ -491,7 +524,11 @@
       } catch (_) {
         // 至少保证有 download 属性（无值时浏览器会用 URL 文件名）
         previewModalDownload.setAttribute('download', '');
+<<<<<<< HEAD
         previewModalDownload.title = 'Download';
+=======
+        previewModalDownload.title = '下载';
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       }
     }
     if (btnPreviewLocateTask) {
@@ -565,7 +602,11 @@
     const tid = taskId ? parseInt(String(taskId), 10) : 0;
     const t = tid ? tasks.find((x) => x.id === tid) : null;
     if (!t || !t.storyboard) {
+<<<<<<< HEAD
       showToast('Storyboard task not found', 'warn');
+=======
+      showToast('未找到该分镜任务', 'warn');
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       return;
     }
     const sbLabel = t.storyboard && t.storyboard.label ? String(t.storyboard.label) : '';
@@ -579,7 +620,11 @@
       }
     }
     if (editStoryboardModalMeta) {
+<<<<<<< HEAD
       editStoryboardModalMeta.textContent = sbLabel ? `Modify Prompt (${sbLabel})` : 'Modify Prompt (Current Shot Only)';
+=======
+      editStoryboardModalMeta.textContent = sbLabel ? `修改分镜提示词（${sbLabel}）` : '修改分镜提示词（仅影响当前分镜任务）';
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
     }
     editStoryboardModalState = { taskId: tid };
     editStoryboardTextarea.value = String(t.promptUser || '');
@@ -607,20 +652,32 @@
 
     const nextShotText = String(editStoryboardTextarea.value || '').trim();
     if (!nextShotText) {
+<<<<<<< HEAD
       showToast('Please modify the prompt first (cannot be empty)', 'warn');
+=======
+      showToast('请先修改分镜提示词（不能为空）', 'warn');
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       return;
     }
 
     const apiKey = $('apiKey').value.trim();
     const baseUrl = getBaseUrl();
     if (!apiKey || !baseUrl) {
+<<<<<<< HEAD
       showToast('Please enter API Key and Server URL');
+=======
+      showToast('请先填写 API Key 和服务器地址');
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       return;
     }
 
     const nextSend = rebuildStoryboardPromptSend(t.promptSend, t.promptUser, nextShotText);
     closeEditStoryboardModal();
+<<<<<<< HEAD
     showToast('Modification submitted, retrying shot...', 'info', { title: 'Shot Retry' });
+=======
+    showToast('已提交修改，正在重试该分镜…', 'info', { title: '分镜重试' });
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
     await runJobs(
       [
         {
@@ -757,8 +814,13 @@
       const cc = param || ccFromText || '未知';
       return {
         type: 'error',
+<<<<<<< HEAD
         title: 'Region Restriction',
         message: `Sora is not available in your current region (${cc}).\nSolution: Switch proxy/VPN to a supported region.`
+=======
+        title: '地区限制',
+        message: `Sora 在你当前网络出口地区不可用（${cc}）。\n解决：切换代理/机房到支持地区后再试。`
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       };
     }
 
@@ -766,8 +828,13 @@
     if (/Just a moment|Enable JavaScript and cookies to continue|__cf_bm|cloudflare/i.test(text)) {
       return {
         type: 'error',
+<<<<<<< HEAD
         title: 'Cloudflare Blocked',
         message: 'Cloudflare block triggered.\nSolution: Change IP/Proxy or reduce concurrency.'
+=======
+        title: 'Cloudflare 拦截',
+        message: '触发 Cloudflare 风控拦截。\n解决：更换更“干净”的出口 IP/代理，或降低并发与请求频率。'
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       };
     }
 
@@ -775,12 +842,20 @@
     if (merged) {
       return {
         type: /warn|limit|blocked|guardrail|违规|不支持|限制/i.test(merged) ? 'warn' : 'error',
+<<<<<<< HEAD
         title: 'Generation Failed',
+=======
+        title: '生成失败',
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         message: merged
       };
     }
 
+<<<<<<< HEAD
     return { type: 'error', title: 'Generation Failed', message: 'Unknown Error (No readable info from upstream)' };
+=======
+    return { type: 'error', title: '生成失败', message: '未知错误（上游未返回可读信息）' };
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
   };
 
   // 内容政策/审查命中：用于分镜兜底（出现审查报错时提供“修改分镜提示词”按钮）
@@ -810,8 +885,13 @@
     if (!files.length) {
       filePreviewBox.style.display = 'none';
       filePreviewMedia.innerHTML = '';
+<<<<<<< HEAD
       filePreviewName.textContent = 'No file selected';
       filePreviewKind.textContent = 'Asset';
+=======
+      filePreviewName.textContent = '未选择文件';
+      filePreviewKind.textContent = '素材';
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       filePreviewMeta.textContent = '';
       renderChips(filePreviewHints, []);
       setBannerText('');
@@ -827,11 +907,19 @@
     const mixed = imgCount > 0 && vidCount > 0;
 
     const first = files[0];
+<<<<<<< HEAD
     const name = first?.name || 'Untitled';
     filePreviewName.textContent = files.length > 1 ? `${files.length} Files (${name} etc)` : name;
 
     // 素材类型标签
     const kindText = mixed ? `Mixed(${imgCount}Img/${vidCount}Vid)` : vidCount ? `Video(${vidCount})` : `Image(${imgCount})`;
+=======
+    const name = first?.name || '未命名文件';
+    filePreviewName.textContent = files.length > 1 ? `${files.length} 个文件（${name} 等）` : name;
+
+    // 素材类型标签
+    const kindText = mixed ? `混合(${imgCount}图/${vidCount}视频)` : vidCount ? `视频(${vidCount})` : `图片(${imgCount})`;
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
     filePreviewKind.textContent = kindText;
 
     const signature = `${files.length}:${name}:${first.size}:${first.lastModified}:${first.type}`;
@@ -897,7 +985,11 @@
           { once: true }
         );
       } else {
+<<<<<<< HEAD
         filePreviewMedia.innerHTML = `<div style="padding:12px;color:#cbd5e1;font-size:12px;">Cannot preview this file type</div>`;
+=======
+        filePreviewMedia.innerHTML = `<div style="padding:12px;color:#cbd5e1;font-size:12px;">无法预览该文件类型</div>`;
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         lastPreviewInfo = { w: 0, h: 0, orientation: '', isImage: false, isVideo: false };
       }
     } else if (lastPreviewInfo) {
@@ -908,6 +1000,7 @@
 
     const sizeText = formatBytes(first.size);
     const dimText = w && h ? `${w}x${h}` : '';
+<<<<<<< HEAD
     const orientationText = orientation === 'portrait' ? 'Vert' : orientation === 'landscape' ? 'Horiz' : orientation === 'square' ? 'Sq' : '';
     const modelLabel = getSelectedModelLabel();
 
@@ -915,6 +1008,15 @@
       `Current Model: ${modelLabel}`,
       `File: ${sizeText}`,
       dimText ? `Resolution: ${dimText}${orientationText ? `(${orientationText})` : ''}` : ''
+=======
+    const orientationText = orientation === 'portrait' ? '竖' : orientation === 'landscape' ? '横' : orientation === 'square' ? '方' : '';
+    const modelLabel = getSelectedModelLabel();
+
+    filePreviewMeta.textContent = [
+      `当前模型：${modelLabel}`,
+      `文件：${sizeText}`,
+      dimText ? `分辨率：${dimText}${orientationText ? `(${orientationText})` : ''}` : ''
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
     ]
       .filter(Boolean)
       .join(' · ');
@@ -937,20 +1039,36 @@
     }
 
     const chips = [];
+<<<<<<< HEAD
     if (mixed) chips.push({ text: 'Mixed: Avoid mixing Img/Vid', kind: 'warn' });
     if (modelInfo.isImage && vidCount > 0) chips.push({ text: 'Img Model + Vid Asset: Video ignored', kind: 'warn' });
     if (modelInfo.isVideo && imgCount > 0 && !promptText) chips.push({ text: 'Img First Frame + Empty Prompt: Results may vary', kind: 'warn' });
     if (currentRecommendedModel && currentRecommendedModel !== modelId) chips.push({ text: `Recommended: ${currentRecommendedModel}`, kind: 'info' });
     if (!chips.length) chips.push({ text: 'Ready', kind: 'ok' });
+=======
+    if (mixed) chips.push({ text: '混合选择：建议不要图/视频混用（容易跑偏）', kind: 'warn' });
+    if (modelInfo.isImage && vidCount > 0) chips.push({ text: '图片模型 + 视频素材：视频不会被使用', kind: 'warn' });
+    if (modelInfo.isVideo && imgCount > 0 && !promptText) chips.push({ text: '图片首帧但提示词为空：结果可能与图无关', kind: 'warn' });
+    if (currentRecommendedModel && currentRecommendedModel !== modelId) chips.push({ text: `推荐模型：${currentRecommendedModel}`, kind: 'info' });
+    if (!chips.length) chips.push({ text: '已就绪', kind: 'ok' });
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
     renderChips(filePreviewHints, chips);
 
     // Banner：只保留最关键一句，避免信息噪声
     if (modelInfo.isVideo && imgCount > 0 && !promptText) {
+<<<<<<< HEAD
       setBannerText('Tip: Image uploaded without prompt. Image is "Reference/First Frame". Add action/shot description to avoid random results.');
     } else if (modelInfo.isImage && vidCount > 0) {
       setBannerText('Tip: Video uploaded but model is "Image". Video will be ignored.');
     } else if (mixed) {
       setBannerText('Tip: Mixed assets selected. Recommended to separate batches.');
+=======
+      setBannerText('提示：你上传了图片但没写提示词。图片只是“参考/首帧”，建议补一句你希望画面发生什么（动作/镜头/风格），否则容易跑偏。');
+    } else if (modelInfo.isImage && vidCount > 0) {
+      setBannerText('提示：你上传的是视频，但当前模型是“图片”。视频不会参与生成；请切换到视频模型或换成图片文件。');
+    } else if (mixed) {
+      setBannerText('提示：你同时选了图片和视频。建议分开跑（同一批只放同类型文件），可减少异常与不相关结果。');
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
     } else {
       setBannerText('');
     }
@@ -1013,8 +1131,13 @@
       previewSeenTaskIds = new Set(
         Array.isArray(arr)
           ? arr
+<<<<<<< HEAD
             .map((x) => parseInt(String(x), 10))
             .filter((n) => !isNaN(n) && n > 0)
+=======
+              .map((x) => parseInt(String(x), 10))
+              .filter((n) => !isNaN(n) && n > 0)
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
           : []
       );
     } catch (_) {
@@ -1138,11 +1261,19 @@
   const renderLogPanel = () => {
     if (!logListContainer || !logDetailContent) return;
     if (!tasks.length) {
+<<<<<<< HEAD
       logListContainer.innerHTML = '<div class="muted" style="padding:12px;">No tasks</div>';
       logDetailId.textContent = '';
       logDetailStatus.textContent = '';
       logDetailMeta.textContent = '';
       logDetailContent.textContent = 'No Logs';
+=======
+      logListContainer.innerHTML = '<div class="muted" style="padding:12px;">暂无任务</div>';
+      logDetailId.textContent = '';
+      logDetailStatus.textContent = '';
+      logDetailMeta.textContent = '';
+      logDetailContent.textContent = '暂无日志';
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       return;
     }
 
@@ -1153,6 +1284,7 @@
 
     // 渲染左侧列表
     const statusMap = {
+<<<<<<< HEAD
       queue: 'Queued',
       running: 'Running',
       retrying: 'Retrying',
@@ -1161,6 +1293,16 @@
       stalled: 'Stalled',
       character_done: 'Role Created',
       character_error: 'Role Failed'
+=======
+      queue: '排队中',
+      running: '生成中',
+      retrying: '重试中',
+      done: '已完成',
+      error: '失败',
+      stalled: '中断',
+      character_done: '角色卡成功',
+      character_error: '角色卡失败'
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
     };
     logListContainer.innerHTML = tasks
       .map((t) => {
@@ -1170,7 +1312,11 @@
             ? t.status === 'done'
               ? statusMap.character_done
               : statusMap.character_error
+<<<<<<< HEAD
             : statusMap[t.status] || 'Unknown';
+=======
+            : statusMap[t.status] || '未知';
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         const msg = t.message || '';
         return `
           <div class="log-card ${active ? 'active' : ''}" data-logitem="${t.id}" style="cursor:pointer;">
@@ -1180,7 +1326,11 @@
             </div>
             <div class="log-card-body" style="padding:8px 10px;">
               <div class="task-log-title" style="font-weight:600; font-size:13px; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeAttr(t.promptSnippet || '')}">
+<<<<<<< HEAD
                 ${escapeHtml(t.promptSnippet || '(Empty Prompt)')}
+=======
+                ${escapeHtml(t.promptSnippet || '(空提示)')}
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
               </div>
               ${msg ? `<div class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(msg)}</div>` : ''}
             </div>
@@ -1207,14 +1357,22 @@
           ? current.status === 'done'
             ? statusMap.character_done
             : statusMap.character_error
+<<<<<<< HEAD
           : statusMap[current.status] || 'Unknown';
+=======
+          : statusMap[current.status] || '未知';
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       logDetailId.textContent = `#${current.id}`;
       logDetailStatus.textContent = statusText;
       logDetailMeta.textContent =
         (current.meta && [current.meta.resolution, current.meta.duration, current.meta.info].filter(Boolean).join(' · ')) ||
         current.message ||
         '';
+<<<<<<< HEAD
       logDetailContent.textContent = getTaskLogText(current) || 'No Logs';
+=======
+      logDetailContent.textContent = getTaskLogText(current) || '暂无日志';
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       logDetailContent.scrollTop = logDetailContent.scrollHeight;
     }
   };
@@ -1223,7 +1381,11 @@
   const renderTaskLogList = renderLogPanel;
 
   const setTaskCount = () => {
+<<<<<<< HEAD
     taskCount.textContent = `${tasks.length} Tasks`;
+=======
+    taskCount.textContent = `${tasks.length} 个任务`;
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
   };
 
   const renderTasks = () => {
@@ -1235,8 +1397,13 @@
       : baseList;
     const filtered = statusFilter
       ? byTag.filter((t) =>
+<<<<<<< HEAD
         statusFilter === 'running' ? t.status === 'running' || t.status === 'retrying' : t.status === statusFilter
       )
+=======
+          statusFilter === 'running' ? t.status === 'running' || t.status === 'retrying' : t.status === statusFilter
+        )
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       : byTag;
     const counts = {
       running: tasks.filter((t) => t.status === 'running' || t.status === 'retrying').length,
@@ -1251,6 +1418,7 @@
     const hiddenCount = baseList.length - filtered.length;
     const groupBar = `
       <div class="chips" style="margin-bottom:6px;">
+<<<<<<< HEAD
         <button class="pill-btn ${statusFilter ? '' : 'active'}" data-filter="">All (${totalCount})</button>
         <button class="pill-btn ${statusFilter === 'running' ? 'active' : ''}" data-filter="running">Running (${counts.running})</button>
         <button class="pill-btn ${statusFilter === 'queue' ? 'active' : ''}" data-filter="queue">Queued (${counts.queue})</button>
@@ -1263,6 +1431,20 @@
         <button class="pill-btn ${tagFilter === 'storyboard' ? 'active' : ''}" data-tag="storyboard">Storyboard (${tagCounts.storyboard})</button>
       </div>
       ${hiddenCount > 0 ? `<div class="banner">Hidden ${hiddenCount} non-matching tasks</div>` : ''}
+=======
+        <button class="pill-btn ${statusFilter ? '' : 'active'}" data-filter="">全部 (${totalCount})</button>
+        <button class="pill-btn ${statusFilter === 'running' ? 'active' : ''}" data-filter="running">运行中 (${counts.running})</button>
+        <button class="pill-btn ${statusFilter === 'queue' ? 'active' : ''}" data-filter="queue">排队中 (${counts.queue})</button>
+        <button class="pill-btn ${statusFilter === 'done' ? 'active' : ''}" data-filter="done">已完成 (${counts.done})</button>
+        <button class="pill-btn ${statusFilter === 'error' ? 'active' : ''}" data-filter="error">失败 (${counts.error})</button>
+      </div>
+      <div class="chips" style="margin-bottom:6px;">
+        <span class="muted" style="padding:6px 2px;">标签</span>
+        <button class="pill-btn ${tagFilter ? '' : 'active'}" data-tag="">全部</button>
+        <button class="pill-btn ${tagFilter === 'storyboard' ? 'active' : ''}" data-tag="storyboard">分镜 (${tagCounts.storyboard})</button>
+      </div>
+      ${hiddenCount > 0 ? `<div class="banner">已隐藏 ${hiddenCount} 条不匹配的任务</div>` : ''}
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
     `;
 
     const html = filtered
@@ -1275,6 +1457,7 @@
               : t.type === 'character' && t.status === 'error'
                 ? '角色卡创建失败'
                 : (() => {
+<<<<<<< HEAD
                   const retryCount =
                     typeof t.retryCount === 'number' ? t.retryCount : parseInt(String(t.retryCount || '0'), 10) || 0;
                   const statusMap = {
@@ -1287,6 +1470,20 @@
                   };
                   return statusMap[t.status] || '未知';
                 })();
+=======
+                    const retryCount =
+                      typeof t.retryCount === 'number' ? t.retryCount : parseInt(String(t.retryCount || '0'), 10) || 0;
+                    const statusMap = {
+                      queue: '排队中',
+                      running: '生成中',
+                      retrying: `重试中${retryCount > 0 ? ` · ${retryCount}` : ''}`,
+                      done: '已完成',
+                      error: '失败',
+                      stalled: '中断'
+                    };
+                    return statusMap[t.status] || '未知';
+                  })();
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         const statusClass = `status ${t.timedOut ? 'timedout' : t.status}`;
         const msg = t.message || '';
         const msgColor = t.status === 'retrying' ? '#b45309' : '#f87171';
@@ -1295,7 +1492,11 @@
         const stepClass = t.status === 'error' ? 'error' : 'active';
         const missingUrlWarn =
           t.type !== 'character' && t.status === 'done' && !t.url
+<<<<<<< HEAD
             ? '<div style="margin-top:6px;font-size:12px;color:#b45309;">Video URL missing, generation may have failed or backend returned no link</div>'
+=======
+            ? '<div style="margin-top:6px;font-size:12px;color:#b45309;">未返回视频链接，可能生成失败或后端未返回地址</div>'
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
             : '';
         const progress = t.progress ?? (t.status === 'done' ? 100 : 0);
         const safeTitle = escapeAttr(t.promptUser || t.promptSnippet || '-');
@@ -1313,8 +1514,13 @@
         const sbChip =
           sb && sb.label
             ? `<span class="task-tag-chip storyboard" title="${escapeAttr(
+<<<<<<< HEAD
               [sb.title, sb.label].filter(Boolean).join(' · ')
             )}">${escapeHtml(sb.label)}</span>`
+=======
+                [sb.title, sb.label].filter(Boolean).join(' · ')
+              )}">${escapeHtml(sb.label)}</span>`
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
             : '';
         const sbTitleChip =
           sb && sb.title
@@ -1327,11 +1533,19 @@
           ? wmStage === 'cancelled'
             ? '已取消去水印'
             : wmStage === 'ready'
+<<<<<<< HEAD
               ? 'Watermark Free Ready'
               : 'Waiting for Watermark Removal'
           : '';
         const wmChip = wmStage
           ? `<span class="task-tag-chip watermark" title="Removing Watermark">${wmLabel}${wmAttempt > 0 ? ` · ${wmAttempt}` : ''}</span>`
+=======
+              ? '无水印已就绪'
+              : '等待去水印'
+          : '';
+        const wmChip = wmStage
+          ? `<span class="task-tag-chip watermark" title="去水印处理中">${wmLabel}${wmAttempt > 0 ? ` · ${wmAttempt}` : ''}</span>`
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
           : '';
         const progressWidth = Math.max(0, Math.min(100, progress));
         if (t.collapsed && t.status === 'done') {
@@ -1347,11 +1561,19 @@
                 ${sbTitleChip}
               </div>
               <div class="task-title ellipsis" data-task-title="1" title="${safeTitle}">${displayTitle}</div>
+<<<<<<< HEAD
               <div class="muted" style="font-size:12px;">Collapsed. Click to expand.</div>
             </div>
             <div class="task-actions">
               ${t.url ? `<button class="link-btn" data-url="${escapeHtml(t.url)}" data-type="${escapeAttr(t.type || 'video')}">Preview</button>` : ''}
               <button class="link-btn" data-expand="${t.id}">Expand</button>
+=======
+              <div class="muted" style="font-size:12px;">已折叠，点击展开查看详情</div>
+            </div>
+            <div class="task-actions">
+              ${t.url ? `<button class="link-btn" data-url="${escapeHtml(t.url)}" data-type="${escapeAttr(t.type || 'video')}">预览</button>` : ''}
+              <button class="link-btn" data-expand="${t.id}">展开</button>
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
             </div>
           </div>
         `;
@@ -1371,12 +1593,21 @@
               <div data-task-msg="1" style="font-size:12px;color:${msgColor};${msg ? '' : 'display:none;'}">${safeMsg}</div>
               ${missingUrlWarn}
               <div>
+<<<<<<< HEAD
                 <div class="progress-shell" data-task-progress-shell="1" role="progressbar" aria-label="Task Progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressWidth}">
                   <div class="progress-bar" data-task-progress-bar="1" style="width:${progressWidth}%;"></div>
                 </div>
                 <div class="progress-info">
                   <span data-task-progress-text="1">Progress: ${progress}%</span>
                   <span class="muted">Queue · Gen · Done</span>
+=======
+                <div class="progress-shell" data-task-progress-shell="1" role="progressbar" aria-label="任务进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressWidth}">
+                  <div class="progress-bar" data-task-progress-bar="1" style="width:${progressWidth}%;"></div>
+                </div>
+                <div class="progress-info">
+                  <span data-task-progress-text="1">进度：${progress}%</span>
+                  <span class="muted">排队 · 生成 · 完成</span>
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
                 </div>
                 <div class="task-steps">
                   <div class="task-step ${stepIdx >= 1 ? stepClass : ''}"></div>
@@ -1387,6 +1618,7 @@
             </div>
             <div class="task-actions">
               ${t.url ? `<button class="link-btn" data-url="${escapeHtml(t.url)}" data-type="${escapeAttr(t.type || 'video')}">预览</button>` : ''}
+<<<<<<< HEAD
               ${t.status === 'running' && t.wmCanCancel && t.remoteTaskId
             ? `<button class="link-btn" data-cancel-wm="${t.id}" ${t.wmCancelling ? 'disabled' : ''}>${t.wmCancelling ? 'Cancelling...' : 'Cancel Wait'
             }</button>`
@@ -1403,6 +1635,27 @@
               ${t.status === 'stalled' ? `<button class="link-btn" data-continue="${t.id}">Continue</button>` : ''}
               ${t.promptUser ? `<button class="link-btn" data-reuse="${t.id}">Reuse Prompt</button>` : ''}
               <button class="link-btn" data-log="${t.id}">View Log</button>
+=======
+              ${
+                t.status === 'running' && t.wmCanCancel && t.remoteTaskId
+                  ? `<button class="link-btn" data-cancel-wm="${t.id}" ${t.wmCancelling ? 'disabled' : ''}>${
+                      t.wmCancelling ? '取消中...' : '取消去水印等待'
+                    }</button>`
+                  : ''
+              }
+              ${canEditStoryboardPrompt ? `<button class="link-btn" data-edit-storyboard="${t.id}">修改分镜提示词</button>` : ''}
+              ${
+                t.status === 'retrying' &&
+                t.retryMode === 'submit' &&
+                (typeof t.retryCount === 'number' ? t.retryCount : parseInt(String(t.retryCount || '0'), 10) || 0) >= 3
+                  ? `<button class="link-btn" data-abort-retry="${t.id}">中断重试</button>`
+                  : ''
+              }
+              ${t.timedOut || t.status === 'error' || (!t.url && t.status === 'done') ? `<button class="link-btn" data-retry="${t.id}">重试</button>` : ''}
+              ${t.status === 'stalled' ? `<button class="link-btn" data-continue="${t.id}">继续</button>` : ''}
+              ${t.promptUser ? `<button class="link-btn" data-reuse="${t.id}">复用提示</button>` : ''}
+              <button class="link-btn" data-log="${t.id}">查看日志</button>
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
             </div>
           </div>
         `;
@@ -1478,7 +1731,11 @@
         if (t && t.promptUser) {
           promptBox.value = t.promptUser;
           analyzePromptHints();
+<<<<<<< HEAD
           showToast('Prompt filled');
+=======
+          showToast('提示已填充');
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
           smoothFocus(promptBox);
           flashCard(btn);
         }
@@ -1504,8 +1761,13 @@
             /* ignore */
           }
         }
+<<<<<<< HEAD
         updateTask(id, { status: 'error', message: 'Auto-retry aborted (Click "Retry" to restart)' });
         showToast('Auto-retry aborted', 'warn', { title: 'Aborted' });
+=======
+        updateTask(id, { status: 'error', message: '已中断自动重试（可点击“重试”再次发起）' });
+        showToast('已中断自动重试', 'warn', { title: '已中断' });
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         flashCard(btn);
       });
     });
@@ -1520,7 +1782,11 @@
           return;
         }
         if (!t) {
+<<<<<<< HEAD
           showToast('Task not found, cannot retry', 'error', { title: 'Retry Failed', duration: 2600 });
+=======
+          showToast('未找到该任务，无法重试', 'error', { title: '重试失败', duration: 2600 });
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
           return;
         }
         const job = {
@@ -1534,6 +1800,7 @@
           storyboard: t.storyboard || null
         };
         if (!job.promptSend && !job.file && !job.fileDataUrl) {
+<<<<<<< HEAD
           showToast('Task has no reusable prompt/asset, retrying anyway (may fail)', 'warn', {
             title: 'Empty Retry',
             duration: 4200
@@ -1542,6 +1809,16 @@
           showToast('Empty prompt retry: submitting with assets only (Allowed)', 'info', { title: 'Retrying', duration: 2200 });
         } else {
           showToast('Retrying task...', 'info');
+=======
+          showToast('该任务没有可复用的提示词/素材，仍将尝试重试（可能失败）', 'warn', {
+            title: '空输入重试',
+            duration: 4200
+          });
+        } else if (!job.promptSend && (job.file || job.fileDataUrl)) {
+          showToast('空提示词重试：将只带素材提交（允许）', 'info', { title: '正在重试', duration: 2200 });
+        } else {
+          showToast('正在重试该任务', 'info');
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         }
         await runJobs(
           [job],
@@ -1563,7 +1840,11 @@
           return;
         }
         if (!t) {
+<<<<<<< HEAD
           showToast('Task not found, cannot continue', 'error', { title: 'Continue Failed', duration: 2600 });
+=======
+          showToast('未找到该任务，无法继续', 'error', { title: '继续失败', duration: 2600 });
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
           return;
         }
         const job = {
@@ -1576,6 +1857,7 @@
           storyboard: t.storyboard || null
         };
         if (!job.promptSend && !job.file && !job.fileDataUrl) {
+<<<<<<< HEAD
           showToast('Task has no reusable prompt/asset, continuing anyway (may fail)', 'warn', {
             title: 'Empty Continue',
             duration: 4200
@@ -1584,6 +1866,16 @@
           showToast('Empty prompt continue: submitting with assets only (Allowed)', 'info', { title: 'Continuing', duration: 2200 });
         } else {
           showToast('Continuing task...', 'info');
+=======
+          showToast('该任务没有可复用的提示词/素材，仍将尝试继续（可能失败）', 'warn', {
+            title: '空输入继续',
+            duration: 4200
+          });
+        } else if (!job.promptSend && (job.file || job.fileDataUrl)) {
+          showToast('空提示词继续：将只带素材提交（允许）', 'info', { title: '正在继续', duration: 2200 });
+        } else {
+          showToast('正在继续该任务', 'info');
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         }
         await runJobs(
           [job],
@@ -1714,7 +2006,11 @@
             previewCountFlashTimer = setTimeout(() => {
               try {
                 previewCount.classList.remove('count-flash');
+<<<<<<< HEAD
               } catch (_) { }
+=======
+              } catch (_) {}
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
               previewCountFlashTimer = null;
             }, 1900);
           }
@@ -1726,7 +2022,11 @@
 
     if (fullList.length === 0) {
       // 预览为空：清空 URL 去重集合即可；未读红点由“已看过的任务 id 集合”控制
+<<<<<<< HEAD
       previewGrid.innerHTML = '<div class="muted" style="padding:12px;">No previews. Will appear here after generation.</div>';
+=======
+      previewGrid.innerHTML = '<div class="muted" style="padding:12px;">暂无预览结果。生成完成后会在这里出现。</div>';
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       previewsHydrated = true;
       updateUnreadDots();
       return;
@@ -1734,7 +2034,11 @@
 
     if (list.length === 0) {
       previewGrid.innerHTML =
+<<<<<<< HEAD
         '<div class="muted" style="padding:12px;">No results for current filter. Switch to "All".</div>';
+=======
+        '<div class="muted" style="padding:12px;">当前过滤条件下暂无结果。可切换到“全部”查看。</div>';
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       previewsHydrated = true;
       updateUnreadDots();
       return;
@@ -1781,7 +2085,11 @@
       setTimeout(() => {
         try {
           card.classList.remove('preview-new');
+<<<<<<< HEAD
         } catch (_) { }
+=======
+        } catch (_) {}
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       }, 3600);
     }
     // Escape URLs for HTML attributes/text (avoid `&bar` style entity decoding).
@@ -1806,7 +2114,11 @@
       badge.className = 'task-id-pill'; // 统一编号视觉
       badge.textContent = `任务 ${taskId}`;
       badge.style.cursor = 'pointer';
+<<<<<<< HEAD
       badge.title = 'Click to locate task card';
+=======
+      badge.title = '点击定位到任务卡片';
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       wrap.appendChild(badge);
 
       const t = tasks.find((x) => x.id === taskId);
@@ -1825,10 +2137,17 @@
         wm.className = 'task-tag-chip watermark';
         wm.textContent =
           wmStage === 'cancelled'
+<<<<<<< HEAD
             ? 'Watermark Cancelled'
             : wmStage === 'ready'
               ? 'No Watermark'
               : `Removing Watermark${wmAttempt > 0 ? ` · ${wmAttempt}` : ''}`;
+=======
+            ? '已取消去水印'
+            : wmStage === 'ready'
+              ? '无水印'
+              : `去水印中${wmAttempt > 0 ? ` · ${wmAttempt}` : ''}`;
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         wrap.appendChild(wm);
       }
       card.style.position = 'relative';
@@ -1865,8 +2184,13 @@
         <button class="link-btn" data-open="1">查看</button>
         ${taskId ? `<button class="link-btn" data-focus-task="${taskId}">定位任务</button>` : ''}
         <a class="link-btn" href="${downloadHref}" download="${escapeHtml(downloadName || '')}" rel="noreferrer" title="${escapeHtml(
+<<<<<<< HEAD
       downloadName || '下载'
     )}">下载</a>
+=======
+          downloadName || '下载'
+        )}">下载</a>
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         <button class="link-btn" data-copy="${safeUrlAttr}">复制链接</button>
       </div>
     `;
@@ -1894,8 +2218,13 @@
     card.querySelectorAll('[data-copy]').forEach((btn) => {
       btn.addEventListener('click', () => {
         navigator.clipboard.writeText(btn.getAttribute('data-copy')).then(
+<<<<<<< HEAD
           () => showToast('Link Copied'),
           () => showToast('Copy Failed')
+=======
+          () => showToast('已复制链接'),
+          () => showToast('复制失败')
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         );
       });
     });
@@ -2334,7 +2663,11 @@
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'task_count', running, total }, '*');
       }
+<<<<<<< HEAD
     } catch (_) { }
+=======
+    } catch (_) {}
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
   };
 
   // 任务列表状态（给管理台任务抽屉用）：节流发送，避免流式每个 chunk 都触发父页面重渲染
@@ -2438,7 +2771,11 @@
           prev.cancelled = true;
           try {
             if (typeof prev.abortFetch === 'function') prev.abortFetch();
+<<<<<<< HEAD
           } catch (_) { }
+=======
+          } catch (_) {}
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         }
         taskLogBuffer[taskId] = '';
         updateTask(taskId, {
@@ -2549,6 +2886,7 @@
       taskRetryControls.set(taskId, retryCtl);
 
       try {
+<<<<<<< HEAD
         // 提交上游阶段：不轻易判失败（自动重试，3 次后提供"中断重试"按钮）
         const MAX_RETRY = 9999;
         for (let attempt = 1; attempt <= MAX_RETRY + 1; attempt++) {
@@ -2709,6 +3047,104 @@
                   // 内容审查：Sora 可能以 reasoning/content 形式返回（不一定走 obj.error）
                   const policyText = [deltaReasoning, deltaContent, rc, rawContent].filter(Boolean).join('\n');
                   if (!hadError && isContentPolicyViolation(policyText)) {
+=======
+      // 提交上游阶段：不轻易判失败（自动重试，3 次后提供"中断重试"按钮）
+      const MAX_RETRY = 9999;
+      for (let attempt = 1; attempt <= MAX_RETRY + 1; attempt++) {
+        let lastChunk = '';
+        let contentAccumulated = '';  // 累积所有 content 字段
+        let characterCreated = false;
+        let characterCardInfo = null;
+        let hadError = false;
+        let finished = false;
+        let logBufferAttempt = '';
+        let watermarkWaitSeen = false; // once seen, disable the 10-min hard timeout and rely on explicit cancel
+        let progressMarkerSeen = false; // once seen, do NOT auto-resubmit (avoid duplicates)
+        const controller = new AbortController();
+        retryCtl.abortFetch = () => controller.abort();
+        const HARD_TIMEOUT = 600000; // 10 分钟总超时
+        let hardTimer = null;
+        const clearTimers = () => {
+          if (hardTimer) clearTimeout(hardTimer);
+        };
+
+        try {
+          if (retryCtl.cancelled) {
+            updateTask(taskId, { status: 'error', message: '已中断自动重试（可点击“重试”再次发起）' });
+            return;
+          }
+          // attempt=1：正常生成（或手动重试的首次尝试）
+          // attempt>1：仅用于“提交上游失败”类可重试错误的自动重试
+          if (attempt > 1) {
+            updateTask(taskId, {
+              status: 'retrying',
+              retryMode: 'submit',
+              retryCount: attempt - 1,
+              timedOut: false,
+              progress: 0
+            });
+          } else if (job.taskId) {
+            updateTask(taskId, { status: 'retrying', retryMode: 'manual', retryCount: 0, timedOut: false, progress: 0 });
+          } else {
+            updateTask(taskId, { status: 'running', timedOut: false, progress: 0 });
+          }
+
+          const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+              Authorization: 'Bearer ' + apiKey,
+              'Content-Type': 'application/json',
+              Accept: 'text/event-stream'
+            },
+            body: JSON.stringify(body),
+            signal: controller.signal
+          });
+
+          if (!resp.ok || !resp.body) {
+            throw new Error('HTTP ' + resp.status);
+          }
+
+          const reader = resp.body.getReader();
+          const decoder = new TextDecoder();
+          let mediaUrl = null;
+          // 默认按模型推断：避免 URL 无扩展名时误判（图片任务却用 video 预览）
+          let mediaType = parseModelId(job.model).isImage ? 'image' : 'video';
+          let mediaMeta = null;
+
+          hardTimer = setTimeout(() => controller.abort(), HARD_TIMEOUT);
+
+          logTask(taskId, '连接成功，开始接收流...');
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            lastChunk = chunk || lastChunk;
+            chunk.split(/\n\n/).forEach((line) => {
+              if (!line.startsWith('data:')) return;
+              const data = line.replace(/^data:\s*/, '');
+              if (data === '[DONE]') {
+                logTask(taskId, '[DONE]');
+                finished = true;
+                return;
+              }
+              logTask(taskId, data);
+              logBufferAttempt = (logBufferAttempt + data + '\n').slice(-LOG_STORE_LIMIT);
+              try {
+                const obj = JSON.parse(data);
+                const choice = (obj.choices && obj.choices[0]) || {};
+                const delta = choice.delta || {};
+                if (obj.error) {
+                  const pretty = humanizeUpstreamError(obj.error);
+                  const errMsg = pretty.message || obj.error.message || obj.error.code || '生成失败';
+                  // 仅“提交上游失败/网络瞬断（未进入进度阶段）”自动重试；避免已提交后重复下单
+                  if (isRetryable(errMsg) && !progressMarkerSeen && !watermarkWaitSeen) {
+                    const retryErr = new Error(errMsg);
+                    retryErr.__submitRetryable = true;
+                    throw retryErr;
+                  }
+                  // 内容审查命中：不要自动重试，直接给“可修改分镜提示词”的兜底入口
+                  if (isContentPolicyViolation(errMsg)) {
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
                     hadError = true;
                     const isSb = !!(job.storyboard && job.storyboard.label);
                     const msg = isSb ? '内容审查未通过（可修改分镜提示词后重试）' : '内容审查未通过（请调整提示词后重试）';
@@ -2723,6 +3159,7 @@
                     showToast(msg, 'warn', { title: '内容审查未通过', duration: 5200 });
                     return;
                   }
+<<<<<<< HEAD
                   const characterFailHit =
                     /角色卡创建失败|Character creation failed/i.test(deltaContent) ||
                     /角色卡创建失败|Character creation failed/i.test(deltaReasoning) ||
@@ -2951,10 +3388,327 @@
                 url: mediaUrl,
                 type: mediaType,
                 meta: mediaMeta ? { info: mediaMeta } : null,
+=======
+                  hadError = true;
+                  updateTask(taskId, { status: 'error', message: errMsg, logTail: lastChunk, logFull: logBufferAttempt });
+                  showToast(errMsg || '生成失败', pretty.type === 'warn' ? 'warn' : 'error', {
+                    title: pretty.title || '生成失败',
+                    duration: 4200
+                  });
+                  return;
+                }
+                const rc = delta.reasoning_content || (choice.message && choice.message.content) || '';
+
+                // Watermark-free waiting (structured, from backend delta.wm)
+                if (delta && delta.wm && typeof delta.wm === 'object') {
+                  const wm = delta.wm || {};
+                  const stage = wm.stage ? String(wm.stage) : '';
+                  const attempt =
+                    typeof wm.attempt === 'number' ? wm.attempt : parseInt(String(wm.attempt || '0'), 10) || 0;
+                  const canCancel = !!wm.can_cancel;
+                  const remoteTaskId = wm.task_id ? String(wm.task_id) : '';
+                  const patch = { wmStage: stage, wmAttempt: attempt, wmCanCancel: canCancel };
+                  if (remoteTaskId) patch.remoteTaskId = remoteTaskId;
+                  updateTask(taskId, patch);
+
+                  // Once we enter watermark-free waiting, do not enforce the 10-min hard timeout.
+                  if (!watermarkWaitSeen) {
+                    watermarkWaitSeen = true;
+                    if (hardTimer) {
+                      clearTimeout(hardTimer);
+                      hardTimer = null;
+                    }
+                  }
+                }
+
+                // 解析 delta.content 里嵌入的 JSON（character_card）
+                const rawContent =
+                  delta.content ||
+                  (choice.message && choice.message.content) ||
+                  obj.content ||
+                  '';
+                const finishReason = choice.finish_reason || choice.native_finish_reason || delta.finish_reason;
+                const deltaContent = typeof delta.content === 'string' ? delta.content : '';
+                const deltaReasoning = typeof delta.reasoning_content === 'string' ? delta.reasoning_content : '';
+
+                // 累积 content 字段
+                if (deltaContent) {
+                  contentAccumulated += deltaContent;
+                }
+
+                // 内容审查：Sora 可能以 reasoning/content 形式返回（不一定走 obj.error）
+                const policyText = [deltaReasoning, deltaContent, rc, rawContent].filter(Boolean).join('\n');
+                if (!hadError && isContentPolicyViolation(policyText)) {
+                  hadError = true;
+                  const isSb = !!(job.storyboard && job.storyboard.label);
+                  const msg = isSb ? '内容审查未通过（可修改分镜提示词后重试）' : '内容审查未通过（请调整提示词后重试）';
+                  updateTask(taskId, {
+                    status: 'error',
+                    errorKind: 'policy',
+                    message: msg,
+                    logTail: lastChunk,
+                    logFull: logBufferAttempt,
+                    progress: 0
+                  });
+                  showToast(msg, 'warn', { title: '内容审查未通过', duration: 5200 });
+                  return;
+                }
+                const characterFailHit =
+                  /角色卡创建失败|Character creation failed/i.test(deltaContent) ||
+                  /角色卡创建失败|Character creation failed/i.test(deltaReasoning) ||
+                  /角色卡创建失败|Character creation failed/i.test(rawContent || '') ||
+                  (/character_card/i.test(rawContent || '') && finishReason === 'STOP' && !characterCreated && !mediaUrl);
+                if (!hadError && characterFailHit) {
+                  const msg =
+                    (deltaContent || deltaReasoning || rawContent || '角色卡创建失败')
+                    .replace(/^❌\s*/, '')
+                    .trim();
+                  hadError = true;
+                  updateTask(taskId, {
+                    status: 'error',
+                    type: 'character',
+                    message: msg,
+                    logTail: lastChunk,
+                    logFull: logBufferAttempt,
+                    progress: 0
+                  });
+                  return;
+                }
+                let innerObj = null;
+                if (typeof rawContent === 'string' && rawContent.trim().startsWith('{')) {
+                  try {
+                    innerObj = JSON.parse(rawContent);
+                  } catch (_) {
+                    innerObj = null;
+                  }
+                }
+
+                if (typeof rc === 'string' && /(blocked|guardrail|违规|不支持|限制)/i.test(rc)) {
+                  hadError = true;
+                  const pretty = humanizeUpstreamError(rc);
+                  updateTask(taskId, {
+                    status: 'error',
+                    message: pretty.message || rc.trim(),
+                    logTail: lastChunk,
+                    logFull: logBufferAttempt
+                  });
+                  showToast(pretty.message || rc.trim(), pretty.type === 'warn' ? 'warn' : 'error', {
+                    title: pretty.title || '生成失败',
+                    duration: 4200
+                  });
+                  return;
+                }
+                // 角色卡事件：直接标记为角色卡成功
+                const cardPayload = obj.event === 'character_card' || obj.card ? obj : innerObj && innerObj.event === 'character_card' ? innerObj : null;
+                if (!cardPayload && typeof data === 'string' && data.includes('"character_card"')) {
+                  try {
+                    const temp = JSON.parse(data);
+                    if (temp && (temp.event === 'character_card' || temp.card)) {
+                      cardPayload = temp;
+                    }
+                  } catch (_) {}
+                }
+                if (cardPayload && (cardPayload.event === 'character_card' || cardPayload.card)) {
+                  const card = cardPayload.card || {};
+                  characterCreated = true;
+                  characterCardInfo = card;
+                  syncRoleCardToLibrary(card);
+                  showToast(`角色卡创建成功：@${card.username || card.display_name || '角色'}`);
+                  updateTask(taskId, {
+                    status: 'done',
+                    type: 'character',
+                    message: `角色卡创建成功：@${card.username || '角色'}`,
+                    meta: { display: card.display_name || card.username || '' },
+                    logTail: lastChunk,
+                    logFull: logBufferAttempt
+                  });
+                  return;
+                }
+                // 进度：结构化字段或 reasoning_content 中的百分比
+                const currentProgress =
+                  tasks.find((t) => t.id === taskId && !isNaN(parseFloat(t.progress)))?.progress ?? 0;
+                let progressVal = null;
+                const pctMatch = data.match(/(\d{1,3})%/);
+                if (pctMatch) progressMarkerSeen = true;
+                if (obj.progress !== undefined && !isNaN(parseFloat(obj.progress))) {
+                  progressVal = parseFloat(obj.progress);
+                  progressMarkerSeen = true;
+                }
+                if (obj.delta && typeof obj.delta.reasoning_content === 'string') {
+                  const m = obj.delta.reasoning_content.match(/(\d{1,3})%/);
+                  if (m) progressVal = Math.max(progressVal ?? 0, parseFloat(m[1]));
+                  if (m) progressMarkerSeen = true;
+                }
+                if (!progressVal && pctMatch) {
+                  progressVal = Math.min(100, parseFloat(pctMatch[1]));
+                }
+                if (!isNaN(progressVal)) {
+                  const merged = Math.max(currentProgress, progressVal);
+                  updateTask(taskId, { progress: merged });
+                }
+
+                // 结构化字段优先
+                const output0 = (obj.output && obj.output[0]) || null;
+                const deltaOut0 = (delta.output && delta.output[0]) || null;
+                // 上游有时会给出明确 type（image/video），即使 URL 没有扩展名也应信任它。
+                const declaredTypeRaw = (output0 && output0.type) || (deltaOut0 && deltaOut0.type) || obj.type || '';
+                const declaredType = String(declaredTypeRaw || '').toLowerCase();
+                const declaredHint = declaredType === 'image' || declaredType === 'video' ? declaredType : '';
+                const typeHintFromFields =
+                  declaredHint ||
+                  (obj.image_url && obj.image_url.url ? 'image' : '') ||
+                  (obj.video_url && obj.video_url.url ? 'video' : '') ||
+                  (output0 && output0.image_url ? 'image' : '') ||
+                  (output0 && output0.video_url ? 'video' : '') ||
+                  (deltaOut0 && deltaOut0.image_url ? 'image' : '') ||
+                  (deltaOut0 && deltaOut0.video_url ? 'video' : '') ||
+                  '';
+                const candidates = [
+                  obj.url,
+                  obj.video_url && obj.video_url.url,
+                  obj.image_url && obj.image_url.url,
+                  output0 && (output0.url || output0.video_url || output0.image_url),
+                  deltaOut0 && (deltaOut0.url || deltaOut0.video_url || deltaOut0.image_url)
+                ].filter(Boolean);
+
+                // Capture remote task_id from delta.output if present (used by watermark cancel button)
+                if (delta.output && delta.output[0] && delta.output[0].task_id) {
+                  updateTask(taskId, { remoteTaskId: String(delta.output[0].task_id) });
+                  progressMarkerSeen = true;
+                }
+
+                let extractedUrl = candidates[0];
+
+                // content/markdown 中的 <video src> 或直接的媒体链接
+                if (!extractedUrl && obj.content) {
+                  const htmlMatch = obj.content.match(/<video[^>]+src=['"]([^'"]+)['"]/i);
+                  if (htmlMatch) extractedUrl = htmlMatch[1];
+                  const mdMatch = obj.content.match(/https?:[^\s)"'<>]+\.(mp4|mov|m4v|webm|png|jpg|jpeg|webp)/i);
+                  if (!extractedUrl && mdMatch) extractedUrl = mdMatch[0];
+                }
+                // 从最新 chunk 中兜底提取媒体链接
+                if (!extractedUrl) {
+                  const urlMatch = lastChunk.match(/https?:[^\s)"'<>]+\.(mp4|mov|m4v|webm|png|jpg|jpeg|webp)/i);
+                  if (urlMatch) extractedUrl = urlMatch[0];
+                }
+
+                if (extractedUrl) {
+                  mediaUrl = extractedUrl;
+                }
+                if (mediaUrl) {
+                  const u = mediaUrl.toString();
+                  const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
+                  const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
+                  mediaType = typeHintFromFields || extHint || modelHint;
+                  const reso =
+                    obj.resolution ||
+                    (obj.meta && obj.meta.resolution) ||
+                    (obj.width && obj.height ? `${obj.width}x${obj.height}` : null);
+                  const dur = obj.duration || (obj.meta && obj.meta.duration) || (obj.length && `${obj.length}s`);
+                  mediaMeta = [reso, dur].filter(Boolean).join(' · ');
+                  updateTask(taskId, {
+                    url: mediaUrl,
+                    type: mediaType,
+                    meta: { resolution: reso || '', duration: dur || '' },
+                    logTail: lastChunk,
+                    logFull: logBufferAttempt,
+                    progress: 100
+                  });
+                } else {
+                  updateTask(taskId, { logTail: lastChunk, logFull: logBufferAttempt });
+                }
+
+                // choices.delta/content 兜底提取任意 http(s) 链接
+                if (!mediaUrl) {
+                  const choice = (obj.choices && obj.choices[0]) || {};
+                  const delta = choice.delta || {};
+                  const msg = choice.message || {};
+                  const contentField = delta.content ?? msg.content ?? obj.content;
+                  const outputField = delta.output ?? msg.output ?? obj.output;
+                  const tryExtract = (text) => {
+                    if (!text) return null;
+                    const htmlMatch = text.match(/<video[^>]+src=['"]([^'"]+)['"]/i);
+                    if (htmlMatch) return htmlMatch[1];
+                    const anyMatch = text.match(/https?:[^\s)"'<>]+/i);
+                    return anyMatch ? anyMatch[0] : null;
+                  };
+                  let extracted = tryExtract(contentField) || tryExtract(lastChunk);
+                  if (!extracted && outputField && outputField[0]) {
+                    extracted = outputField[0].url || outputField[0].video_url || outputField[0].image_url || null;
+                  }
+                  if (extracted) {
+                    mediaUrl = extracted;
+                    const u = mediaUrl.toString();
+                    const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
+                    const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
+                    mediaType = extHint || modelHint;
+                    updateTask(taskId, { url: mediaUrl, type: mediaType, logTail: lastChunk, logFull: logBufferAttempt, progress: 100 });
+                  }
+                }
+              } catch (e) {
+                if (e && e.__submitRetryable) throw e;
+                updateTask(taskId, { logTail: lastChunk, logFull: logBufferAttempt });
+              }
+            });
+            if (hadError || finished) break;
+          }
+
+          clearTimers();
+          // 结束后兜底：从 lastChunk 任意链接
+          if (!mediaUrl) {
+            const tailMatch = lastChunk.match(/https?:[^\s)"'<>]+/i);
+            if (tailMatch) {
+              mediaUrl = tailMatch[0];
+              const u = String(mediaUrl || '');
+              const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
+              const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
+              mediaType = extHint || modelHint;
+            }
+          }
+
+          if (hadError) {
+            return;
+          }
+
+          // 白名单过滤
+          if (mediaUrl && !isValidMediaUrl(mediaUrl)) {
+            mediaUrl = null;
+          }
+
+          if (mediaUrl) {
+            updateTask(taskId, {
+              status: 'done',
+              url: mediaUrl,
+              type: mediaType,
+              meta: mediaMeta ? { info: mediaMeta } : null,
+              logTail: lastChunk,
+              logFull: logBufferAttempt || lastChunk,
+              progress: 100
+            });
+          } else {
+            // 检查是否是角色卡创建任务
+            const isCharacterTask = job.isCharacterCreation === true;
+            const hasCharacterSuccessMsg = /角色创建成功|角色卡创建成功|角色名@/.test(contentAccumulated || lastChunk || '');
+
+            if (characterCreated || characterCardInfo || (isCharacterTask && hasCharacterSuccessMsg)) {
+              // 从消息中提取角色名
+              let username = characterCardInfo?.username || '';
+              if (!username && hasCharacterSuccessMsg) {
+                const match = (contentAccumulated || lastChunk || '').match(/角色名@(\w+)/);
+                if (match) username = match[1];
+              }
+
+              updateTask(taskId, {
+                status: 'done',
+                type: 'character',
+                message: username ? `角色卡创建成功：@${username}` : '角色卡创建成功',
+                meta: { display: characterCardInfo?.display_name || username || '' },
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
                 logTail: lastChunk,
                 logFull: logBufferAttempt || lastChunk,
                 progress: 100
               });
+<<<<<<< HEAD
             } else {
               // 检查是否是角色卡创建任务
               const isCharacterTask = job.isCharacterCreation === true;
@@ -3074,6 +3828,105 @@
             return;
           }
         }
+=======
+
+              // 保存角色卡到localStorage
+              try {
+                const stored = localStorage.getItem('character_cards');
+                const cards = stored ? JSON.parse(stored) : [];
+
+                // 创建新的角色卡对象
+                const newCard = {
+                  id: Date.now(), // 使用时间戳作为ID
+                  username: username || 'unknown',
+                  display_name: characterCardInfo?.display_name || username || '',
+                  description: characterCardInfo?.description || '',
+                  avatar_path: characterCardInfo?.avatar_path || '',
+                  created_at: new Date().toISOString()
+                };
+
+                // 添加到列表开头（最新的在前面）
+                cards.unshift(newCard);
+
+                // 保存回localStorage
+                localStorage.setItem('character_cards', JSON.stringify(cards));
+              } catch (e) {
+                console.error('保存角色卡失败:', e);
+              }
+
+              // 刷新角色卡列表
+              if (typeof loadRoles === 'function') {
+                loadRoles();
+              }
+            } else {
+              const maybePolicy = isContentPolicyViolation(`${logBufferAttempt || ''}\n${lastChunk || ''}`);
+              const isSb = !!(job.storyboard && job.storyboard.label);
+              const msg = maybePolicy
+                ? isSb
+                  ? '内容审查未通过（可修改分镜提示词后重试）'
+                  : '内容审查未通过（请调整提示词后重试）'
+                : '未返回媒体链接，可能被内容安全拦截或提示无效';
+              updateTask(taskId, {
+                status: 'error',
+                errorKind: maybePolicy ? 'policy' : '',
+                message: msg,
+                logTail: lastChunk,
+                logFull: logBufferAttempt || lastChunk,
+                progress: 0
+            });
+          }
+          }
+          return; // success
+        } catch (e) {
+          clearTimers();
+          const msg = e?.message || String(e);
+          if (retryCtl.cancelled) {
+            updateTask(taskId, { status: 'error', message: '已中断自动重试（可点击“重试”再次发起）' });
+            return;
+          }
+
+          // 仅“提交上游失败/网络瞬断（未进入进度阶段）”自动重试；避免已提交后重复下单
+          const retryableSubmit = isRetryable(msg) && !progressMarkerSeen && !watermarkWaitSeen && attempt <= MAX_RETRY;
+          if (retryableSubmit) {
+            const retryCount = attempt; // 第 1 次失败 -> 重试 1；第 2 次失败 -> 重试 2 ...
+            const delay = Math.min(1500 * Math.pow(2, Math.min(retryCount - 1, 5)), 15000);
+            const brief = String(msg || '未知错误').replace(/\s+/g, ' ').slice(0, 120);
+            updateTask(taskId, {
+              status: 'retrying',
+              retryMode: 'submit',
+              retryCount,
+              timedOut: false,
+              message: `上传失败，正在自动重试（${retryCount}）：${brief}`,
+              progress: 0
+            });
+            logTask(taskId, `上传失败：${brief}；${delay}ms 后自动重试（${retryCount}）`);
+            const ok = await sleepCancellable(delay, () => retryCtl.cancelled);
+            if (!ok) {
+              updateTask(taskId, { status: 'error', message: '已中断自动重试（可点击“重试”再次发起）' });
+              return;
+            }
+            continue;
+          }
+          const timeout =
+            /Failed to connect|timed out|Timeout|ETIMEDOUT|ENETUNREACH|ECONNABORTED|AbortError|aborted/i.test(msg);
+          const message = timeout ? '请求等待超时，可能上游仍在处理，请稍后重试' : msg;
+          log('错误: ' + message);
+          updateTask(taskId, {
+            status: 'error',
+            timedOut: timeout,
+            message,
+            logTail: '',
+            logFull: logBufferAttempt || msg,
+            progress: 0
+          });
+          showToast(message, timeout ? 'warn' : 'error', {
+            title: timeout ? '超时' : '请求失败',
+            duration: 4200
+          });
+          return;
+        }
+      }
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       } finally {
         retryCtl.abortFetch = null;
         taskRetryControls.delete(taskId);
@@ -3498,6 +4351,7 @@
 
       const prev = readyBtnTimer.get(btn);
       if (prev) clearTimeout(prev);
+<<<<<<< HEAD
       readyBtnTimer.set(
         btn,
         setTimeout(() => {
@@ -3510,6 +4364,20 @@
       /* ignore */
     }
   };
+=======
+        readyBtnTimer.set(
+          btn,
+          setTimeout(() => {
+            try {
+              btn.classList.remove('btn-ready');
+            } catch (_) {}
+          }, 2950)
+        );
+      } catch (_) {
+        /* ignore */
+      }
+    };
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
 
   const syncMainUploadUI = (opts = { quiet: true }) => {
     ensureMainFilePickerMode(getBatchType(), { quiet: !!(opts && opts.quiet) });
@@ -3594,8 +4462,13 @@
            <button type="button" class="pill-btn multi-remove multi-prompt-remove" data-idx="${idx}">删除</button>
          </div>
          <textarea class="input multi-prompt-input multi-prompt-textarea" data-idx="${idx}" placeholder="提示词 ${idx + 1}（可多行，建议描述镜头/主体/动作/风格）">${escapeHtml(
+<<<<<<< HEAD
             p.text ?? ''
           )}</textarea>
+=======
+           p.text ?? ''
+         )}</textarea>
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         <div class="multi-row-roles" data-row-roles="${idx}"></div>
       </div>`;
         })
@@ -3733,12 +4606,21 @@
   const cloneStoryboardRoles = (rolesArr) =>
     Array.isArray(rolesArr)
       ? rolesArr
+<<<<<<< HEAD
         .map((r) => ({
           display: r?.display || r?.display_name || r?.username || '',
           username: r?.username || '',
           avatar: r?.avatar || r?.avatar_path || ''
         }))
         .filter((r) => r.display || r.username || r.avatar)
+=======
+          .map((r) => ({
+            display: r?.display || r?.display_name || r?.username || '',
+            username: r?.username || '',
+            avatar: r?.avatar || r?.avatar_path || ''
+          }))
+          .filter((r) => r.display || r.username || r.avatar)
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       : [];
   const cloneStoryboardShots = (arr) =>
     (Array.isArray(arr) ? arr : []).map((s) => ({
@@ -4038,7 +4920,11 @@
       makeBtn('关闭', () => {
         try {
           document.body.removeChild(menu);
+<<<<<<< HEAD
         } catch (_) { }
+=======
+        } catch (_) {}
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       }, { dim: true })
     );
     menu.appendChild(foot);
@@ -4062,7 +4948,11 @@
       if (!menu.contains(e.target) && e.target !== anchorEl) {
         try {
           document.body.removeChild(menu);
+<<<<<<< HEAD
         } catch (_) { }
+=======
+        } catch (_) {}
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         document.removeEventListener('mousedown', dismiss);
       }
     };
@@ -4564,12 +5454,21 @@
             useGlobalRoles: s.useGlobalRoles === false || s.use_global_roles === false ? false : true,
             roles: Array.isArray(s.roles)
               ? s.roles
+<<<<<<< HEAD
                 .map((r) => ({
                   display: r.display || r.display_name || r.username || '',
                   username: r.username || '',
                   avatar: r.avatar || r.avatar_path || ''
                 }))
                 .filter((r) => r.display || r.username)
+=======
+                  .map((r) => ({
+                    display: r.display || r.display_name || r.username || '',
+                    username: r.username || '',
+                    avatar: r.avatar || r.avatar_path || ''
+                  }))
+                  .filter((r) => r.display || r.username)
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
               : []
           }));
         }
@@ -5357,7 +6256,11 @@
       menu.appendChild(
         makeBtn(inGlobal ? '全局（本模式）：已挂载（点此取消）' : '全局（本模式）：挂载到所有提示', () => toggleAttachedRoleMulti(roleObj))
       );
+<<<<<<< HEAD
       menu.appendChild(makeBtn('—— 挂载到单行 ——', () => { })).disabled = true;
+=======
+      menu.appendChild(makeBtn('—— 挂载到单行 ——', () => {})).disabled = true;
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       multiPrompts.forEach((p, idx) => {
         const row = multiPromptRoles[idx] || [];
         const inRow = uname ? row.some((r) => String(r?.username || '').trim() === uname) : false;
@@ -5370,7 +6273,11 @@
           toggleAttachedRoleStoryboard(roleObj)
         )
       );
+<<<<<<< HEAD
       menu.appendChild(makeBtn('—— 挂载到单镜 ——', () => { })).disabled = true;
+=======
+      menu.appendChild(makeBtn('—— 挂载到单镜 ——', () => {})).disabled = true;
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
       storyboardShots.forEach((s, idx) => {
         const roles = (s && Array.isArray(s.roles) ? s.roles : []) || [];
         const inShot = uname ? roles.some((r) => String(r?.username || '').trim() === uname) : false;
@@ -5957,7 +6864,11 @@
         setTimeout(() => {
           try {
             btnPreviewBatchDownload.removeAttribute('data-done');
+<<<<<<< HEAD
           } catch (_) { }
+=======
+          } catch (_) {}
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
         }, 1200);
         btnPreviewBatchDownload.textContent = oldText;
         previewBatchDownloading = false;
@@ -6703,12 +7614,21 @@
             useGlobalRoles: x && (x.useGlobalRoles === false || x.use_global_roles === false) ? false : true,
             roles: Array.isArray(x.roles)
               ? x.roles
+<<<<<<< HEAD
                 .map((r) => ({
                   display: r.display || r.display_name || r.username || '',
                   username: r.username || '',
                   avatar: r.avatar || r.avatar_path || ''
                 }))
                 .filter((r) => r.display || r.username)
+=======
+                  .map((r) => ({
+                    display: r.display || r.display_name || r.username || '',
+                    username: r.username || '',
+                    avatar: r.avatar || r.avatar_path || ''
+                  }))
+                  .filter((r) => r.display || r.username)
+>>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
               : []
           }));
         if (!storyboardShots.length) {
