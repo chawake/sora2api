@@ -326,7 +326,7 @@
       transform: translateY(-1px);
     }
 
-    /* “就绪”反馈：按钮从灰 -> 可点时给一个更明显的脉冲 + 扫光（分镜/多提示尤其重要） */
+    /* "Ready" feedback: Add a distinct pulse + shine sweep when the button changes from gray to clickable (Especially important for Storyboard/Multi-prompt) */
     @keyframes btnReadyPop {
       0% {
         transform: translateY(0) scale(1);
@@ -2369,7 +2369,7 @@
 <body>
   <div class="page">
     <div class="header">
-      <h1>Sora2 Generation Panel</h1>
+      <h1>Gen Hub</h1>
       <a href="https://linux.do/u/kongt/summary" target="_blank" class="badge"
         style="text-decoration: none; cursor: pointer;">@kongt</a>
     </div>
@@ -2384,7 +2384,7 @@
               <div class="role-head-actions">
                 <span id="roleCount" class="muted role-count">0</span>
                 <button id="btnRoleDense" class="pill-btn" type="button"
-                  title="Toggle Dense Mode (Better for many roles)">Dense</button>
+                  title="Toggle Compact Mode (Better for many roles)">Compact</button>
                 <button id="btnReloadRoles" class="pill-btn" type="button">Refresh</button>
               </div>
             </div>
@@ -2420,8 +2420,8 @@
             </div>
 
             <div id="roleList" class="roles" aria-live="polite"></div>
-            <p class="hint">Top: Drag to prompt box, or click 'Attach'. Favorites at top. Dense mode for large
-              libraries.</p>
+            <p class="hint">Drag to the prompt input, or click "Mount". Favorites are pinned to the top; Compact Mode is
+              better for libraries with many characters.</p>
           </aside>
           <div class="main-column">
             <section class="card form-panel"
@@ -2696,7 +2696,7 @@
                   </div>
                   <div class="task-actions-bar">
                     <button id="btnOnlyRunning" class="pill-btn">Running Only</button>
-                    <button id="btnPreviewDense" class="pill-btn">Dense Preview</button>
+                    <button id="btnPreviewDense" class="pill-btn">Compact Preview</button>
                     <button id="btnClearDone" class="pill-btn">Clear Failed</button>
                     <button id="btnClearAll" class="pill-btn">Clear All</button>
                   </div>
@@ -2783,6 +2783,14 @@
             <button id="btnEditStoryboardRetry" class="pill-btn active">Save & Retry</button>
           </div>
         </div>
+        <div class="modal-body">
+          <div class="hint" style="margin-bottom:10px; color:var(--muted);">
+            Only retries the current shot; does not affect others. Shortcut: Ctrl + Enter to Save & Retry.
+          </div>
+          <textarea id="editStoryboardTextarea" class="input"
+            placeholder="Modify this storyboard prompt (Safe phrasing recommended)"
+            style="min-height:220px;"></textarea>
+        </div>
       </div>
       <div id="toastHost" class="toast-host" aria-live="polite" aria-label="Hints"></div>
       <script src="/static/js/generate.js?v=20251214b"></script>
@@ -2808,36 +2816,3 @@
 </body>
 
 </html>
-=======
-只会重试当前分镜，不会影响其它分镜。快捷键：Ctrl + Enter 保存并重试。
-</div>
-<textarea id="editStoryboardTextarea" class="input" placeholder="请修改这条分镜提示词（建议用更安全的表达方式）"
-  style="min-height:220px;"></textarea>
-</div>
-</div>
-</div>
-<div id="toastHost" class="toast-host" aria-live="polite" aria-label="提示"></div>
-<script src="/static/js/generate.js?v=20251214b"></script>
-<script>
-  (function () {
-    const postHeight = () => {
-      const page = document.querySelector('.page');
-      const h = page
-        ? Math.ceil((page.getBoundingClientRect()?.height || 0) + (page.offsetTop || 0))
-        : document.documentElement.scrollHeight;
-      try {
-        window.parent.postMessage({ type: 'sora-generate-height', height: h }, '*');
-      } catch (e) {
-        console.warn('postMessage height failed', e);
-      }
-    };
-    window.addEventListener('load', postHeight);
-    window.addEventListener('resize', postHeight);
-    const ro = new ResizeObserver(() => postHeight());
-    ro.observe(document.body);
-  })();
-</script>
-</body>
-
-</html>
->>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
