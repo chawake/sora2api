@@ -779,9 +779,9 @@ class TokenManager:
                 user_info = await self.get_user_info(token_value, proxy_url=proxy_url)
                 username = user_info.get("username")
 
-            # If username is null, need to set one
-            if username is None:
-                print(f"⚠️  Username detected as null, need to set username")
+                # If username is null, need to set one
+                if username is None:
+                    print(f"⚠️  Username detected as null, need to set username")
 
                     # Generate random username
                     max_attempts = 5
