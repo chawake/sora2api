@@ -1,9 +1,7 @@
 """Admin routes - Management endpoints"""
 from fastapi import APIRouter, HTTPException, Depends, Header
-from fastapi.responses import FileResponse
 from typing import List, Optional
 from datetime import datetime
-from pathlib import Path
 import secrets
 from pydantic import BaseModel
 from ..core.auth import AuthManager
@@ -65,7 +63,6 @@ class AddTokenRequest(BaseModel):
     st: Optional[str] = None  # Session Token (optional, for storage)
     rt: Optional[str] = None  # Refresh Token (optional, for storage)
     client_id: Optional[str] = None  # Client ID (optional)
-    proxy_url: Optional[str] = None  # Proxy URL (optional)
     remark: Optional[str] = None
     image_enabled: bool = True  # Enable image generation
     video_enabled: bool = True  # Enable video generation
@@ -77,7 +74,6 @@ class ST2ATRequest(BaseModel):
 
 class RT2ATRequest(BaseModel):
     rt: str  # Refresh Token
-    client_id: Optional[str] = None  # Client ID (optional)
 
 class UpdateTokenStatusRequest(BaseModel):
     is_active: bool
@@ -87,7 +83,6 @@ class UpdateTokenRequest(BaseModel):
     st: Optional[str] = None
     rt: Optional[str] = None
     client_id: Optional[str] = None  # Client ID
-    proxy_url: Optional[str] = None  # Proxy URL
     remark: Optional[str] = None
     image_enabled: Optional[bool] = None  # Enable image generation
     video_enabled: Optional[bool] = None  # Enable video generation
@@ -95,13 +90,10 @@ class UpdateTokenRequest(BaseModel):
     video_concurrency: Optional[int] = None  # Video concurrency limit
 
 class ImportTokenItem(BaseModel):
-    email: str  # Email (primary key, required)
-    access_token: Optional[str] = None  # Access Token (AT, optional for st/rt modes)
+    email: str  # Email (primary key)
+    access_token: str  # Access Token (AT)
     session_token: Optional[str] = None  # Session Token (ST)
     refresh_token: Optional[str] = None  # Refresh Token (RT)
-    client_id: Optional[str] = None  # Client ID (optional, for compatibility)
-    proxy_url: Optional[str] = None  # Proxy URL (optional, for compatibility)
-    remark: Optional[str] = None  # Remark (optional, for compatibility)
     is_active: bool = True  # Active status
     image_enabled: bool = True  # Enable image generation
     video_enabled: bool = True  # Enable video generation
@@ -110,7 +102,6 @@ class ImportTokenItem(BaseModel):
 
 class ImportTokensRequest(BaseModel):
     tokens: List[ImportTokenItem]
-    mode: str = "at"  # Import mode: offline/at/st/rt
 
 class UpdateAdminConfigRequest(BaseModel):
     error_ban_threshold: int
@@ -181,7 +172,6 @@ async def get_tokens(token: str = Depends(verify_admin_token)) -> List[dict]:
             "st": token.st,  # Complete Session Token
             "rt": token.rt,  # Complete Refresh Token
             "client_id": token.client_id,  # Client ID
-            "proxy_url": token.proxy_url,  # Proxy URL
             "email": token.email,
             "name": token.name,
             "remark": token.remark,
@@ -224,7 +214,6 @@ async def add_token(request: AddTokenRequest, token: str = Depends(verify_admin_
             st=request.st,
             rt=request.rt,
             client_id=request.client_id,
-            proxy_url=request.proxy_url,
             remark=request.remark,
             update_if_exists=False,
             image_enabled=request.image_enabled,
@@ -239,12 +228,12 @@ async def add_token(request: AddTokenRequest, token: str = Depends(verify_admin_
                 image_concurrency=request.image_concurrency,
                 video_concurrency=request.video_concurrency
             )
-        return {"success": True, "message": "Token 添加成功", "token_id": new_token.id}
+        return {"success": True, "message": "Token added successfully", "token_id": new_token.id}
     except ValueError as e:
         # Token already exists
         raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"添加 Token 失败: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Failed to add Token: {str(e)}")
 
 @router.post("/api/tokens/st2at")
 async def st_to_at(request: ST2ATRequest, token: str = Depends(verify_admin_token)):
@@ -265,7 +254,7 @@ async def st_to_at(request: ST2ATRequest, token: str = Depends(verify_admin_toke
 async def rt_to_at(request: RT2ATRequest, token: str = Depends(verify_admin_token)):
     """Convert Refresh Token to Access Token (only convert, not add to database)"""
     try:
-        result = await token_manager.rt_to_at(request.rt, client_id=request.client_id)
+        result = await token_manager.rt_to_at(request.rt)
         return {
             "success": True,
             "message": "RT converted to AT successfully",
@@ -350,87 +339,26 @@ async def delete_token(token_id: int, token: str = Depends(verify_admin_token)):
 
 @router.post("/api/tokens/import")
 async def import_tokens(request: ImportTokensRequest, token: str = Depends(verify_admin_token)):
-    """Import tokens with different modes: offline/at/st/rt"""
-    mode = request.mode  # offline/at/st/rt
-    added_count = 0
-    updated_count = 0
-    failed_count = 0
-    results = []
+    """Import tokens in append mode (update if exists, add if not)"""
+    try:
+        added_count = 0
+        updated_count = 0
 
-    for import_item in request.tokens:
-        try:
-            # Step 1: Get or convert access_token based on mode
-            access_token = None
-            skip_status = False
-
-            if mode == "offline":
-                # Offline mode: use provided AT, skip status update
-                if not import_item.access_token:
-                    raise ValueError("离线导入模式需要提供 access_token")
-                access_token = import_item.access_token
-                skip_status = True
-
-            elif mode == "at":
-                # AT mode: use provided AT, update status (current logic)
-                if not import_item.access_token:
-                    raise ValueError("AT导入模式需要提供 access_token")
-                access_token = import_item.access_token
-                skip_status = False
-
-            elif mode == "st":
-                # ST mode: convert ST to AT, update status
-                if not import_item.session_token:
-                    raise ValueError("ST导入模式需要提供 session_token")
-                # Convert ST to AT
-                st_result = await token_manager.st_to_at(
-                    import_item.session_token,
-                    proxy_url=import_item.proxy_url
-                )
-                access_token = st_result["access_token"]
-                # Update email if API returned it
-                if "email" in st_result and st_result["email"]:
-                    import_item.email = st_result["email"]
-                skip_status = False
-
-            elif mode == "rt":
-                # RT mode: convert RT to AT, update status
-                if not import_item.refresh_token:
-                    raise ValueError("RT导入模式需要提供 refresh_token")
-                # Convert RT to AT
-                rt_result = await token_manager.rt_to_at(
-                    import_item.refresh_token,
-                    client_id=import_item.client_id,
-                    proxy_url=import_item.proxy_url
-                )
-                access_token = rt_result["access_token"]
-                # Update RT if API returned new one
-                if "refresh_token" in rt_result and rt_result["refresh_token"]:
-                    import_item.refresh_token = rt_result["refresh_token"]
-                # Update email if API returned it
-                if "email" in rt_result and rt_result["email"]:
-                    import_item.email = rt_result["email"]
-                skip_status = False
-            else:
-                raise ValueError(f"不支持的导入模式: {mode}")
-
-            # Step 2: Check if token with this email already exists
+        for import_item in request.tokens:
+            # Check if token with this email already exists
             existing_token = await db.get_token_by_email(import_item.email)
 
             if existing_token:
                 # Update existing token
                 await token_manager.update_token(
                     token_id=existing_token.id,
-                    token=access_token,
+                    token=import_item.access_token,
                     st=import_item.session_token,
                     rt=import_item.refresh_token,
-                    client_id=import_item.client_id,
-                    proxy_url=import_item.proxy_url,
-                    remark=import_item.remark,
                     image_enabled=import_item.image_enabled,
                     video_enabled=import_item.video_enabled,
                     image_concurrency=import_item.image_concurrency,
-                    video_concurrency=import_item.video_concurrency,
-                    skip_status_update=skip_status
+                    video_concurrency=import_item.video_concurrency
                 )
                 # Update active status
                 await token_manager.update_token_status(existing_token.id, import_item.is_active)
@@ -442,27 +370,17 @@ async def import_tokens(request: ImportTokensRequest, token: str = Depends(verif
                         video_concurrency=import_item.video_concurrency
                     )
                 updated_count += 1
-                results.append({
-                    "email": import_item.email,
-                    "status": "updated",
-                    "success": True
-                })
             else:
                 # Add new token
                 new_token = await token_manager.add_token(
-                    token_value=access_token,
+                    token_value=import_item.access_token,
                     st=import_item.session_token,
                     rt=import_item.refresh_token,
-                    client_id=import_item.client_id,
-                    proxy_url=import_item.proxy_url,
-                    remark=import_item.remark,
                     update_if_exists=False,
                     image_enabled=import_item.image_enabled,
                     video_enabled=import_item.video_enabled,
                     image_concurrency=import_item.image_concurrency,
-                    video_concurrency=import_item.video_concurrency,
-                    skip_status_update=skip_status,
-                    email=import_item.email  # Pass email for offline mode
+                    video_concurrency=import_item.video_concurrency
                 )
                 # Set active status
                 if not import_item.is_active:
@@ -475,28 +393,15 @@ async def import_tokens(request: ImportTokensRequest, token: str = Depends(verif
                         video_concurrency=import_item.video_concurrency
                     )
                 added_count += 1
-                results.append({
-                    "email": import_item.email,
-                    "status": "added",
-                    "success": True
-                })
-        except Exception as e:
-            failed_count += 1
-            results.append({
-                "email": import_item.email,
-                "status": "failed",
-                "success": False,
-                "error": str(e)
-            })
 
-    return {
-        "success": True,
-        "message": f"Import completed ({mode} mode): {added_count} added, {updated_count} updated, {failed_count} failed",
-        "added": added_count,
-        "updated": updated_count,
-        "failed": failed_count,
-        "results": results
-    }
+        return {
+            "success": True,
+            "message": f"Import completed: {added_count} added, {updated_count} updated",
+            "added": added_count,
+            "updated": updated_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Import failed: {str(e)}")
 
 @router.put("/api/tokens/{token_id}")
 async def update_token(
@@ -504,7 +409,7 @@ async def update_token(
     request: UpdateTokenRequest,
     token: str = Depends(verify_admin_token)
 ):
-    """Update token (AT, ST, RT, proxy_url, remark, image_enabled, video_enabled, concurrency limits)"""
+    """Update token (AT, ST, RT, remark, image_enabled, video_enabled, concurrency limits)"""
     try:
         await token_manager.update_token(
             token_id=token_id,
@@ -512,7 +417,6 @@ async def update_token(
             st=request.st,
             rt=request.rt,
             client_id=request.client_id,
-            proxy_url=request.proxy_url,
             remark=request.remark,
             image_enabled=request.image_enabled,
             video_enabled=request.video_enabled,
@@ -605,13 +509,6 @@ async def update_api_key(
 ):
     """Update API key"""
     try:
-        # Get current admin config from database
-        admin_config = await db.get_admin_config()
-
-        # Update api_key in database
-        admin_config.api_key = request.new_api_key
-        await db.update_admin_config(admin_config)
-
         # Update in-memory config
         config.api_key = request.new_api_key
 
@@ -744,12 +641,12 @@ async def activate_sora2(
 
         if result.get("success"):
             # Get new invite code after activation
-            sora2_info = await token_manager.get_sora2_invite_code(token_obj.token, token_id)
+            sora2_info = await token_manager.get_sora2_invite_code(token_obj.token)
 
             # Get remaining count
             sora2_remaining_count = 0
             try:
-                remaining_info = await token_manager.get_sora2_remaining_count(token_obj.token, token_id)
+                remaining_info = await token_manager.get_sora2_remaining_count(token_obj.token)
                 if remaining_info.get("success"):
                     sora2_remaining_count = remaining_info.get("remaining_count", 0)
             except Exception as e:
@@ -787,44 +684,19 @@ async def activate_sora2(
 # Logs endpoints
 @router.get("/api/logs")
 async def get_logs(limit: int = 100, token: str = Depends(verify_admin_token)):
-    """Get recent logs with token email and task progress"""
+    """Get recent logs with token email"""
     logs = await db.get_recent_logs(limit)
-    result = []
-    for log in logs:
-        log_data = {
-            "id": log.get("id"),
-            "token_id": log.get("token_id"),
-            "token_email": log.get("token_email"),
-            "token_username": log.get("token_username"),
-            "operation": log.get("operation"),
-            "status_code": log.get("status_code"),
-            "duration": log.get("duration"),
-            "watermark_method": log.get("watermark_method"),
-            "created_at": log.get("created_at"),
-            "request_body": log.get("request_body"),
-            "response_body": log.get("response_body"),
-            "task_id": log.get("task_id")
-        }
-
-        # If task_id exists and status is in-progress, get task progress
-        if log.get("task_id") and log.get("status_code") == -1:
-            task = await db.get_task(log.get("task_id"))
-            if task:
-                log_data["progress"] = task.progress
-                log_data["task_status"] = task.status
-
-        result.append(log_data)
-
-    return result
-
-@router.delete("/api/logs")
-async def clear_logs(token: str = Depends(verify_admin_token)):
-    """Clear all logs"""
-    try:
-        await db.clear_all_logs()
-        return {"success": True, "message": "所有日志已清空"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return [{
+        "id": log.get("id"),
+        "token_id": log.get("token_id"),
+        "token_email": log.get("token_email"),
+        "token_username": log.get("token_username"),
+        "operation": log.get("operation"),
+        "status_code": log.get("status_code"),
+        "duration": log.get("duration"),
+        "watermark_method": log.get("watermark_method"),
+        "created_at": log.get("created_at")
+    } for log in logs]
 
 # Cache config endpoints
 @router.post("/api/cache/config")
@@ -834,13 +706,11 @@ async def update_cache_timeout(
 ):
     """Update cache timeout"""
     try:
-        # Allow -1 for never delete, otherwise must be between 60-86400
-        if request.timeout != -1:
-            if request.timeout < 60:
-                raise HTTPException(status_code=400, detail="Cache timeout must be at least 60 seconds or -1 for never delete")
+        if request.timeout < 60:
+            raise HTTPException(status_code=400, detail="Cache timeout must be at least 60 seconds")
 
-            if request.timeout > 86400:
-                raise HTTPException(status_code=400, detail="Cache timeout cannot exceed 24 hours (86400 seconds)")
+        if request.timeout > 86400:
+            raise HTTPException(status_code=400, detail="Cache timeout cannot exceed 24 hours (86400 seconds)")
 
         # Update in-memory config
         config.set_cache_timeout(request.timeout)
@@ -852,10 +722,9 @@ async def update_cache_timeout(
         if generation_handler:
             generation_handler.file_cache.set_timeout(request.timeout)
 
-        timeout_msg = "never delete" if request.timeout == -1 else f"{request.timeout} seconds"
         return {
             "success": True,
-            "message": f"Cache timeout updated to {timeout_msg}",
+            "message": f"Cache timeout updated to {request.timeout} seconds",
             "timeout": request.timeout
         }
     except HTTPException:

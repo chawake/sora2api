@@ -37,17 +37,9 @@
     <header class="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur">
         <div class="mx-auto flex h-14 max-w-7xl items-center px-6">
             <div class="mr-4 flex items-baseline gap-3">
-                <span class="font-bold text-xl">Sora2API</span>
+                <span class="font-bold text-xl">Sora API</span>
             </div>
             <div class="flex flex-1 items-center justify-end gap-3">
-                <a href="https://github.com/TheSmallHanCat/sora2api" target="_blank"
-                    class="inline-flex items-center justify-center text-xs transition-colors hover:bg-accent hover:text-accent-foreground h-7 px-2.5"
-                    title="GitHub Repository">
-                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v 3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                    </svg>
-                </a>
                 <button onclick="logout()"
                     class="inline-flex items-center justify-center text-xs transition-colors hover:bg-accent hover:text-accent-foreground h-7 px-2.5 gap-1">
                     <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -69,17 +61,16 @@
                 <button onclick="switchTab('tokens')" id="tabTokens"
                     class="tab-btn border-b-2 border-primary text-sm font-medium py-3 px-1">Token Management</button>
                 <button onclick="switchTab('settings')" id="tabSettings"
-                    class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">System Config</button>
+                    class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">System
+                    Configuration</button>
                 <button onclick="switchTab('logs')" id="tabLogs"
                     class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">Request Logs</button>
-                <button onclick="switchTab('generate')" id="tabGenerate"
-                    class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">Generate</button>
             </nav>
         </div>
 
         <!-- Token Management Panel -->
         <div id="panelTokens">
-            <!-- Statistics Cards -->
+            <!-- 统计卡片 -->
             <div class="grid gap-4 grid-cols-2 md:grid-cols-5 mb-6">
                 <div class="rounded-lg border border-border bg-background p-4">
                     <p class="text-sm font-medium text-muted-foreground mb-2">Total Tokens</p>
@@ -90,15 +81,15 @@
                     <h3 class="text-xl font-bold text-green-600" id="statActive">-</h3>
                 </div>
                 <div class="rounded-lg border border-border bg-background p-4">
-                    <p class="text-sm font-medium text-muted-foreground mb-2">Images (Today/Total)</p>
+                    <p class="text-sm font-medium text-muted-foreground mb-2">Today/Total Images</p>
                     <h3 class="text-xl font-bold text-blue-600" id="statImages">-</h3>
                 </div>
                 <div class="rounded-lg border border-border bg-background p-4">
-                    <p class="text-sm font-medium text-muted-foreground mb-2">Videos (Today/Total)</p>
+                    <p class="text-sm font-medium text-muted-foreground mb-2">Today/Total Videos</p>
                     <h3 class="text-xl font-bold text-purple-600" id="statVideos">-</h3>
                 </div>
                 <div class="rounded-lg border border-border bg-background p-4">
-                    <p class="text-sm font-medium text-muted-foreground mb-2">Errors (Today/Total)</p>
+                    <p class="text-sm font-medium text-muted-foreground mb-2">Today/Total Errors</p>
                     <h3 class="text-xl font-bold text-destructive" id="statErrors">-</h3>
                 </div>
             </div>
@@ -122,7 +113,7 @@
                                 <!-- Tooltip -->
                                 <div
                                     class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                    Auto use ST/RT to refresh AT when Token expires in <24h <div
+                                    Auto refresh AT using ST or RT when Token expires in <24h <div
                                         class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900">
                                 </div>
                             </div>
@@ -180,15 +171,18 @@
                             <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Status</th>
                             <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Client ID
                             </th>
-                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Expires</th>
-                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Plan</th>
+                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Expiration
+                            </th>
+                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Account Type
+                            </th>
                             <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Sora2</th>
-                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Rem.</th>
-                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Img</th>
-                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Vid</th>
-                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Err</th>
-                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Note</th>
-                            <th class="h-10 px-3 text-right align-middle font-medium text-muted-foreground">Action</th>
+                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Available
+                            </th>
+                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Images</th>
+                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Videos</th>
+                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Errors</th>
+                            <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">Remark</th>
+                            <th class="h-10 px-3 text-right align-middle font-medium text-muted-foreground">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="tokenTableBody" class="divide-y divide-border">
@@ -202,9 +196,9 @@
         <!-- System Configuration Panel -->
         <div id="panelSettings" class="hidden">
             <div class="grid gap-6 lg:grid-cols-2">
-                <!-- Security Settings -->
+                <!-- Security Configuration -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">Security Settings</h3>
+                    <h3 class="text-lg font-semibold mb-4">Security Configuration</h3>
                     <div class="space-y-4">
                         <div>
                             <label class="text-sm font-medium mb-2 block">Admin Username</label>
@@ -230,9 +224,9 @@
                     </div>
                 </div>
 
-                <!-- API Key Settings -->
+                <!-- API Key Configuration -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">API Key Settings</h3>
+                    <h3 class="text-lg font-semibold mb-4">API Key Configuration</h3>
                     <div class="space-y-4">
                         <div>
                             <label class="text-sm font-medium mb-2 block">Current API Key</label>
@@ -254,9 +248,9 @@
                     </div>
                 </div>
 
-                <!-- Proxy Settings -->
+                <!-- Proxy Configuration -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">Proxy Settings</h3>
+                    <h3 class="text-lg font-semibold mb-4">Proxy Configuration</h3>
                     <div class="space-y-4">
                         <div>
                             <label class="inline-flex items-center gap-2 cursor-pointer">
@@ -269,17 +263,17 @@
                             <input id="cfgProxyUrl"
                                 class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 placeholder="http://127.0.0.1:7890 or socks5://127.0.0.1:1080">
-                            <p class="text-xs text-muted-foreground mt-1">Supports HTTP and SOCKS5 proxy</p>
+                            <p class="text-xs text-muted-foreground mt-1">Supports HTTP and SOCKS5 proxies</p>
                         </div>
                         <button onclick="saveProxyConfig()"
                             class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save
-                            Config</button>
+                            Configuration</button>
                     </div>
                 </div>
 
-                <!-- Error Handling Settings -->
+                <!-- Error Handling Configuration -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">Error Handling Settings</h3>
+                    <h3 class="text-lg font-semibold mb-4">Error Handling Configuration</h3>
                     <div class="space-y-4">
                         <div>
                             <label class="text-sm font-medium mb-2 block">Error Ban Threshold</label>
@@ -291,13 +285,13 @@
                         </div>
                         <button onclick="saveAdminConfig()"
                             class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save
-                            Config</button>
+                            Configuration</button>
                     </div>
                 </div>
 
-                <!-- Cache Settings -->
+                <!-- Cache Configuration -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">Cache Settings</h3>
+                    <h3 class="text-lg font-semibold mb-4">Cache Configuration</h3>
                     <div class="space-y-4">
                         <div>
                             <label class="inline-flex items-center gap-2 cursor-pointer">
@@ -306,18 +300,18 @@
                                 <span class="text-sm font-medium">Enable Cache</span>
                             </label>
                             <p class="text-xs text-muted-foreground mt-1">If disabled, generated images and videos will
-                                output original links directly and will not be cached locally.</p>
+                                output original links directly and will not be cached locally</p>
                         </div>
 
                         <!-- Cache Configuration Options -->
                         <div id="cacheOptions" style="display: none;" class="space-y-4 pt-4 border-t border-border">
                             <div>
-                                <label class="text-sm font-medium mb-2 block">Cache Timeout (seconds)</label>
+                                <label class="text-sm font-medium mb-2 block">Cache Timeout (Seconds)</label>
                                 <input id="cfgCacheTimeout" type="number"
                                     class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                    placeholder="7200" min="-1" max="86400">
+                                    placeholder="7200" min="60" max="86400">
                                 <p class="text-xs text-muted-foreground mt-1">File cache timeout, range: 60-86400
-                                    seconds (1 minute - 24 hours), -1 means never auto-delete</p>
+                                    seconds (1 minute - 24 hours)</p>
                             </div>
                             <div>
                                 <label class="text-sm font-medium mb-2 block">Cache File Access Domain</label>
@@ -329,59 +323,60 @@
                             </div>
                             <div id="cacheEffectiveUrl" class="rounded-md bg-muted p-3 hidden">
                                 <p class="text-xs text-muted-foreground">
-                                    <strong>🌐 Currently effective access address:</strong><code
-                                        id="cacheEffectiveUrlValue" class="bg-background px-1 py-0.5 rounded"></code>
+                                    <strong>🌐 Current Effective Access URL:</strong><code id="cacheEffectiveUrlValue"
+                                        class="bg-background px-1 py-0.5 rounded"></code>
                                 </p>
                             </div>
                         </div>
 
                         <button onclick="saveCacheConfig()"
                             class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save
-                            Config</button>
+                            Configuration</button>
                     </div>
                 </div>
 
-                <!-- Generation Timeout Settings -->
+                <!-- Generation Timeout Configuration -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">Generation Timeout Settings</h3>
+                    <h3 class="text-lg font-semibold mb-4">Generation Timeout Configuration</h3>
                     <div class="space-y-4">
                         <div>
-                            <label class="text-sm font-medium mb-2 block">Image Generation Timeout (s)</label>
+                            <label class="text-sm font-medium mb-2 block">Image Generation Timeout (Seconds)</label>
                             <input id="cfgImageTimeout" type="number"
                                 class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 placeholder="300" min="60" max="3600">
-                            <p class="text-xs text-muted-foreground mt-1">Range: 60-3600s (1min-1h), auto-release lock
-                                on timeout
+                            <p class="text-xs text-muted-foreground mt-1">Image generation timeout, range: 60-3600
+                                seconds (1 minute - 1 hour), token lock automatically released after timeout
                             </p>
                         </div>
                         <div>
-                            <label class="text-sm font-medium mb-2 block">Video Generation Timeout (s)</label>
+                            <label class="text-sm font-medium mb-2 block">Video Generation Timeout (Seconds)</label>
                             <input id="cfgVideoTimeout" type="number"
                                 class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 placeholder="1500" min="60" max="7200">
-                            <p class="text-xs text-muted-foreground mt-1">Range: 60-7200s (1min-2h), returns upstream
-                                error ontimeout
+                            <p class="text-xs text-muted-foreground mt-1">Video generation timeout, range: 60-7200
+                                seconds (1 minute - 2 hours), returns upstream API timeout error after timeout
                             </p>
                         </div>
                         <button onclick="saveGenerationTimeout()"
                             class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save
-                            Config</button>
+                            Configuration</button>
                     </div>
                 </div>
 
-                <!-- Watermark-Free Mode Settings -->
+                <!-- No-Watermark Mode Configuration -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">Watermark-Free Mode Settings</h3>
+                    <h3 class="text-lg font-semibold mb-4">No-Watermark Mode Configuration</h3>
                     <div class="space-y-4">
                         <div>
                             <label class="inline-flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" id="cfgWatermarkFreeEnabled" class="h-4 w-4 rounded border-input"
                                     onchange="toggleWatermarkFreeOptions()">
-                                <span class="text-sm font-medium">Enable Watermark-Free Mode</span>
+                                <span class="text-sm font-medium">Enable No-Watermark Mode</span>
                             </label>
                             <p class="text-xs text-muted-foreground mt-2">
-                                When enabled, generated videos will be published to Sora platform to get watermark-free
-                                version. Published videos are auto-deleted after local caching.</p>
+                                When enabled, generated videos will be published to the Sora platform to extract
+                                no-watermark videos. Published videos will be automatically deleted after local caching.
+                            </p>
                         </div>
 
                         <!-- Parse Method Selection -->
@@ -425,13 +420,13 @@
 
                         <button onclick="saveWatermarkFreeConfig()"
                             class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">Save
-                            Config</button>
+                            Configuration</button>
                     </div>
                 </div>
 
-                <!-- Debug Settings -->
+                <!-- Debug Configuration -->
                 <div class="rounded-lg border border-border bg-background p-6">
-                    <h3 class="text-lg font-semibold mb-4">Debug Settings</h3>
+                    <h3 class="text-lg font-semibold mb-4">Debug Configuration</h3>
                     <div class="space-y-4">
                         <div>
                             <label class="inline-flex items-center gap-2 cursor-pointer">
@@ -439,29 +434,16 @@
                                     onchange="toggleDebugMode()">
                                 <span class="text-sm font-medium">Enable Debug Mode</span>
                             </label>
-                            <p class="text-xs text-muted-foreground mt-2">Enabled: Detailed upstream API
-                                request/response logs will be written to <code
-                                    class="bg-muted px-1 py-0.5 rounded">logs.txt</code>, effective immediately</p>
-                        </div>
-                        <div>
-                            <button onclick="downloadDebugLogs()"
-                                class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 text-sm font-medium transition-colors">
-                                <svg class="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="7 10 12 15 17 10" />
-                                    <line x1="12" y1="15" x2="12" y2="3" />
-                                </svg>
-                                Download Log File
-                            </button>
-                            <p class="text-xs text-muted-foreground mt-2">Download complete debug log file (logs.txt)
-                            </p>
+                            <p class="text-xs text-muted-foreground mt-2">When enabled, detailed upstream API request
+                                and response logs will be written to <code
+                                    class="bg-muted px-1 py-0.5 rounded">logs.txt</code> file, requires restart to take
+                                effect</p>
                         </div>
                         <div
                             class="rounded-md bg-yellow-50 dark:bg-yellow-900/20 p-3 border border-yellow-200 dark:border-yellow-800">
                             <p class="text-xs text-yellow-800 dark:text-yellow-200">
-                                ⚠️ <strong>Warning:</strong> Debug mode generates massive logs, enable only for
-                                debugging to save disk space
+                                ⚠️ <strong>Note:</strong> Debug mode generates a huge amount of logs, only enable for
+                                debugging, otherwise disk usage will explode
                             </p>
                         </div>
                     </div>
@@ -503,20 +485,17 @@
                         <thead class="sticky top-0 bg-background">
                             <tr class="border-b border-border">
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground w-32">
-                                    Operation
-                                </th>
+                                    Actions</th>
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground w-40">
                                     Token Email</th>
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground w-20">
-                                    Status Code
-                                </th>
+                                    Status Code</th>
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground w-24">
-                                    Duration(s)</th>
+                                    Duration (s)</th>
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground w-44">Time
                                 </th>
                                 <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground w-20">
-                                    Details
-                                </th>
+                                    Details</th>
                             </tr>
                         </thead>
                         <tbody id="logsTableBody" class="divide-y divide-border">
@@ -527,14 +506,7 @@
             </div>
         </div>
 
-        <!-- Generation Panel (Single-layer embed, full width) -->
-        <div id="panelGenerate" class="hidden" style="background: #ffffff;">
-            <iframe id="generateFrame" src="/static/generate.html" class="w-full"
-                style="border: 0; background: #ffffff; display:block; width:100%; height: 800px;"
-                loading="lazy"></iframe>
-        </div>
-
-        <!-- Log Detail Modal -->
+        <!-- Log Details Modal -->
         <div id="logDetailModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
             <div
                 class="bg-background rounded-lg border border-border w-full max-w-3xl shadow-xl max-h-[80vh] flex flex-col">
@@ -556,9 +528,12 @@
             </div>
         </div>
 
-        <!-- footer -->
+        <!-- Footer -->
         <footer class="mt-12 pt-6 border-t border-border text-center text-xs text-muted-foreground">
-            <p> 2025 Chawake. All rights reserved.</p>
+            <p> 2025 <a href="https://linux.do/u/thesmallhancat/summary" target="_blank"
+                    class="no-underline hover:underline" style="color: inherit;">Labs</a> && <a
+                    href="https://linux.do/u/tibbar/summary" target="_blank" class="no-underline hover:underline"
+                    style="color: inherit;">Cha</a>. All rights reserved.</p>
         </footer>
     </main>
 
@@ -583,7 +558,7 @@
                     <textarea id="addTokenAT" rows="3"
                         class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none"
                         placeholder="Enter Access Token or use ST/RT conversion below"></textarea>
-                    <p class="text-xs text-muted-foreground">Format: eyJh... (JWT)</p>
+                    <p class="text-xs text-muted-foreground">Format: eyJh... (JWT Format)</p>
                 </div>
 
                 <!-- Session Token -->
@@ -617,8 +592,8 @@
                         </button>
                     </div>
                     <p class="text-xs text-muted-foreground">Get from mobile or other clients</p>
-                    <p id="addRTRefreshHint" class="text-xs text-green-600 font-medium hidden"> RT verified and
-                        refreshed</p>
+                    <p id="addRTRefreshHint" class="text-xs text-green-600 font-medium hidden">✓ RT has been refreshed,
+                        updated RT filled in</p>
                 </div>
 
                 <!-- Client ID -->
@@ -631,24 +606,13 @@
                     <p class="text-xs text-muted-foreground">Used for RT refresh, leave empty for default Client ID</p>
                 </div>
 
-                <!-- Proxy URL -->
-                <div class="space-y-2">
-                    <label class="text-sm font-medium">Proxy <span class="text-muted-foreground text-xs">-
-                            Optional</span></label>
-                    <input id="addTokenProxyUrl"
-                        class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
-                        placeholder="http://127.0.0.1:7890 or socks5://127.0.0.1:1080">
-                    <p class="text-xs text-muted-foreground">Supports http and socks5 proxies, leave empty to use system
-                        proxy</p>
-                </div>
-
                 <!-- Remark -->
                 <div class="space-y-2">
                     <label class="text-sm font-medium">Remark <span class="text-muted-foreground text-xs">-
                             Optional</span></label>
                     <input id="addTokenRemark"
                         class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        placeholder="Add remark">
+                        placeholder="Add remark info">
                 </div>
 
                 <!-- Feature Toggles -->
@@ -664,7 +628,7 @@
                             <input type="number" id="addTokenImageConcurrency" value="-1"
                                 class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm"
                                 placeholder="Concurrency"
-                                title="Concurrency limit: max simultaneous requests. -1 for unlimited">
+                                title="Concurrency Limit: Set max simultaneous requests. -1 means unlimited">
                         </div>
                     </div>
                     <div class="space-y-2">
@@ -677,7 +641,7 @@
                             <input type="number" id="addTokenVideoConcurrency" value="-1"
                                 class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm"
                                 placeholder="Concurrency"
-                                title="Concurrency limit: max simultaneous requests. -1 for unlimited">
+                                title="Concurrency Limit: Set max simultaneous requests. -1 means unlimited">
                         </div>
                     </div>
                 </div>
@@ -724,7 +688,7 @@
                     <textarea id="editTokenAT" rows="3"
                         class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none"
                         placeholder="Enter Access Token or use ST/RT conversion below"></textarea>
-                    <p class="text-xs text-muted-foreground">Format: eyJh... (JWT)</p>
+                    <p class="text-xs text-muted-foreground">Format: eyJh... (JWT Format)</p>
                 </div>
 
                 <!-- Session Token -->
@@ -758,8 +722,8 @@
                         </button>
                     </div>
                     <p class="text-xs text-muted-foreground">Get from mobile or other clients</p>
-                    <p id="editRTRefreshHint" class="text-xs text-green-600 font-medium hidden">✓ RT verified and
-                        refreshed</p>
+                    <p id="editRTRefreshHint" class="text-xs text-green-600 font-medium hidden">✓ RT has been refreshed,
+                        updated RT filled in</p>
                 </div>
 
                 <!-- Client ID -->
@@ -772,27 +736,16 @@
                     <p class="text-xs text-muted-foreground">Used for RT refresh, leave empty for default Client ID</p>
                 </div>
 
-                <!-- Proxy URL -->
-                <div class="space-y-2">
-                    <label class="text-sm font-medium">Proxy <span class="text-muted-foreground text-xs">-
-                            Optional</span></label>
-                    <input id="editTokenProxyUrl"
-                        class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
-                        placeholder="http://127.0.0.1:7890 or socks5://127.0.0.1:1080">
-                    <p class="text-xs text-muted-foreground">Supports http and socks5 proxies, leave empty to use system
-                        proxy</p>
-                </div>
-
                 <!-- Remark -->
                 <div class="space-y-2">
                     <label class="text-sm font-medium">Remark <span class="text-muted-foreground text-xs">-
                             Optional</span></label>
                     <input id="editTokenRemark"
                         class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        placeholder="Add remark">
+                        placeholder="Add remark info">
                 </div>
 
-                <!-- 功能开关 -->
+                <!-- Feature Toggles -->
                 <div class="space-y-3 pt-2 border-t border-border">
                     <label class="text-sm font-medium">Feature Toggles</label>
                     <div class="space-y-2">
@@ -804,7 +757,7 @@
                             <input type="number" id="editTokenImageConcurrency"
                                 class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm"
                                 placeholder="Concurrency"
-                                title="Concurrency limit: max simultaneous requests. -1 for unlimited">
+                                title="Concurrency Limit: Set max simultaneous requests. -1 means unlimited">
                         </div>
                     </div>
                     <div class="space-y-2">
@@ -816,7 +769,7 @@
                             <input type="number" id="editTokenVideoConcurrency"
                                 class="flex h-8 w-20 rounded-md border border-input bg-background px-2 py-1 text-sm"
                                 placeholder="Concurrency"
-                                title="Concurrency limit: max simultaneous requests. -1 for unlimited">
+                                title="Concurrency Limit: Set max simultaneous requests. -1 means unlimited">
                         </div>
                     </div>
                 </div>
@@ -840,7 +793,7 @@
         </div>
     </div>
 
-    <!-- Sora2 Activation Modal -->
+    <!-- Sora2 Activate Modal -->
     <div id="sora2Modal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
         <div class="bg-background rounded-lg border border-border w-full max-w-md shadow-xl">
             <div class="flex items-center justify-between p-5 border-b border-border">
@@ -859,7 +812,7 @@
                     <label class="text-sm font-medium mb-2 block">Sora2 Invite Code</label>
                     <input id="sora2InviteCode"
                         class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        placeholder="Enter 6-digit invite code, e.g. 0ZSKEG">
+                        placeholder="Enter 6-digit invite code, e.g., 0ZSKEG">
                     <p class="text-xs text-muted-foreground mt-1">Enter Sora2 invite code to activate Sora2 feature for
                         this Token</p>
                 </div>
@@ -903,48 +856,9 @@
                         class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                     <p class="text-xs text-muted-foreground mt-1">Select exported Token JSON file to import</p>
                 </div>
-                <div>
-                    <label class="text-sm font-medium mb-2 block">Select Import Mode</label>
-                    <select id="importMode" onchange="updateImportModeHint()"
-                        class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                        <option value="at">Prefer AT Import (Recommended)</option>
-                        <option value="offline">Offline Import (Skip account status update)</option>
-                        <option value="st">Prefer ST Import</option>
-                        <option value="rt">Prefer RT Import</option>
-                    </select>
-                    <p id="importModeHint" class="text-xs text-muted-foreground mt-1">Use AT to update account status
-                        (subscription, Sora2 limits, etc.)</p>
-                </div>
-                <div class="rounded-md bg-gray-50 dark:bg-gray-900/20 p-3 border border-gray-200 dark:border-gray-800">
-                    <p class="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-2">📋 Import Mode Guide</p>
-                    <div class="space-y-1.5 text-xs text-gray-700 dark:text-gray-300">
-                        <div class="flex items-start gap-2">
-                            <span class="font-medium min-w-[100px]">AT Import:</span>
-                            <span>Fully update all account info (Recommended)</span>
-                        </div>
-                        <div class="flex items-start gap-2">
-                            <span class="font-medium min-w-[100px]">Offline Import:</span>
-                            <span>Insert directly to DB, fast import without API calls, account info needs manual
-                                fetch</span>
-                        </div>
-                        <div class="flex items-start gap-2">
-                            <span class="font-medium min-w-[100px]">ST Import:</span>
-                            <span>For ST only (no AT), auto converts to AT</span>
-                        </div>
-                        <div class="flex items-start gap-2">
-                            <span class="font-medium min-w-[100px]">RT Import:</span>
-                            <span>For RT only (no AT), auto converts to AT</span>
-                        </div>
-                    </div>
-                    <p
-                        class="text-xs text-gray-600 dark:text-gray-400 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                        💡 Tip: After offline import, use 'Test' button to update account info. Unstable features? Ask
-                        the cat.
-                    </p>
-                </div>
                 <div class="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 border border-blue-200 dark:border-blue-800">
                     <p class="text-xs text-blue-800 dark:text-blue-200">
-                        <strong>Note:</strong> Existing emails will be overwritten/updated, new ones will be added
+                        <strong>Note:</strong> Merging policies: overwrite if email exists, add if not.
                     </p>
                 </div>
             </div>
@@ -967,112 +881,68 @@
         </div>
     </div>
 
-    <div id="importProgressModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-        <div
-            class="bg-background rounded-lg border border-border w-full max-w-2xl shadow-xl max-h-[80vh] flex flex-col">
-            <div class="flex items-center justify-between p-5 border-b border-border">
-                <h3 class="text-lg font-semibold">Import Progress</h3>
-                <button onclick="closeImportProgressModal()" class="text-muted-foreground hover:text-foreground">
-                    <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                </button>
-            </div>
-            <div class="p-5 overflow-y-auto flex-1">
-                <div id="importProgressSummary" class="mb-4 p-3 rounded-md bg-muted"></div>
-                <div id="importProgressList" class="space-y-2"></div>
-            </div>
-            <div class="flex items-center justify-end gap-3 p-5 border-t border-border">
-                <button onclick="closeImportProgressModal()"
-                    class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-5">Close</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         let allTokens = [];
         const $ = (id) => document.getElementById(id),
             checkAuth = () => { const t = localStorage.getItem('adminToken'); return t || (location.href = '/login', null), t },
             apiRequest = async (url, opts = {}) => { const t = checkAuth(); if (!t) return null; const r = await fetch(url, { ...opts, headers: { ...opts.headers, Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' } }); return r.status === 401 ? (localStorage.removeItem('adminToken'), location.href = '/login', null) : r },
             loadStats = async () => { try { const r = await apiRequest('/api/stats'); if (!r) return; const d = await r.json(); $('statTotal').textContent = d.total_tokens || 0; $('statActive').textContent = d.active_tokens || 0; $('statImages').textContent = (d.today_images || 0) + '/' + (d.total_images || 0); $('statVideos').textContent = (d.today_videos || 0) + '/' + (d.total_videos || 0); $('statErrors').textContent = (d.today_errors || 0) + '/' + (d.total_errors || 0) } catch (e) { console.error('Failed to load stats:', e) } },
-            loadTokens = async () => { try { const r = await apiRequest('/api/tokens'); if (!r) return; allTokens = await r.json(); renderTokens() } catch (e) { console.error('Failed to load tokens:', e) } },
-            formatExpiry = exp => { if (!exp) return '-'; const d = new Date(exp), now = new Date(), diff = d - now; const dateStr = d.toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }); const timeStr = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }); if (diff < 0) return `<span class="text-red-600">${dateStr} ${timeStr}</span>`; const days = Math.floor(diff / 864e5); if (days < 7) return `<span class="text-orange-600">${dateStr} ${timeStr}</span>`; return `${dateStr} ${timeStr}` },
+            loadTokens = async () => { try { const r = await apiRequest('/api/tokens'); if (!r) return; allTokens = await r.json(); renderTokens() } catch (e) { console.error('Failed to load Tokens:', e) } },
+            formatExpiry = exp => { if (!exp) return '-'; const d = new Date(exp), now = new Date(), diff = d - now; const dateStr = d.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'); const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }); if (diff < 0) return `<span class="text-red-600">${dateStr} ${timeStr}</span>`; const days = Math.floor(diff / 864e5); if (days < 7) return `<span class="text-orange-600">${dateStr} ${timeStr}</span>`; return `${dateStr} ${timeStr}` },
             formatPlanType = type => { if (!type) return '-'; const typeMap = { 'chatgpt_team': 'Team', 'chatgpt_plus': 'Plus', 'chatgpt_pro': 'Pro', 'chatgpt_free': 'Free' }; return typeMap[type] || type },
-            formatSora2 = (t) => { if (t.sora2_supported === true) { const remaining = t.sora2_total_count - t.sora2_redeemed_count; const tooltipText = `Invite Code: ${t.sora2_invite_code || 'None'}\nAvailable: ${remaining}/${t.sora2_total_count}\nUsed: ${t.sora2_redeemed_count}`; return `<div class="inline-flex items-center gap-1"><span class="inline-flex items-center rounded px-2 py-0.5 text-xs bg-green-50 text-green-700 cursor-pointer" title="${tooltipText}" onclick="copySora2Code('${t.sora2_invite_code || ''}')">Yes</span><span class="text-xs text-muted-foreground" title="${tooltipText}">${remaining}/${t.sora2_total_count}</span></div>` } else if (t.sora2_supported === false) { return `<span class="inline-flex items-center rounded px-2 py-0.5 text-xs bg-gray-100 text-gray-700 cursor-pointer" title="Click to activate via Invite Code" onclick="openSora2Modal(${t.id})">No</span>` } else { return '-' } },
-            formatPlanTypeWithTooltip = (t) => { const tooltipText = t.subscription_end ? `Expires: ${new Date(t.subscription_end).toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' })} ${new Date(t.subscription_end).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}` : ''; return `<span class="inline-flex items-center rounded px-2 py-0.5 text-xs bg-blue-50 text-blue-700 cursor-pointer" title="${tooltipText || t.plan_title || '-'}">${formatPlanType(t.plan_type)}</span>` },
+            formatSora2 = (t) => { if (t.sora2_supported === true) { const remaining = t.sora2_total_count - t.sora2_redeemed_count; const tooltipText = `Invite Code: ${t.sora2_invite_code || 'None'}\nAvailable: ${remaining}/${t.sora2_total_count}\nUsed: ${t.sora2_redeemed_count}`; return `<div class="inline-flex items-center gap-1"><span class="inline-flex items-center rounded px-2 py-0.5 text-xs bg-green-50 text-green-700 cursor-pointer" title="${tooltipText}" onclick="copySora2Code('${t.sora2_invite_code || ''}')">Supported</span><span class="text-xs text-muted-foreground" title="${tooltipText}">${remaining}/${t.sora2_total_count}</span></div>` } else if (t.sora2_supported === false) { return `<span class="inline-flex items-center rounded px-2 py-0.5 text-xs bg-gray-100 text-gray-700 cursor-pointer" title="Click to activate with invite code" onclick="openSora2Modal(${t.id})">Unsupported</span>` } else { return '-' } },
+            formatPlanTypeWithTooltip = (t) => { const tooltipText = t.subscription_end ? `Plan Expires: ${new Date(t.subscription_end).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')} ${new Date(t.subscription_end).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}` : ''; return `<span class="inline-flex items-center rounded px-2 py-0.5 text-xs bg-blue-50 text-blue-700 cursor-pointer" title="${tooltipText || t.plan_title || '-'}">${formatPlanType(t.plan_type)}</span>` },
             formatSora2Remaining = (t) => { if (t.sora2_supported === true) { const remaining = t.sora2_remaining_count || 0; return `<span class="text-xs">${remaining}</span>` } else { return '-' } },
             formatClientId = (clientId) => { if (!clientId) return '-'; const short = clientId.substring(0, 8) + '...'; return `<span class="text-xs font-mono cursor-pointer hover:text-primary" title="${clientId}" onclick="navigator.clipboard.writeText('${clientId}').then(()=>showToast('Copied','success'))">${short}</span>` },
-            renderTokens = () => { const tb = $('tokenTableBody'); tb.innerHTML = allTokens.map(t => { const imageDisplay = t.image_enabled ? `${t.image_count || 0}` : '-'; const videoDisplay = (t.video_enabled && t.sora2_supported) ? `${t.video_count || 0}` : '-'; const statusText = t.is_expired ? 'Expired' : (t.is_active ? 'Active' : 'Disabled'); const statusClass = t.is_expired ? 'bg-gray-100 text-gray-700' : (t.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-700'); return `<tr><td class=\"py-2.5 px-3\">${t.email}</td><td class=\"py-2.5 px-3\"><span class=\"inline-flex items-center rounded px-2 py-0.5 text-xs ${statusClass}\">${statusText}</span></td><td class="py-2.5 px-3">${formatClientId(t.client_id)}</td><td class="py-2.5 px-3 text-xs">${formatExpiry(t.expiry_time)}</td><td class="py-2.5 px-3 text-xs">${formatPlanTypeWithTooltip(t)}</td><td class="py-2.5 px-3 text-xs">${formatSora2(t)}</td><td class="py-2.5 px-3">${formatSora2Remaining(t)}</td><td class="py-2.5 px-3">${imageDisplay}</td><td class="py-2.5 px-3">${videoDisplay}</td><td class="py-2.5 px-3">${t.error_count || 0}</td><td class="py-2.5 px-3 text-xs text-muted-foreground">${t.remark || '-'}</td><td class="py-2.5 px-3 text-right"><button onclick="testToken(${t.id})" class="inline-flex items-center justify-center rounded-md hover:bg-blue-50 hover:text-blue-700 h-7 px-2 text-xs mr-1">Test</button><button onclick="openEditModal(${t.id})" class="inline-flex items-center justify-center rounded-md hover:bg-green-50 hover:text-green-700 h-7 px-2 text-xs mr-1">Edit</button><button onclick="toggleToken(${t.id},${t.is_active})" class="inline-flex items-center justify-center rounded-md hover:bg-accent h-7 px-2 text-xs mr-1">${t.is_active ? 'Disable' : 'Enable'}</button><button onclick="deleteToken(${t.id})" class="inline-flex items-center justify-center rounded-md hover:bg-destructive/10 hover:text-destructive h-7 px-2 text-xs">Delete</button></td></tr>` }).join('') },
+            renderTokens = () => { const tb = $('tokenTableBody'); tb.innerHTML = allTokens.map(t => { const imageDisplay = t.image_enabled ? `${t.image_count || 0}` : '-'; const videoDisplay = (t.video_enabled && t.sora2_supported) ? `${t.video_count || 0}` : '-'; return `<tr><td class="py-2.5 px-3">${t.email}</td><td class="py-2.5 px-3"><span class="inline-flex items-center rounded px-2 py-0.5 text-xs ${t.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-700'}">${t.is_active ? 'Active' : 'Disabled'}</span></td><td class="py-2.5 px-3 text-xs">${formatClientId(t.client_id)}</td><td class="py-2.5 px-3 text-xs">${formatExpiry(t.expiry_time)}</td><td class="py-2.5 px-3 text-xs">${formatPlanTypeWithTooltip(t)}</td><td class="py-2.5 px-3 text-xs">${formatSora2(t)}</td><td class="py-2.5 px-3">${formatSora2Remaining(t)}</td><td class="py-2.5 px-3">${imageDisplay}</td><td class="py-2.5 px-3">${videoDisplay}</td><td class="py-2.5 px-3">${t.error_count || 0}</td><td class="py-2.5 px-3 text-xs text-muted-foreground">${t.remark || '-'}</td><td class="py-2.5 px-3 text-right"><button onclick="testToken(${t.id})" class="inline-flex items-center justify-center rounded-md hover:bg-blue-50 hover:text-blue-700 h-7 px-2 text-xs mr-1">Test</button><button onclick="openEditModal(${t.id})" class="inline-flex items-center justify-center rounded-md hover:bg-green-50 hover:text-green-700 h-7 px-2 text-xs mr-1">Edit</button><button onclick="toggleToken(${t.id},${t.is_active})" class="inline-flex items-center justify-center rounded-md hover:bg-accent h-7 px-2 text-xs mr-1">${t.is_active ? 'Disable' : 'Enable'}</button><button onclick="deleteToken(${t.id})" class="inline-flex items-center justify-center rounded-md hover:bg-destructive/10 hover:text-destructive h-7 px-2 text-xs">Delete</button></td></tr>` }).join('') },
             refreshTokens = async () => { await loadTokens(); await loadStats() },
             openAddModal = () => $('addModal').classList.remove('hidden'),
-            closeAddModal = () => { $('addModal').classList.add('hidden'); $('addTokenAT').value = ''; $('addTokenST').value = ''; $('addTokenRT').value = ''; $('addTokenClientId').value = ''; $('addTokenProxyUrl').value = ''; $('addTokenRemark').value = ''; $('addTokenImageEnabled').checked = true; $('addTokenVideoEnabled').checked = true; $('addTokenImageConcurrency').value = '-1'; $('addTokenVideoConcurrency').value = '-1'; $('addRTRefreshHint').classList.add('hidden') },
-            openEditModal = (id) => { const token = allTokens.find(t => t.id === id); if (!token) return showToast('Token not found', 'error'); $('editTokenId').value = token.id; $('editTokenAT').value = token.token || ''; $('editTokenST').value = token.st || ''; $('editTokenRT').value = token.rt || ''; $('editTokenClientId').value = token.client_id || ''; $('editTokenProxyUrl').value = token.proxy_url || ''; $('editTokenRemark').value = token.remark || ''; $('editTokenImageEnabled').checked = token.image_enabled !== false; $('editTokenVideoEnabled').checked = token.video_enabled !== false; $('editTokenImageConcurrency').value = token.image_concurrency || '-1'; $('editTokenVideoConcurrency').value = token.video_concurrency || '-1'; $('editModal').classList.remove('hidden') },
-            closeEditModal = () => { $('editModal').classList.add('hidden'); $('editTokenId').value = ''; $('editTokenAT').value = ''; $('editTokenST').value = ''; $('editTokenRT').value = ''; $('editTokenClientId').value = ''; $('editTokenProxyUrl').value = ''; $('editTokenRemark').value = ''; $('editTokenImageEnabled').checked = true; $('editTokenVideoEnabled').checked = true; $('editTokenImageConcurrency').value = ''; $('editTokenVideoConcurrency').value = ''; $('editRTRefreshHint').classList.add('hidden') },
-            submitEditToken = async () => { const id = parseInt($('editTokenId').value), at = $('editTokenAT').value.trim(), st = $('editTokenST').value.trim(), rt = $('editTokenRT').value.trim(), clientId = $('editTokenClientId').value.trim(), proxyUrl = $('editTokenProxyUrl').value.trim(), remark = $('editTokenRemark').value.trim(), imageEnabled = $('editTokenImageEnabled').checked, videoEnabled = $('editTokenVideoEnabled').checked, imageConcurrency = $('editTokenImageConcurrency').value ? parseInt($('editTokenImageConcurrency').value) : null, videoConcurrency = $('editTokenVideoConcurrency').value ? parseInt($('editTokenVideoConcurrency').value) : null; if (!id) return showToast('Invalid Token ID', 'error'); if (!at) return showToast('Please enter Access Token', 'error'); const btn = $('editTokenBtn'), btnText = $('editTokenBtnText'), btnSpinner = $('editTokenBtnSpinner'); btn.disabled = true; btnText.textContent = 'Saving...'; btnSpinner.classList.remove('hidden'); try { const r = await apiRequest(`/api/tokens/${id}`, { method: 'PUT', body: JSON.stringify({ token: at, st: st || null, rt: rt || null, client_id: clientId || null, proxy_url: proxyUrl || '', remark: remark || null, image_enabled: imageEnabled, video_enabled: videoEnabled, image_concurrency: imageConcurrency, video_concurrency: videoConcurrency }) }); if (!r) { btn.disabled = false; btnText.textContent = 'Save'; btnSpinner.classList.add('hidden'); return } const d = await r.json(); if (d.success) { closeEditModal(); await refreshTokens(); showToast('Token updated successfully', 'success') } else { showToast('Update failed: ' + (d.detail || d.message || 'Unknown error'), 'error') } } catch (e) { showToast('Update failed: ' + e.message, 'error') } finally { btn.disabled = false; btnText.textContent = 'Save'; btnSpinner.classList.add('hidden') } },
-            convertST2AT = async () => { const st = $('addTokenST').value.trim(); if (!st) return showToast('Please enter Session Token first', 'error'); try { showToast('Converting ST to AT...', 'info'); const r = await apiRequest('/api/tokens/st2at', { method: 'POST', body: JSON.stringify({ st: st }) }); if (!r) return; const d = await r.json(); if (d.success && d.access_token) { $('addTokenAT').value = d.access_token; showToast('Conversion successful! AT auto-filled', 'success') } else { showToast('Conversion failed: ' + (d.message || d.detail || 'Unknown error'), 'error') } } catch (e) { showToast('Conversion failed: ' + e.message, 'error') } },
-            convertRT2AT = async () => { const rt = $('addTokenRT').value.trim(); if (!rt) return showToast('Please enter Refresh Token first', 'error'); const clientId = $('addTokenClientId').value.trim(); const hint = $('addRTRefreshHint'); hint.classList.add('hidden'); try { showToast('Converting RT to AT...', 'info'); const r = await apiRequest('/api/tokens/rt2at', { method: 'POST', body: JSON.stringify({ rt: rt, client_id: clientId || null }) }); if (!r) return; const d = await r.json(); if (d.success && d.access_token) { $('addTokenAT').value = d.access_token; if (d.refresh_token) { $('addTokenRT').value = d.refresh_token; hint.classList.remove('hidden'); showToast('Success! AT filled, RT refreshed and updated', 'success') } else { showToast('Conversion successful! AT auto-filled', 'success') } } else { showToast('Conversion failed: ' + (d.message || d.detail || 'Unknown error'), 'error') } } catch (e) { showToast('Conversion failed: ' + e.message, 'error') } },
-            convertEditST2AT = async () => { const st = $('editTokenST').value.trim(); if (!st) return showToast('Please enter Session Token first', 'error'); try { showToast('Converting ST to AT...', 'info'); const r = await apiRequest('/api/tokens/st2at', { method: 'POST', body: JSON.stringify({ st: st }) }); if (!r) return; const d = await r.json(); if (d.success && d.access_token) { $('editTokenAT').value = d.access_token; showToast('Conversion successful! AT auto-filled', 'success') } else { showToast('Conversion failed: ' + (d.message || d.detail || 'Unknown error'), 'error') } } catch (e) { showToast('Conversion failed: ' + e.message, 'error') } },
-            convertEditRT2AT = async () => { const rt = $('editTokenRT').value.trim(); if (!rt) return showToast('Please enter Refresh Token first', 'error'); const clientId = $('editTokenClientId').value.trim(); const hint = $('editRTRefreshHint'); hint.classList.add('hidden'); try { showToast('Converting RT to AT...', 'info'); const r = await apiRequest('/api/tokens/rt2at', { method: 'POST', body: JSON.stringify({ rt: rt, client_id: clientId || null }) }); if (!r) return; const d = await r.json(); if (d.success && d.access_token) { $('editTokenAT').value = d.access_token; if (d.refresh_token) { $('editTokenRT').value = d.refresh_token; hint.classList.remove('hidden'); showToast('Success! AT filled, RT refreshed and updated', 'success') } else { showToast('Conversion successful! AT auto-filled', 'success') } } else { showToast('Conversion failed: ' + (d.message || d.detail || 'Unknown error'), 'error') } } catch (e) { showToast('Conversion failed: ' + e.message, 'error') } },
-            submitAddToken = async () => { const at = $('addTokenAT').value.trim(), st = $('addTokenST').value.trim(), rt = $('addTokenRT').value.trim(), clientId = $('addTokenClientId').value.trim(), proxyUrl = $('addTokenProxyUrl').value.trim(), remark = $('addTokenRemark').value.trim(), imageEnabled = $('addTokenImageEnabled').checked, videoEnabled = $('addTokenVideoEnabled').checked, imageConcurrency = parseInt($('addTokenImageConcurrency').value) || (-1), videoConcurrency = parseInt($('addTokenVideoConcurrency').value) || (-1); if (!at) return showToast('Please enter Access Token or use ST/RT conversion', 'error'); const btn = $('addTokenBtn'), btnText = $('addTokenBtnText'), btnSpinner = $('addTokenBtnSpinner'); btn.disabled = true; btnText.textContent = 'Adding...'; btnSpinner.classList.remove('hidden'); try { const r = await apiRequest('/api/tokens', { method: 'POST', body: JSON.stringify({ token: at, st: st || null, rt: rt || null, client_id: clientId || null, proxy_url: proxyUrl || '', remark: remark || null, image_enabled: imageEnabled, video_enabled: videoEnabled, image_concurrency: imageConcurrency, video_concurrency: videoConcurrency }) }); if (!r) { btn.disabled = false; btnText.textContent = 'Add'; btnSpinner.classList.add('hidden'); return } if (r.status === 409) { const d = await r.json(); const msg = d.detail || 'Token already exists'; btn.disabled = false; btnText.textContent = 'Add'; btnSpinner.classList.add('hidden'); if (confirm(msg + '\n\nDelete old Token and re-add?')) { const existingToken = allTokens.find(t => t.token === at); if (existingToken) { const deleted = await deleteToken(existingToken.id, true); if (deleted) { showToast('Re-adding...', 'info'); setTimeout(() => submitAddToken(), 500) } else { showToast('Failed to delete old Token', 'error') } } } return } const d = await r.json(); if (d.success) { closeAddModal(); await refreshTokens(); showToast('Token added successfully', 'success') } else { showToast('Add failed: ' + (d.detail || d.message || 'Unknown error'), 'error') } } catch (e) { showToast('Add failed: ' + e.message, 'error') } finally { btn.disabled = false; btnText.textContent = 'Add'; btnSpinner.classList.add('hidden') } },
-            testToken = async (id) => { try { showToast('Testing Token...', 'info'); const r = await apiRequest(`/api/tokens/${id}/test`, { method: 'POST' }); if (!r) return; const d = await r.json(); if (d.success && d.status === 'success') { let msg = `Token Valid! User: ${d.email || 'Unknown'}`; if (d.sora2_supported) { const remaining = d.sora2_total_count - d.sora2_redeemed_count; msg += `\nSora2: Yes (${remaining}/${d.sora2_total_count})`; if (d.sora2_remaining_count !== undefined) { msg += `\nAvailable: ${d.sora2_remaining_count}` } } showToast(msg, 'success'); await refreshTokens() } else { showToast(`Token Invalid: ${d.message || 'Unknown error'}`, 'error') } } catch (e) { showToast('Test failed: ' + e.message, 'error') } },
-            toggleToken = async (id, isActive) => { const action = isActive ? 'disable' : 'enable'; try { const r = await apiRequest(`/api/tokens/${id}/${action}`, { method: 'POST' }); if (!r) return; const d = await r.json(); d.success ? (await refreshTokens(), showToast(isActive ? 'Token Disabled' : 'Token Enabled', 'success')) : showToast('Operation failed', 'error') } catch (e) { showToast('Operation failed: ' + e.message, 'error') } },
-            toggleTokenStatus = async (id, active) => { try { const r = await apiRequest(`/api/tokens/${id}/status`, { method: 'PUT', body: JSON.stringify({ is_active: active }) }); if (!r) return; const d = await r.json(); d.success ? (await refreshTokens(), showToast('Status updated', 'success')) : showToast('Update failed', 'error') } catch (e) { showToast('Update failed: ' + e.message, 'error') } },
-            deleteToken = async (id, skipConfirm = false) => { if (!skipConfirm && !confirm('Are you sure you want to delete this Token?')) return; try { const r = await apiRequest(`/api/tokens/${id}`, { method: 'DELETE' }); if (!r) return; const d = await r.json(); if (d.success) { await refreshTokens(); if (!skipConfirm) showToast('Deleted successfully', 'success'); return true } else { if (!skipConfirm) showToast('Delete failed', 'error'); return false } } catch (e) { if (!skipConfirm) showToast('Delete failed: ' + e.message, 'error'); return false } },
+            closeAddModal = () => { $('addModal').classList.add('hidden'); $('addTokenAT').value = ''; $('addTokenST').value = ''; $('addTokenRT').value = ''; $('addTokenClientId').value = ''; $('addTokenRemark').value = ''; $('addTokenImageEnabled').checked = true; $('addTokenVideoEnabled').checked = true; $('addTokenImageConcurrency').value = '-1'; $('addTokenVideoConcurrency').value = '-1'; $('addRTRefreshHint').classList.add('hidden') },
+            openEditModal = (id) => { const token = allTokens.find(t => t.id === id); if (!token) return showToast('Token does not exist', 'error'); $('editTokenId').value = token.id; $('editTokenAT').value = token.token || ''; $('editTokenST').value = token.st || ''; $('editTokenRT').value = token.rt || ''; $('editTokenClientId').value = token.client_id || ''; $('editTokenRemark').value = token.remark || ''; $('editTokenImageEnabled').checked = token.image_enabled !== false; $('editTokenVideoEnabled').checked = token.video_enabled !== false; $('editTokenImageConcurrency').value = token.image_concurrency || '-1'; $('editTokenVideoConcurrency').value = token.video_concurrency || '-1'; $('editModal').classList.remove('hidden') },
+            closeEditModal = () => { $('editModal').classList.add('hidden'); $('editTokenId').value = ''; $('editTokenAT').value = ''; $('editTokenST').value = ''; $('editTokenRT').value = ''; $('editTokenClientId').value = ''; $('editTokenRemark').value = ''; $('editTokenImageEnabled').checked = true; $('editTokenVideoEnabled').checked = true; $('editTokenImageConcurrency').value = ''; $('editTokenVideoConcurrency').value = ''; $('editRTRefreshHint').classList.add('hidden') },
+            submitEditToken = async () => { const id = parseInt($('editTokenId').value), at = $('editTokenAT').value.trim(), st = $('editTokenST').value.trim(), rt = $('editTokenRT').value.trim(), clientId = $('editTokenClientId').value.trim(), remark = $('editTokenRemark').value.trim(), imageEnabled = $('editTokenImageEnabled').checked, videoEnabled = $('editTokenVideoEnabled').checked, imageConcurrency = $('editTokenImageConcurrency').value ? parseInt($('editTokenImageConcurrency').value) : null, videoConcurrency = $('editTokenVideoConcurrency').value ? parseInt($('editTokenVideoConcurrency').value) : null; if (!id) return showToast('Invalid Token ID', 'error'); if (!at) return showToast('Please enter Access Token', 'error'); const btn = $('editTokenBtn'), btnText = $('editTokenBtnText'), btnSpinner = $('editTokenBtnSpinner'); btn.disabled = true; btnText.textContent = 'Saving...'; btnSpinner.classList.remove('hidden'); try { const r = await apiRequest(`/api/tokens/${id}`, { method: 'PUT', body: JSON.stringify({ token: at, st: st || null, rt: rt || null, client_id: clientId || null, remark: remark || null, image_enabled: imageEnabled, video_enabled: videoEnabled, image_concurrency: imageConcurrency, video_concurrency: videoConcurrency }) }); if (!r) { btn.disabled = false; btnText.textContent = 'Save'; btnSpinner.classList.add('hidden'); return } const d = await r.json(); if (d.success) { closeEditModal(); await refreshTokens(); showToast('Token updated successfully', 'success') } else { showToast('Update failed: ' + (d.detail || d.message || 'Unknown error'), 'error') } } catch (e) { showToast('Update failed: ' + e.message, 'error') } finally { btn.disabled = false; btnText.textContent = 'Save'; btnSpinner.classList.add('hidden') } },
+            convertST2AT = async () => { const st = $('addTokenST').value.trim(); if (!st) return showToast('Please enter Session Token first', 'error'); try { showToast('Converting ST→AT...', 'info'); const r = await apiRequest('/api/tokens/st2at', { method: 'POST', body: JSON.stringify({ st: st }) }); if (!r) return; const d = await r.json(); if (d.success && d.access_token) { $('addTokenAT').value = d.access_token; showToast('Conversion successful! AT filled automatically', 'success') } else { showToast('Conversion failed: ' + (d.message || d.detail || 'Unknown error'), 'error') } } catch (e) { showToast('Conversion failed: ' + e.message, 'error') } },
+            convertRT2AT = async () => { const rt = $('addTokenRT').value.trim(); if (!rt) return showToast('Please enter Refresh Token first', 'error'); const hint = $('addRTRefreshHint'); hint.classList.add('hidden'); try { showToast('Converting RT→AT...', 'info'); const r = await apiRequest('/api/tokens/rt2at', { method: 'POST', body: JSON.stringify({ rt: rt }) }); if (!r) return; const d = await r.json(); if (d.success && d.access_token) { $('addTokenAT').value = d.access_token; if (d.refresh_token) { $('addTokenRT').value = d.refresh_token; hint.classList.remove('hidden'); showToast('Conversion successful! AT filled automatically, RT refreshed and updated', 'success') } else { showToast('Conversion successful! AT filled automatically', 'success') } } else { showToast('Conversion failed: ' + (d.message || d.detail || 'Unknown error'), 'error') } } catch (e) { showToast('Conversion failed: ' + e.message, 'error') } },
+            convertEditST2AT = async () => { const st = $('editTokenST').value.trim(); if (!st) return showToast('Please enter Session Token first', 'error'); try { showToast('Converting ST→AT...', 'info'); const r = await apiRequest('/api/tokens/st2at', { method: 'POST', body: JSON.stringify({ st: st }) }); if (!r) return; const d = await r.json(); if (d.success && d.access_token) { $('editTokenAT').value = d.access_token; showToast('Conversion successful! AT filled automatically', 'success') } else { showToast('Conversion failed: ' + (d.message || d.detail || 'Unknown error'), 'error') } } catch (e) { showToast('Conversion failed: ' + e.message, 'error') } },
+            convertEditRT2AT = async () => { const rt = $('editTokenRT').value.trim(); if (!rt) return showToast('Please enter Refresh Token first', 'error'); const hint = $('editRTRefreshHint'); hint.classList.add('hidden'); try { showToast('Converting RT→AT...', 'info'); const r = await apiRequest('/api/tokens/rt2at', { method: 'POST', body: JSON.stringify({ rt: rt }) }); if (!r) return; const d = await r.json(); if (d.success && d.access_token) { $('editTokenAT').value = d.access_token; if (d.refresh_token) { $('editTokenRT').value = d.refresh_token; hint.classList.remove('hidden'); showToast('Conversion successful! AT filled automatically, RT refreshed and updated', 'success') } else { showToast('Conversion successful! AT filled automatically', 'success') } } else { showToast('Conversion failed: ' + (d.message || d.detail || 'Unknown error'), 'error') } } catch (e) { showToast('Conversion failed: ' + e.message, 'error') } },
+            submitAddToken = async () => { const at = $('addTokenAT').value.trim(), st = $('addTokenST').value.trim(), rt = $('addTokenRT').value.trim(), clientId = $('addTokenClientId').value.trim(), remark = $('addTokenRemark').value.trim(), imageEnabled = $('addTokenImageEnabled').checked, videoEnabled = $('addTokenVideoEnabled').checked, imageConcurrency = parseInt($('addTokenImageConcurrency').value) || (-1), videoConcurrency = parseInt($('addTokenVideoConcurrency').value) || (-1); if (!at) return showToast('Please enter Access Token or use ST/RT conversion', 'error'); const btn = $('addTokenBtn'), btnText = $('addTokenBtnText'), btnSpinner = $('addTokenBtnSpinner'); btn.disabled = true; btnText.textContent = 'Adding...'; btnSpinner.classList.remove('hidden'); try { const r = await apiRequest('/api/tokens', { method: 'POST', body: JSON.stringify({ token: at, st: st || null, rt: rt || null, client_id: clientId || null, remark: remark || null, image_enabled: imageEnabled, video_enabled: videoEnabled, image_concurrency: imageConcurrency, video_concurrency: videoConcurrency }) }); if (!r) { btn.disabled = false; btnText.textContent = 'Add'; btnSpinner.classList.add('hidden'); return } if (r.status === 409) { const d = await r.json(); const msg = d.detail || 'Token already exists'; btn.disabled = false; btnText.textContent = 'Add'; btnSpinner.classList.add('hidden'); if (confirm(msg + '\n\nDelete old Token and re-add?')) { const existingToken = allTokens.find(t => t.token === at); if (existingToken) { const deleted = await deleteToken(existingToken.id, true); if (deleted) { showToast('Re-adding...', 'info'); setTimeout(() => submitAddToken(), 500) } else { showToast('Failed to delete old Token', 'error') } } } return } const d = await r.json(); if (d.success) { closeAddModal(); await refreshTokens(); showToast('Token added successfully', 'success') } else { showToast('Add failed: ' + (d.detail || d.message || 'Unknown error'), 'error') } } catch (e) { showToast('Add failed: ' + e.message, 'error') } finally { btn.disabled = false; btnText.textContent = 'Add'; btnSpinner.classList.add('hidden') } },
+            testToken = async (id) => { try { showToast('Testing Token...', 'info'); const r = await apiRequest(`/api/tokens/${id}/test`, { method: 'POST' }); if (!r) return; const d = await r.json(); if (d.success && d.status === 'success') { let msg = `Token Valid! User: ${d.email || 'Unknown'}`; if (d.sora2_supported) { const remaining = d.sora2_total_count - d.sora2_redeemed_count; msg += `\nSora2: Supported (${remaining}/${d.sora2_total_count})`; if (d.sora2_remaining_count !== undefined) { msg += `\nAvailable: ${d.sora2_remaining_count}` } } showToast(msg, 'success'); await refreshTokens() } else { showToast(`Token Invalid: ${d.message || 'Unknown error'}`, 'error') } } catch (e) { showToast('Test Failed: ' + e.message, 'error') } },
+            toggleToken = async (id, isActive) => { const action = isActive ? 'disable' : 'enable'; try { const r = await apiRequest(`/api/tokens/${id}/${action}`, { method: 'POST' }); if (!r) return; const d = await r.json(); d.success ? (await refreshTokens(), showToast(isActive ? 'Token Disabled' : 'Token Enabled', 'success')) : showToast('Operation Failed', 'error') } catch (e) { showToast('Operation Failed: ' + e.message, 'error') } },
+            toggleTokenStatus = async (id, active) => { try { const r = await apiRequest(`/api/tokens/${id}/status`, { method: 'PUT', body: JSON.stringify({ is_active: active }) }); if (!r) return; const d = await r.json(); d.success ? (await refreshTokens(), showToast('Status updated successfully', 'success')) : showToast('Update failed', 'error') } catch (e) { showToast('Update failed: ' + e.message, 'error') } },
+            deleteToken = async (id, skipConfirm = false) => { if (!skipConfirm && !confirm('Are you sure you want to delete this Token?')) return; try { const r = await apiRequest(`/api/tokens/${id}`, { method: 'DELETE' }); if (!r) return; const d = await r.json(); if (d.success) { await refreshTokens(); if (!skipConfirm) showToast('Delete successful', 'success'); return true } else { if (!skipConfirm) showToast('Delete failed', 'error'); return false } } catch (e) { if (!skipConfirm) showToast('Delete failed: ' + e.message, 'error'); return false } },
             copySora2Code = async (code) => { if (!code) { showToast('No invite code to copy', 'error'); return } try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(code); showToast(`Invite code copied: ${code}`, 'success') } else { const textarea = document.createElement('textarea'); textarea.value = code; textarea.style.position = 'fixed'; textarea.style.opacity = '0'; document.body.appendChild(textarea); textarea.select(); const success = document.execCommand('copy'); document.body.removeChild(textarea); if (success) { showToast(`Invite code copied: ${code}`, 'success') } else { showToast('Copy failed: Browser not supported', 'error') } } } catch (e) { showToast('Copy failed: ' + e.message, 'error') } },
             openSora2Modal = (id) => { $('sora2TokenId').value = id; $('sora2InviteCode').value = ''; $('sora2Modal').classList.remove('hidden') },
             closeSora2Modal = () => { $('sora2Modal').classList.add('hidden'); $('sora2TokenId').value = ''; $('sora2InviteCode').value = '' },
             openImportModal = () => { $('importModal').classList.remove('hidden'); $('importFile').value = '' },
             closeImportModal = () => { $('importModal').classList.add('hidden'); $('importFile').value = '' },
-            openImportProgressModal = () => { $('importProgressModal').classList.remove('hidden') },
-            closeImportProgressModal = () => { $('importProgressModal').classList.add('hidden') },
-            showImportProgress = (results, added, updated, failed) => { const summary = $('importProgressSummary'), list = $('importProgressList'); summary.innerHTML = `<div class="text-sm"><strong>Import Complete</strong><br/>Added: ${added} | Updated: ${updated} | Failed: ${failed}</div>`; list.innerHTML = results.map(r => { const statusColor = r.success ? (r.status === 'added' ? 'text-green-600' : 'text-blue-600') : 'text-red-600'; const statusText = r.status === 'added' ? 'Added' : r.status === 'updated' ? 'Updated' : 'Failed'; return `<div class="p-3 rounded-md border ${r.success ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'}"><div class="flex items-center justify-between"><span class="font-medium">${r.email}</span><span class="${statusColor} text-sm font-medium">${statusText}</span></div>${r.error ? `<div class="text-xs text-red-600 dark:text-red-400 mt-1">${r.error}</div>` : ''}</div>` }).join(''); openImportProgressModal() },
-            exportTokens = () => { if (allTokens.length === 0) { showToast('No tokens to export', 'error'); return } const exportData = allTokens.map(t => ({ email: t.email, access_token: t.token, session_token: t.st || null, refresh_token: t.rt || null, client_id: t.client_id || null, proxy_url: t.proxy_url || null, remark: t.remark || null, is_active: t.is_active, image_enabled: t.image_enabled !== false, video_enabled: t.video_enabled !== false, image_concurrency: t.image_concurrency || (-1), video_concurrency: t.video_concurrency || (-1) })); const dataStr = JSON.stringify(exportData, null, 2); const dataBlob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(dataBlob); const link = document.createElement('a'); link.href = url; link.download = `tokens_${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); showToast(`Exported ${allTokens.length} tokens`, 'success') },
-            updateImportModeHint = () => { const mode = $('importMode').value, hint = $('importModeHint'), hints = { at: 'Use AT to update account status (subscription, based on AT)', offline: 'Offline import, no status update, dynamic fields shown as -', st: 'Auto convert ST to AT, then update status', rt: 'Auto convert RT to AT (refresh RT), then update status' }; hint.textContent = hints[mode] || '' },
-            submitImportTokens = async () => { const fileInput = $('importFile'); if (!fileInput.files || fileInput.files.length === 0) { showToast('Please select a file', 'error'); return } const file = fileInput.files[0]; if (!file.name.endsWith('.json')) { showToast('Please select a JSON file', 'error'); return } const mode = $('importMode').value; try { const fileContent = await file.text(); const importData = JSON.parse(fileContent); if (!Array.isArray(importData)) { showToast('JSON format error: should be array', 'error'); return } if (importData.length === 0) { showToast('JSON file is empty', 'error'); return } for (let item of importData) { if (!item.email) { showToast('Missing required field: email', 'error'); return } if (mode === 'offline' || mode === 'at') { if (!item.access_token) { showToast(`${item.email} missing required field: access_token`, 'error'); return } } else if (mode === 'st') { if (!item.session_token) { showToast(`${item.email} missing required field: session_token`, 'error'); return } } else if (mode === 'rt') { if (!item.refresh_token) { showToast(`${item.email} missing required field: refresh_token`, 'error'); return } } } const btn = $('importBtn'), btnText = $('importBtnText'), btnSpinner = $('importBtnSpinner'); btn.disabled = true; btnText.textContent = 'Importing...'; btnSpinner.classList.remove('hidden'); try { const r = await apiRequest('/api/tokens/import', { method: 'POST', body: JSON.stringify({ tokens: importData, mode: mode }) }); if (!r) { btn.disabled = false; btnText.textContent = 'Import'; btnSpinner.classList.add('hidden'); return } const d = await r.json(); if (d.success) { closeImportModal(); await refreshTokens(); showImportProgress(d.results || [], d.added || 0, d.updated || 0, d.failed || 0) } else { showToast('Import failed: ' + (d.detail || d.message || 'Unknown error'), 'error') } } catch (e) { showToast('Import failed: ' + e.message, 'error') } finally { btn.disabled = false; btnText.textContent = 'Import'; btnSpinner.classList.add('hidden') } } catch (e) { showToast('File parse failed: ' + e.message, 'error') } },
-            submitSora2Activate = async () => { const tokenId = parseInt($('sora2TokenId').value), inviteCode = $('sora2InviteCode').value.trim(); if (!tokenId) return showToast('Invalid Token ID', 'error'); if (!inviteCode) return showToast('Please enter invite code', 'error'); if (inviteCode.length !== 6) return showToast('Invite code must be 6 digits', 'error'); const btn = $('sora2ActivateBtn'), btnText = $('sora2ActivateBtnText'), btnSpinner = $('sora2ActivateBtnSpinner'); btn.disabled = true; btnText.textContent = 'Activating...'; btnSpinner.classList.remove('hidden'); try { showToast('Activating Sora2...', 'info'); const r = await apiRequest(`/api/tokens/${tokenId}/sora2/activate?invite_code=${inviteCode}`, { method: 'POST' }); if (!r) { btn.disabled = false; btnText.textContent = 'Activate'; btnSpinner.classList.add('hidden'); return } const d = await r.json(); if (d.success) { closeSora2Modal(); await refreshTokens(); if (d.already_accepted) { showToast('Sora2 already activated (previously accepted)', 'success') } else { showToast(`Sora2 activated! Code: ${d.invite_code || 'None'}`, 'success') } } else { showToast('Activation failed: ' + (d.message || 'Unknown error'), 'error') } } catch (e) { showToast('Activation failed: ' + e.message, 'error') } finally { btn.disabled = false; btnText.textContent = 'Activate'; btnSpinner.classList.add('hidden') } },
+            exportTokens = () => { if (allTokens.length === 0) { showToast('No Tokens to export', 'error'); return } const exportData = allTokens.map(t => ({ email: t.email, access_token: t.token, session_token: t.st || null, refresh_token: t.rt || null, is_active: t.is_active, image_enabled: t.image_enabled !== false, video_enabled: t.video_enabled !== false, image_concurrency: t.image_concurrency || (-1), video_concurrency: t.video_concurrency || (-1) })); const dataStr = JSON.stringify(exportData, null, 2); const dataBlob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(dataBlob); const link = document.createElement('a'); link.href = url; link.download = `tokens_${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); showToast(`Exported ${allTokens.length} Tokens`, 'success') },
+            submitImportTokens = async () => { const fileInput = $('importFile'); if (!fileInput.files || fileInput.files.length === 0) { showToast('Please select file', 'error'); return } const file = fileInput.files[0]; if (!file.name.endsWith('.json')) { showToast('Please select JSON file', 'error'); return } try { const fileContent = await file.text(); const importData = JSON.parse(fileContent); if (!Array.isArray(importData)) { showToast('JSON format error: should be array', 'error'); return } if (importData.length === 0) { showToast('JSON file empty', 'error'); return } const btn = $('importBtn'), btnText = $('importBtnText'), btnSpinner = $('importBtnSpinner'); btn.disabled = true; btnText.textContent = 'Importing...'; btnSpinner.classList.remove('hidden'); try { const r = await apiRequest('/api/tokens/import', { method: 'POST', body: JSON.stringify({ tokens: importData }) }); if (!r) { btn.disabled = false; btnText.textContent = 'Import'; btnSpinner.classList.add('hidden'); return } const d = await r.json(); if (d.success) { closeImportModal(); await refreshTokens(); const msg = `Import successful! Added: ${d.added || 0}, Updated: ${d.updated || 0}`; showToast(msg, 'success') } else { showToast('Import failed: ' + (d.detail || d.message || 'Unknown error'), 'error') } } catch (e) { showToast('Import failed: ' + e.message, 'error') } finally { btn.disabled = false; btnText.textContent = 'Import'; btnSpinner.classList.add('hidden') } } catch (e) { showToast('File parse failed: ' + e.message, 'error') } },
+            submitSora2Activate = async () => { const tokenId = parseInt($('sora2TokenId').value), inviteCode = $('sora2InviteCode').value.trim(); if (!tokenId) return showToast('Invalid Token ID', 'error'); if (!inviteCode) return showToast('Please enter invite code', 'error'); if (inviteCode.length !== 6) return showToast('Invite code must be 6 digits', 'error'); const btn = $('sora2ActivateBtn'), btnText = $('sora2ActivateBtnText'), btnSpinner = $('sora2ActivateBtnSpinner'); btn.disabled = true; btnText.textContent = 'Activating...'; btnSpinner.classList.remove('hidden'); try { showToast('Activating Sora2...', 'info'); const r = await apiRequest(`/api/tokens/${tokenId}/sora2/activate?invite_code=${inviteCode}`, { method: 'POST' }); if (!r) { btn.disabled = false; btnText.textContent = 'Activate'; btnSpinner.classList.add('hidden'); return } const d = await r.json(); if (d.success) { closeSora2Modal(); await refreshTokens(); if (d.already_accepted) { showToast('Sora2 already activated (previously accepted)', 'success') } else { showToast(`Sora2 activated successfully! Invite code: ${d.invite_code || 'None'}`, 'success') } } else { showToast('Activation failed: ' + (d.message || 'Unknown error'), 'error') } } catch (e) { showToast('Activation failed: ' + e.message, 'error') } finally { btn.disabled = false; btnText.textContent = 'Activate'; btnSpinner.classList.add('hidden') } },
             loadAdminConfig = async () => { try { const r = await apiRequest('/api/admin/config'); if (!r) return; const d = await r.json(); $('cfgErrorBan').value = d.error_ban_threshold || 3; $('cfgAdminUsername').value = d.admin_username || 'admin'; $('cfgCurrentAPIKey').value = d.api_key || ''; $('cfgDebugEnabled').checked = d.debug_enabled || false } catch (e) { console.error('Failed to load config:', e) } },
-            saveAdminConfig = async () => { try { const r = await apiRequest('/api/admin/config', { method: 'POST', body: JSON.stringify({ error_ban_threshold: parseInt($('cfgErrorBan').value) || 3 }) }); if (!r) return; const d = await r.json(); d.success ? showToast('Config saved', 'success') : showToast('Save failed', 'error') } catch (e) { showToast('Save failed: ' + e.message, 'error') } },
-            updateAdminPassword = async () => { const username = $('cfgAdminUsername').value.trim(), oldPwd = $('cfgOldPassword').value.trim(), newPwd = $('cfgNewPassword').value.trim(); if (!oldPwd || !newPwd) return showToast('Enter old and new password', 'error'); if (newPwd.length < 4) return showToast('New password min 4 chars', 'error'); try { const r = await apiRequest('/api/admin/password', { method: 'POST', body: JSON.stringify({ username: username || undefined, old_password: oldPwd, new_password: newPwd }) }); if (!r) return; const d = await r.json(); if (d.success) { showToast('Password changed, please login again', 'success'); setTimeout(() => { localStorage.removeItem('adminToken'); location.href = '/login' }, 2000) } else { showToast('Change failed: ' + (d.detail || 'Unknown error'), 'error') } } catch (e) { showToast('Change failed: ' + e.message, 'error') } },
-            updateAPIKey = async () => { const newKey = $('cfgNewAPIKey').value.trim(); if (!newKey) return showToast('Enter new API Key', 'error'); if (newKey.length < 6) return showToast('Min 6 chars', 'error'); if (!confirm('Sure to update API Key? Clients must update.')) return; try { const r = await apiRequest('/api/admin/apikey', { method: 'POST', body: JSON.stringify({ new_api_key: newKey }) }); if (!r) return; const d = await r.json(); if (d.success) { showToast('API Key updated', 'success'); $('cfgCurrentAPIKey').value = newKey; $('cfgNewAPIKey').value = '' } else { showToast('Update failed: ' + (d.detail || 'Unknown error'), 'error') } } catch (e) { showToast('Update failed: ' + e.message, 'error') } },
+            saveAdminConfig = async () => { try { const r = await apiRequest('/api/admin/config', { method: 'POST', body: JSON.stringify({ error_ban_threshold: parseInt($('cfgErrorBan').value) || 3 }) }); if (!r) return; const d = await r.json(); d.success ? showToast('Config saved successfully', 'success') : showToast('Save failed', 'error') } catch (e) { showToast('Save failed: ' + e.message, 'error') } },
+            updateAdminPassword = async () => { const username = $('cfgAdminUsername').value.trim(), oldPwd = $('cfgOldPassword').value.trim(), newPwd = $('cfgNewPassword').value.trim(); if (!oldPwd || !newPwd) return showToast('Please enter old and new password', 'error'); if (newPwd.length < 4) return showToast('New password at least 4 chars', 'error'); try { const r = await apiRequest('/api/admin/password', { method: 'POST', body: JSON.stringify({ username: username || undefined, old_password: oldPwd, new_password: newPwd }) }); if (!r) return; const d = await r.json(); if (d.success) { showToast('Password changed, please login again', 'success'); setTimeout(() => { localStorage.removeItem('adminToken'); location.href = '/login' }, 2000) } else { showToast('Change failed: ' + (d.detail || 'Unknown error'), 'error') } } catch (e) { showToast('Change failed: ' + e.message, 'error') } },
+            updateAPIKey = async () => { const newKey = $('cfgNewAPIKey').value.trim(); if (!newKey) return showToast('Please enter new API Key', 'error'); if (newKey.length < 6) return showToast('API Key at least 6 chars', 'error'); if (!confirm('Are you sure to update API Key? Clients need to be notified.')) return; try { const r = await apiRequest('/api/admin/apikey', { method: 'POST', body: JSON.stringify({ new_api_key: newKey }) }); if (!r) return; const d = await r.json(); if (d.success) { showToast('API Key updated successfully', 'success'); $('cfgCurrentAPIKey').value = newKey; $('cfgNewAPIKey').value = '' } else { showToast('Update failed: ' + (d.detail || 'Unknown error'), 'error') } } catch (e) { showToast('Update failed: ' + e.message, 'error') } },
             toggleDebugMode = async () => { const enabled = $('cfgDebugEnabled').checked; try { const r = await apiRequest('/api/admin/debug', { method: 'POST', body: JSON.stringify({ enabled: enabled }) }); if (!r) return; const d = await r.json(); if (d.success) { showToast(enabled ? 'Debug mode enabled' : 'Debug mode disabled', 'success') } else { showToast('Operation failed: ' + (d.detail || 'Unknown error'), 'error'); $('cfgDebugEnabled').checked = !enabled } } catch (e) { showToast('Operation failed: ' + e.message, 'error'); $('cfgDebugEnabled').checked = !enabled } },
-            downloadDebugLogs = async () => { try { const token = localStorage.getItem('adminToken'); if (!token) { showToast('Not logged in', 'error'); return } const r = await fetch('/api/admin/logs/download', { headers: { Authorization: `Bearer ${token}` } }); if (!r.ok) { if (r.status === 404) { showToast('Log file not found', 'error') } else { showToast('Download failed', 'error') } return } const blob = await r.blob(); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `logs_${new Date().toISOString().split('T')[0]}.txt`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); showToast('Log download success', 'success') } catch (e) { showToast('Download failed: ' + e.message, 'error') } },
             loadProxyConfig = async () => { try { const r = await apiRequest('/api/proxy/config'); if (!r) return; const d = await r.json(); $('cfgProxyEnabled').checked = d.proxy_enabled || false; $('cfgProxyUrl').value = d.proxy_url || '' } catch (e) { console.error('Failed to load proxy config:', e) } },
-            saveProxyConfig = async () => { try { const r = await apiRequest('/api/proxy/config', { method: 'POST', body: JSON.stringify({ proxy_enabled: $('cfgProxyEnabled').checked, proxy_url: $('cfgProxyUrl').value.trim() }) }); if (!r) return; const d = await r.json(); d.success ? showToast('Proxy config saved', 'success') : showToast('Save failed', 'error') } catch (e) { showToast('Save failed: ' + e.message, 'error') } },
-            loadWatermarkFreeConfig = async () => { try { const r = await apiRequest('/api/watermark-free/config'); if (!r) return; const d = await r.json(); $('cfgWatermarkFreeEnabled').checked = d.watermark_free_enabled || false; $('cfgParseMethod').value = d.parse_method || 'third_party'; toggleWatermarkFreeOptions(); toggleCustomParseOptions(); await loadAndroidCredentials() } catch (e) { console.error('Failed to load watermark config:', e) } },
+            saveProxyConfig = async () => { try { const r = await apiRequest('/api/proxy/config', { method: 'POST', body: JSON.stringify({ proxy_enabled: $('cfgProxyEnabled').checked, proxy_url: $('cfgProxyUrl').value.trim() }) }); if (!r) return; const d = await r.json(); d.success ? showToast('Proxy config saved successfully', 'success') : showToast('Save failed', 'error') } catch (e) { showToast('Save failed: ' + e.message, 'error') } },
+            loadWatermarkFreeConfig = async () => { try { const r = await apiRequest('/api/watermark-free/config'); if (!r) return; const d = await r.json(); $('cfgWatermarkFreeEnabled').checked = d.watermark_free_enabled || false; $('cfgParseMethod').value = d.parse_method || 'third_party'; toggleWatermarkFreeOptions(); toggleCustomParseOptions(); await loadAndroidCredentials() } catch (e) { console.error('Failed to load no-watermark config:', e) } },
             loadAndroidCredentials = async () => { try { const r = await apiRequest('/api/android-credentials'); if (!r) return; const d = await r.json(); if (!d.success || !d.data) return; $('cfgAndroidAuthToken').value = d.data.sora_auth_token || ''; $('cfgAndroidRefreshToken').value = d.data.sora_refresh_token || ''; $('cfgAndroidClientId').value = d.data.sora_client_id || 'app_OHnYmJt5u1XEdhDUx0ig1ziv' } catch (e) { console.error('Failed to load Android credentials:', e) } },
-            saveAndroidCredentials = async () => { const at = $('cfgAndroidAuthToken').value.trim(), rt = $('cfgAndroidRefreshToken').value.trim(), clientId = ($('cfgAndroidClientId').value || '').trim() || 'app_OHnYmJt5u1XEdhDUx0ig1ziv'; if (!at || !rt) { showToast('Please enter Android Access Token and Refresh Token', 'error'); return false } try { const r = await apiRequest('/api/android-credentials', { method: 'POST', body: JSON.stringify({ sora_auth_token: at, sora_refresh_token: rt, sora_client_id: clientId }) }); if (!r) return false; const d = await r.json(); if (d.success) { showToast('Android credentials saved', 'success'); return true } showToast(d.detail || d.message || 'Failed to save Android credentials', 'error'); return false } catch (e) { showToast('Failed to save Android credentials: ' + e.message, 'error'); return false } },
-            saveWatermarkFreeConfig = async () => { try { const enabled = $('cfgWatermarkFreeEnabled').checked, parseMethod = $('cfgParseMethod').value; const r = await apiRequest('/api/watermark-free/config', { method: 'POST', body: JSON.stringify({ watermark_free_enabled: enabled, parse_method: parseMethod, custom_parse_url: null, custom_parse_token: null }) }); if (!r) return; const d = await r.json(); if (!d.success) { return showToast('Save failed', 'error') } if (enabled && parseMethod === 'custom') { await saveAndroidCredentials() } else { showToast('Watermark-free config saved', 'success') } } catch (e) { showToast('Save failed: ' + e.message, 'error') } },
+            saveAndroidCredentials = async () => { const at = $('cfgAndroidAuthToken').value.trim(), rt = $('cfgAndroidRefreshToken').value.trim(), clientId = $('cfgAndroidClientId').value.trim() || 'app_OHnYmJt5u1XEdhDUx0ig1ziv'; if (!at || !rt) { showToast('Please enter Android Access Token and Refresh Token', 'error'); return false } try { const r = await apiRequest('/api/android-credentials', { method: 'POST', body: JSON.stringify({ sora_auth_token: at, sora_refresh_token: rt, sora_client_id: clientId }) }); if (!r) return false; const d = await r.json(); if (d.success) { showToast('Android credentials saved successfully', 'success'); return true } showToast(d.detail || d.message || 'Failed to save Android credentials', 'error'); return false } catch (e) { showToast('Failed to save Android credentials: ' + e.message, 'error'); return false } },
+            saveWatermarkFreeConfig = async () => { try { const enabled = $('cfgWatermarkFreeEnabled').checked, parseMethod = $('cfgParseMethod').value; const r = await apiRequest('/api/watermark-free/config', { method: 'POST', body: JSON.stringify({ watermark_free_enabled: enabled, parse_method: parseMethod, custom_parse_url: null, custom_parse_token: null }) }); if (!r) return; const d = await r.json(); if (!d.success) { return showToast('Save failed', 'error') } if (enabled && parseMethod === 'custom') { await saveAndroidCredentials() } else { showToast('No-watermark config saved successfully', 'success') } } catch (e) { showToast('Save failed: ' + e.message, 'error') } },
             toggleWatermarkFreeOptions = () => { const enabled = $('cfgWatermarkFreeEnabled').checked; $('watermarkFreeOptions').style.display = enabled ? 'block' : 'none' },
             toggleCustomParseOptions = () => { const method = $('cfgParseMethod').value; $('customParseOptions').style.display = method === 'custom' ? 'block' : 'none' },
             toggleCacheOptions = () => { const enabled = $('cfgCacheEnabled').checked; $('cacheOptions').style.display = enabled ? 'block' : 'none' },
-            loadCacheConfig = async () => { try { console.log('Loading cache config...'); const r = await apiRequest('/api/cache/config'); if (!r) { console.error('API request failed'); return } const d = await r.json(); console.log('Cache config data:', d); if (d.success && d.config) { const enabled = d.config.enabled !== false; const timeout = d.config.timeout || 7200; const baseUrl = d.config.base_url || ''; const effectiveUrl = d.config.effective_base_url || ''; console.log('Set cache enabled:', enabled); console.log('Set timeout:', timeout); console.log('Set Base URL:', baseUrl); console.log('Effective URL:', effectiveUrl); $('cfgCacheEnabled').checked = enabled; $('cfgCacheTimeout').value = timeout; $('cfgCacheBaseUrl').value = baseUrl; if (effectiveUrl) { $('cacheEffectiveUrlValue').textContent = effectiveUrl; $('cacheEffectiveUrl').classList.remove('hidden') } else { $('cacheEffectiveUrl').classList.add('hidden') } toggleCacheOptions(); console.log('Cache config loaded') } else { console.error('Cache config format error:', d) } } catch (e) { console.error('Failed to load cache config:', e); showToast('Failed to load cache config: ' + e.message, 'error') } },
-            loadGenerationTimeout = async () => { try { console.log('Loading timeout config...'); const r = await apiRequest('/api/generation/timeout'); if (!r) { console.error('API request failed'); return } const d = await r.json(); console.log('Timeout config data:', d); if (d.success && d.config) { const imageTimeout = d.config.image_timeout || 300; const videoTimeout = d.config.video_timeout || 1500; console.log('Set image timeout:', imageTimeout); console.log('Set video timeout:', videoTimeout); $('cfgImageTimeout').value = imageTimeout; $('cfgVideoTimeout').value = videoTimeout; console.log('Timeout config loaded') } else { console.error('Timeout config format error:', d) } } catch (e) { console.error('Failed to load timeout config:', e); showToast('Failed to load timeout config: ' + e.message, 'error') } },
-            saveCacheConfig = async () => { const enabled = $('cfgCacheEnabled').checked, timeout = parseInt($('cfgCacheTimeout').value) || 7200, baseUrl = $('cfgCacheBaseUrl').value.trim(); console.log('Saving cache config:', { enabled, timeout, baseUrl }); if (timeout !== -1 && (timeout < 60 || timeout > 86400)) return showToast('Cache timeout must be 60-86400s or -1', 'error'); if (baseUrl && !baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) return showToast('Base URL must start with http:// or https://', 'error'); try { console.log('Saving enabled state...'); const r0 = await apiRequest('/api/cache/enabled', { method: 'POST', body: JSON.stringify({ enabled: enabled }) }); if (!r0) { console.error('Failed to save enabled state'); return } const d0 = await r0.json(); console.log('Enabled state saved:', d0); if (!d0.success) { console.error('Failed to save enabled state:', d0); return showToast('Failed to save enabled state', 'error') } console.log('Saving timeout...'); const r1 = await apiRequest('/api/cache/config', { method: 'POST', body: JSON.stringify({ timeout: timeout }) }); if (!r1) { console.error('Failed to save timeout'); return } const d1 = await r1.json(); console.log('Timeout saved:', d1); if (!d1.success) { console.error('Failed to save timeout:', d1); return showToast('Failed to save timeout', 'error') } console.log('Saving Base URL...'); const r2 = await apiRequest('/api/cache/base-url', { method: 'POST', body: JSON.stringify({ base_url: baseUrl }) }); if (!r2) { console.error('Failed to save Base URL'); return } const d2 = await r2.json(); console.log('Base URL saved:', d2); if (d2.success) { showToast('Cache config saved', 'success'); console.log('Waiting for write...'); await new Promise(r => setTimeout(r, 200)); console.log('Reloading config...'); await loadCacheConfig() } else { console.error('Failed to save Base URL:', d2); showToast('Failed to save Base URL', 'error') } } catch (e) { console.error('Save failed:', e); showToast('Save failed: ' + e.message, 'error') } },
-            saveGenerationTimeout = async () => { const imageTimeout = parseInt($('cfgImageTimeout').value) || 300, videoTimeout = parseInt($('cfgVideoTimeout').value) || 1500; console.log('Saving timeout config:', { imageTimeout, videoTimeout }); if (imageTimeout < 60 || imageTimeout > 3600) return showToast('Image timeout must be 60-3600s', 'error'); if (videoTimeout < 60 || videoTimeout > 7200) return showToast('Video timeout must be 60-7200s', 'error'); try { const r = await apiRequest('/api/generation/timeout', { method: 'POST', body: JSON.stringify({ image_timeout: imageTimeout, video_timeout: videoTimeout }) }); if (!r) { console.error('Save failed'); return } const d = await r.json(); console.log('Save result:', d); if (d.success) { showToast('Timeout config saved', 'success'); await new Promise(r => setTimeout(r, 200)); await loadGenerationTimeout() } else { console.error('Save failed:', d); showToast('Save failed', 'error') } } catch (e) { console.error('Save failed:', e); showToast('Save failed: ' + e.message, 'error') } },
-            toggleATAutoRefresh = async () => { try { const enabled = $('atAutoRefreshToggle').checked; const r = await apiRequest('/api/token-refresh/enabled', { method: 'POST', body: JSON.stringify({ enabled: enabled }) }); if (!r) { $('atAutoRefreshToggle').checked = !enabled; return } const d = await r.json(); if (d.success) { showToast(enabled ? 'AT Auto-Refresh Enabled' : 'AT Auto-Refresh Disabled', 'success') } else { showToast('Operation failed: ' + (d.detail || 'Unknown error'), 'error'); $('atAutoRefreshToggle').checked = !enabled } } catch (e) { showToast('Operation failed: ' + e.message, 'error'); $('atAutoRefreshToggle').checked = !enabled } },
-            loadATAutoRefreshConfig = async () => { try { const r = await apiRequest('/api/token-refresh/config'); if (!r) return; const d = await r.json(); if (d.success && d.config) { $('atAutoRefreshToggle').checked = d.config.at_auto_refresh_enabled || false } else { console.error('AT Auto-Refresh config format error:', d) } } catch (e) { console.error('Failed to load AT config:', e) } },
+            loadCacheConfig = async () => { try { console.log('Loading cache config...'); const r = await apiRequest('/api/cache/config'); if (!r) { console.error('API request failed'); return } const d = await r.json(); console.log('Cache config data:', d); if (d.success && d.config) { const enabled = d.config.enabled !== false; const timeout = d.config.timeout || 7200; const baseUrl = d.config.base_url || ''; const effectiveUrl = d.config.effective_base_url || ''; console.log('Cache enabled:', enabled); console.log('Timeout:', timeout); console.log('Base URL:', baseUrl); console.log('Effective URL:', effectiveUrl); $('cfgCacheEnabled').checked = enabled; $('cfgCacheTimeout').value = timeout; $('cfgCacheBaseUrl').value = baseUrl; if (effectiveUrl) { $('cacheEffectiveUrlValue').textContent = effectiveUrl; $('cacheEffectiveUrl').classList.remove('hidden') } else { $('cacheEffectiveUrl').classList.add('hidden') } toggleCacheOptions(); console.log('Cache config loaded successfully') } else { console.error('Cache config data error:', d) } } catch (e) { console.error('Failed to load cache config:', e); showToast('Failed to load cache config: ' + e.message, 'error') } },
+            loadGenerationTimeout = async () => { try { console.log('Loading generation timeout config...'); const r = await apiRequest('/api/generation/timeout'); if (!r) { console.error('API request failed'); return } const d = await r.json(); console.log('Generation timeout config data:', d); if (d.success && d.config) { const imageTimeout = d.config.image_timeout || 300; const videoTimeout = d.config.video_timeout || 1500; console.log('Image timeout:', imageTimeout); console.log('Video timeout:', videoTimeout); $('cfgImageTimeout').value = imageTimeout; $('cfgVideoTimeout').value = videoTimeout; console.log('Generation timeout config loaded successfully') } else { console.error('Generation timeout config data error:', d) } } catch (e) { console.error('Failed to load generation timeout config:', e); showToast('Failed to load generation timeout config: ' + e.message, 'error') } },
+            saveCacheConfig = async () => { const enabled = $('cfgCacheEnabled').checked, timeout = parseInt($('cfgCacheTimeout').value) || 7200, baseUrl = $('cfgCacheBaseUrl').value.trim(); console.log('Saving cache config:', { enabled, timeout, baseUrl }); if (timeout < 60 || timeout > 86400) return showToast('Cache timeout must be between 60-86400 seconds', 'error'); if (baseUrl && !baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) return showToast('Domain must start with http:// or https://', 'error'); try { console.log('Saving cache enabled status...'); const r0 = await apiRequest('/api/cache/enabled', { method: 'POST', body: JSON.stringify({ enabled: enabled }) }); if (!r0) { console.error('Save cache enabled status failed'); return } const d0 = await r0.json(); console.log('Cache enabled status result:', d0); if (!d0.success) { console.error('Save cache enabled status failed:', d0); return showToast('Save cache enabled status failed', 'error') } console.log('Saving timeout...'); const r1 = await apiRequest('/api/cache/config', { method: 'POST', body: JSON.stringify({ timeout: timeout }) }); if (!r1) { console.error('Save timeout failed'); return } const d1 = await r1.json(); console.log('Save timeout result:', d1); if (!d1.success) { console.error('Save timeout failed:', d1); return showToast('Save timeout failed', 'error') } console.log('Saving base URL...'); const r2 = await apiRequest('/api/cache/base-url', { method: 'POST', body: JSON.stringify({ base_url: baseUrl }) }); if (!r2) { console.error('Save base URL failed'); return } const d2 = await r2.json(); console.log('Save base URL result:', d2); if (d2.success) { showToast('Cache config saved successfully', 'success'); console.log('Waiting for config write...'); await new Promise(r => setTimeout(r, 200)); console.log('Reloading config...'); await loadCacheConfig() } else { console.error('Save base URL failed:', d2); showToast('Save base URL failed', 'error') } } catch (e) { console.error('Save failed:', e); showToast('Save failed: ' + e.message, 'error') } },
+            saveGenerationTimeout = async () => { const imageTimeout = parseInt($('cfgImageTimeout').value) || 300, videoTimeout = parseInt($('cfgVideoTimeout').value) || 1500; console.log('Saving generation timeout config:', { imageTimeout, videoTimeout }); if (imageTimeout < 60 || imageTimeout > 3600) return showToast('Image timeout must be between 60-3600 seconds', 'error'); if (videoTimeout < 60 || videoTimeout > 7200) return showToast('Video timeout must be between 60-7200 seconds', 'error'); try { const r = await apiRequest('/api/generation/timeout', { method: 'POST', body: JSON.stringify({ image_timeout: imageTimeout, video_timeout: videoTimeout }) }); if (!r) { console.error('Save request failed'); return } const d = await r.json(); console.log('Save result:', d); if (d.success) { showToast('Generation timeout config saved successfully', 'success'); await new Promise(r => setTimeout(r, 200)); await loadGenerationTimeout() } else { console.error('Save failed:', d); showToast('Save failed', 'error') } } catch (e) { console.error('Save failed:', e); showToast('Save failed: ' + e.message, 'error') } },
+            toggleATAutoRefresh = async () => { try { const enabled = $('atAutoRefreshToggle').checked; const r = await apiRequest('/api/token-refresh/enabled', { method: 'POST', body: JSON.stringify({ enabled: enabled }) }); if (!r) { $('atAutoRefreshToggle').checked = !enabled; return } const d = await r.json(); if (d.success) { showToast(enabled ? 'AT Auto Refresh Enabled' : 'AT Auto Refresh Disabled', 'success') } else { showToast('Operation failed: ' + (d.detail || 'Unknown error'), 'error'); $('atAutoRefreshToggle').checked = !enabled } } catch (e) { showToast('Operation failed: ' + e.message, 'error'); $('atAutoRefreshToggle').checked = !enabled } },
+            loadATAutoRefreshConfig = async () => { try { const r = await apiRequest('/api/token-refresh/config'); if (!r) return; const d = await r.json(); if (d.success && d.config) { $('atAutoRefreshToggle').checked = d.config.at_auto_refresh_enabled || false } else { console.error('AT auto refresh config data error:', d) } } catch (e) { console.error('Failed to load AT auto refresh config:', e) } },
+            loadLogs = async () => { try { const r = await apiRequest('/api/logs?limit=100'); if (!r) return; const logs = await r.json(); const tb = $('logsTableBody'); tb.innerHTML = logs.map(l => { const method = l.watermark_method || '-'; let methodClass = 'bg-gray-50 text-gray-600'; if (method === 'android_success') methodClass = 'bg-green-50 text-green-700'; else if (method === 'android_fallback_third_party') methodClass = 'bg-yellow-50 text-yellow-700'; else if (method === 'third_party') methodClass = 'bg-blue-50 text-blue-700'; else if (method === 'watermark_disabled') methodClass = 'bg-gray-50 text-gray-500'; else if (method === 'watermark_publish_failed') methodClass = 'bg-red-50 text-red-700'; return `<tr><td class="py-2.5 px-3">${l.operation}</td><td class="py-2.5 px-3"><span class="text-xs ${l.token_email ? 'text-blue-600' : 'text-muted-foreground'}">${l.token_email || 'Unknown'}</span></td><td class="py-2.5 px-3"><span class="inline-flex items-center rounded px-2 py-0.5 text-xs ${l.status_code === 200 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}">${l.status_code}</span></td><td class="py-2.5 px-3">${l.duration.toFixed(2)}</td><td class="py-2.5 px-3"><span class="inline-flex items-center rounded px-2 py-0.5 text-xs ${methodClass}">${method}</span></td><td class="py-2.5 px-3 text-xs text-muted-foreground">${l.created_at ? new Date(l.created_at).toLocaleString('en-US') : '-'}</td></tr>` }).join('') } catch (e) { console.error('Failed to load logs:', e) } },
             refreshLogs = async () => { await loadLogs() },
-            showLogDetail = (logId) => { const log = window.allLogs.find(l => l.id === logId); if (!log) { showToast('Log not found', 'error'); return } const content = $('logDetailContent'); let detailHtml = ''; if (log.status_code === -1) { detailHtml += `<div class="space-y-2"><h4 class="font-medium text-sm text-blue-600">Progress</h4><div class="rounded-md border border-blue-200 p-3 bg-blue-50"><p class="text-sm text-blue-700">Task is generating...</p>${log.task_status ? `<p class="text-xs text-blue-600 mt-1">Status: ${log.task_status}</p>` : ''}</div></div>` } else if (log.status_code === 200) { try { const responseBody = log.response_body ? JSON.parse(log.response_body) : null; if (responseBody) { if (responseBody.data && responseBody.data.length > 0) { const item = responseBody.data[0]; if (item.url) { detailHtml += `<div class="space-y-2"><h4 class="font-medium text-sm">Result</h4><div class="rounded-md border border-border p-3 bg-muted/30"><p class="text-sm mb-2"><span class="font-medium">File URL:</span></p><a href="${item.url}" target="_blank" class="text-blue-600 hover:underline text-xs break-all">${item.url}</a></div></div>` } else { detailHtml += `<div class="space-y-2"><h4 class="font-medium text-sm">Response Data</h4><pre class="rounded-md border border-border p-3 bg-muted/30 text-xs overflow-x-auto">${JSON.stringify(responseBody, null, 2)}</pre></div>` } } else { detailHtml += `<div class="space-y-2"><h4 class="font-medium text-sm">Response Data</h4><pre class="rounded-md border border-border p-3 bg-muted/30 text-xs overflow-x-auto">${JSON.stringify(responseBody, null, 2)}</pre></div>` } } else { detailHtml += `<div class="space-y-2"><h4 class="font-medium text-sm">Response Info</h4><p class="text-sm text-muted-foreground">No Response Data</p></div>` } } catch (e) { detailHtml += `<div class="space-y-2"><h4 class="font-medium text-sm">Response Data</h4><pre class="rounded-md border border-border p-3 bg-muted/30 text-xs overflow-x-auto">${log.response_body || 'None'}</pre></div>` } } else { try { const responseBody = log.response_body ? JSON.parse(log.response_body) : null; if (responseBody && responseBody.error) { detailHtml += `<div class="space-y-2"><h4 class="font-medium text-sm text-red-600">Error Reason</h4><div class="rounded-md border border-red-200 p-3 bg-red-50"><p class="text-sm text-red-700">${responseBody.error.message || responseBody.error || 'Unknown Error'}</p></div></div>` } else if (log.response_body && log.response_body !== '{}') { detailHtml += `<div class="space-y-2"><h4 class="font-medium text-sm text-red-600">Error Info</h4><pre class="rounded-md border border-red-200 p-3 bg-red-50 text-xs overflow-x-auto">${log.response_body}</pre></div>` } } catch (e) { if (log.response_body && log.response_body !== '{}') { detailHtml += `<div class="space-y-2"><h4 class="font-medium text-sm text-red-600">Error Info</h4><pre class="rounded-md border border-red-200 p-3 bg-red-50 text-xs overflow-x-auto">${log.response_body}</pre></div>` } } } detailHtml += `<div class="space-y-2 pt-4 border-t border-border"><h4 class="font-medium text-sm">Basic Info</h4><div class="grid grid-cols-2 gap-2 text-sm"><div><span class="text-muted-foreground">Action:</span> ${log.operation}</div><div><span class="text-muted-foreground">Status Code:</span> <span class="inline-flex items-center rounded px-2 py-0.5 text-xs ${log.status_code === -1 ? 'bg-blue-50 text-blue-700' : log.status_code === 200 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}">${log.status_code === -1 ? 'Generating' : log.status_code}</span></div><div><span class="text-muted-foreground">Duration:</span> ${log.duration === -1 ? 'Generating' : log.duration.toFixed(2) + 's'}</div><div><span class="text-muted-foreground">Time:</span> ${log.created_at ? new Date(log.created_at).toLocaleString('en-CA') : '-'}</div></div></div>`; content.innerHTML = detailHtml; $('logDetailModal').classList.remove('hidden') },
-            closeLogDetailModal = () => { $('logDetailModal').classList.add('hidden') },
-            clearAllLogs = async () => { if (!confirm('Clear all logs? Cannot be undone!')) return; try { const r = await apiRequest('/api/logs', { method: 'DELETE' }); if (!r) return; const d = await r.json(); if (d.success) { showToast('Logs cleared', 'success'); await loadLogs() } else { showToast('Clear failed: ' + (d.message || 'Unknown error'), 'error') } } catch (e) { showToast('Clear failed: ' + e.message, 'error') } },
             showToast = (m, t = 'info') => { const d = document.createElement('div'), bc = { success: 'bg-green-600', error: 'bg-destructive', info: 'bg-primary' }; d.className = `fixed bottom-4 right-4 ${bc[t] || bc.info} text-white px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium z-50 animate-slide-up`; d.textContent = m; document.body.appendChild(d); setTimeout(() => { d.style.opacity = '0'; d.style.transition = 'opacity .3s'; setTimeout(() => d.parentNode && document.body.removeChild(d), 300) }, 2000) },
             logout = () => { if (!confirm('Are you sure you want to logout?')) return; localStorage.removeItem('adminToken'); location.href = '/login' },
-            loadCharacters = async () => { try { const r = await apiRequest('/api/characters'); if (!r) return; const d = await r.json(); const g = $('charactersGrid'); if (!d || d.length === 0) { g.innerHTML = '<div class="col-span-full text-center py-8 text-muted-foreground">No characters</div>'; return } g.innerHTML = d.map(c => `<div class="rounded-lg border border-border bg-background p-4"><div class="flex items-start gap-3"><img src="${c.avatar_path || '/static/favicon.ico'}" class="h-14 w-14 rounded-lg object-cover" onerror="this.src='/static/favicon.ico'"/><div class="flex-1 min-w-0"><div class="font-semibold truncate">${c.display_name || c.username}</div><div class="text-xs text-muted-foreground truncate">@${c.username}</div>${c.description ? `<div class="text-xs text-muted-foreground mt-1 line-clamp-2">${c.description}</div>` : ''}</div></div><div class="mt-3 flex gap-2"><button onclick="deleteCharacter(${c.id})" class="flex-1 inline-flex items-center justify-center rounded-md border border-destructive text-destructive hover:bg-destructive hover:text-white h-8 px-3 text-sm transition-colors">Delete</button></div></div>`).join('') } catch (e) { showToast('Load failed: ' + e.message, 'error') } },
-            deleteCharacter = async (id) => { if (!confirm('Delete this character?')) return; try { const r = await apiRequest(`/api/characters/${id}`, { method: 'DELETE' }); if (!r) return; const d = await r.json(); if (d.success) { showToast('Deleted', 'success'); await loadCharacters() } else { showToast('Delete failed', 'error') } } catch (e) { showToast('Delete failed: ' + e.message, 'error') } },
-            switchTab = t => { const cap = n => n.charAt(0).toUpperCase() + n.slice(1);['tokens', 'settings', 'logs', 'generate'].forEach(n => { const active = n === t; $(`panel${cap(n)}`).classList.toggle('hidden', !active); $(`tab${cap(n)}`).classList.toggle('border-primary', active); $(`tab${cap(n)}`).classList.toggle('text-primary', active); $(`tab${cap(n)}`).classList.toggle('border-transparent', !active); $(`tab${cap(n)}`).classList.toggle('text-muted-foreground', !active) }); if (t === 'settings') { loadAdminConfig(); loadProxyConfig(); loadWatermarkFreeConfig(); loadCacheConfig(); loadGenerationTimeout(); loadATAutoRefreshConfig() } else if (t === 'logs') { loadLogs() } };
-        // Adapt generate iframe height
-        window.addEventListener('message', (event) => {
-            const data = event.data || {};
-            if (data.type === 'sora-generate-height' && typeof data.height === 'number') {
-                const iframe = document.getElementById('generateFrame');
-                if (iframe) {
-                    const nextH = Math.max(560, Math.ceil(data.height) + 8);
-                    iframe.style.height = `${nextH}px`;
-                }
-            }
-        });
+            switchTab = t => { const cap = n => n.charAt(0).toUpperCase() + n.slice(1);['tokens', 'settings', 'logs'].forEach(n => { const active = n === t; $(`panel${cap(n)}`).classList.toggle('hidden', !active); $(`tab${cap(n)}`).classList.toggle('border-primary', active); $(`tab${cap(n)}`).classList.toggle('text-primary', active); $(`tab${cap(n)}`).classList.toggle('border-transparent', !active); $(`tab${cap(n)}`).classList.toggle('text-muted-foreground', !active) }); if (t === 'settings') { loadAdminConfig(); loadProxyConfig(); loadWatermarkFreeConfig(); loadCacheConfig(); loadGenerationTimeout(); loadATAutoRefreshConfig() } else if (t === 'logs') { loadLogs() } };
         window.addEventListener('DOMContentLoaded', () => { checkAuth(); refreshTokens(); loadATAutoRefreshConfig() });
     </script>
 </body>

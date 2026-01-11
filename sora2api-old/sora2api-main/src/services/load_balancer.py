@@ -17,23 +17,22 @@ class LoadBalancer:
         # Use image timeout from config as lock timeout
         self.token_lock = TokenLock(lock_timeout=config.image_timeout)
 
-    async def select_token(self, for_image_generation: bool = False, for_video_generation: bool = False, require_pro: bool = False) -> Optional[Token]:
+    async def select_token(self, for_image_generation: bool = False, for_video_generation: bool = False) -> Optional[Token]:
         """
         Select a token using random load balancing
 
         Args:
             for_image_generation: If True, only select tokens that are not locked for image generation and have image_enabled=True
             for_video_generation: If True, filter out tokens with Sora2 quota exhausted (sora2_cooldown_until not expired), tokens that don't support Sora2, and tokens with video_enabled=False
-            require_pro: If True, only select tokens with ChatGPT Pro subscription (plan_type="chatgpt_pro")
 
         Returns:
             Selected token or None if no available tokens
         """
         # Try to auto-refresh tokens expiring within 24 hours if enabled
         if config.at_auto_refresh_enabled:
-            debug_logger.log_info(f"[LOAD_BALANCER] 🔄 自动刷新功能已启用，开始检查Token过期时间...")
+            debug_logger.log_info(f"[LOAD_BALANCER] 🔄 Auto-refresh enabled, checking Token expiry...")
             all_tokens = await self.token_manager.get_all_tokens()
-            debug_logger.log_info(f"[LOAD_BALANCER] 📊 总Token数: {len(all_tokens)}")
+            debug_logger.log_info(f"[LOAD_BALANCER] 📊 Total Tokens: {len(all_tokens)}")
 
             refresh_count = 0
             for token in all_tokens:
@@ -43,26 +42,19 @@ class LoadBalancer:
                     hours_until_expiry = time_until_expiry.total_seconds() / 3600
                     # Refresh if expiry is within 24 hours
                     if hours_until_expiry <= 24:
-                        debug_logger.log_info(f"[LOAD_BALANCER] 🔔 Token {token.id} ({token.email}) 需要刷新，剩余时间: {hours_until_expiry:.2f} 小时")
+                        debug_logger.log_info(f"[LOAD_BALANCER] 🔔 Token {token.id} ({token.email}) needs refresh, time remaining: {hours_until_expiry:.2f} hours")
                         refresh_count += 1
                         await self.token_manager.auto_refresh_expiring_token(token.id)
 
             if refresh_count == 0:
-                debug_logger.log_info(f"[LOAD_BALANCER] ✅ 所有Token都无需刷新")
+                debug_logger.log_info(f"[LOAD_BALANCER] ✅ All Tokens do not need refresh")
             else:
-                debug_logger.log_info(f"[LOAD_BALANCER] ✅ 刷新检查完成，共检查 {refresh_count} 个Token")
+                debug_logger.log_info(f"[LOAD_BALANCER] ✅ Refresh check completed, checked {refresh_count} Tokens")
 
         active_tokens = await self.token_manager.get_active_tokens()
 
         if not active_tokens:
             return None
-
-        # Filter for Pro tokens if required
-        if require_pro:
-            pro_tokens = [token for token in active_tokens if token.plan_type == "chatgpt_pro"]
-            if not pro_tokens:
-                return None
-            active_tokens = pro_tokens
 
         # If for video generation, filter out tokens with Sora2 quota exhausted and tokens without Sora2 support
         if for_video_generation:

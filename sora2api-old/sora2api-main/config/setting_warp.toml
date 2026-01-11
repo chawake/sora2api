@@ -1,5 +1,5 @@
 [global]
-api_key = "han1234"
+api_key = "sk-1234"
 admin_username = "admin"
 admin_password = "admin"
 
@@ -21,20 +21,20 @@ log_responses = true
 mask_token = true
 
 [cache]
-enabled = false
+enabled = true
 timeout = 600
 base_url = "http://127.0.0.1:8000"
 
 [generation]
 image_timeout = 300
-video_timeout = 3000
+video_timeout = 1500
 
 [admin]
 error_ban_threshold = 3
 
 [proxy]
-proxy_enabled = false
-proxy_url = ""
+proxy_enabled = true
+proxy_url = "socks5://warp:1080"
 
 [watermark_free]
 watermark_free_enabled = false

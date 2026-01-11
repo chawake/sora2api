@@ -163,7 +163,7 @@ class Config:
     @property
     def video_timeout(self) -> int:
         """Get video generation timeout in seconds"""
-        return self._config.get("generation", {}).get("video_timeout", 3000)
+        return self._config.get("generation", {}).get("video_timeout", 1500)
 
     def set_video_timeout(self, timeout: int):
         """Set video generation timeout in seconds"""
