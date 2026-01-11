@@ -177,15 +177,9 @@ async def get_tokens(token: str = Depends(verify_admin_token)) -> List[dict]:
         stats = await db.get_token_stats(token.id)
         result.append({
             "id": token.id,
-<<<<<<< HEAD
             "token": token.token,  # Complete Access Token
             "st": token.st,  # Complete Session Token
             "rt": token.rt,  # Complete Refresh Token
-=======
-            "token": token.token,  # 完整的Access Token
-            "st": token.st,  # 完整的Session Token
-            "rt": token.rt,  # 完整的Refresh Token
->>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
             "client_id": token.client_id,  # Client ID
             "proxy_url": token.proxy_url,  # Proxy URL
             "email": token.email,
@@ -805,10 +799,7 @@ async def get_logs(limit: int = 100, token: str = Depends(verify_admin_token)):
             "operation": log.get("operation"),
             "status_code": log.get("status_code"),
             "duration": log.get("duration"),
-<<<<<<< HEAD
             "watermark_method": log.get("watermark_method"),
-=======
->>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
             "created_at": log.get("created_at"),
             "request_body": log.get("request_body"),
             "response_body": log.get("response_body"),
@@ -1038,7 +1029,6 @@ async def update_at_auto_refresh_enabled(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update AT auto refresh enabled status: {str(e)}")
 
-<<<<<<< HEAD
 
 @router.get("/api/android-credentials", summary="Get Android credentials")
 async def get_android_credentials(token: str = Depends(verify_admin_token)) -> dict:
@@ -1095,19 +1085,3 @@ async def update_android_credentials(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update Android credentials: {str(e)}")
-=======
-# Debug logs download endpoint
-@router.get("/api/admin/logs/download")
-async def download_debug_logs(token: str = Depends(verify_admin_token)):
-    """Download debug logs file (logs.txt)"""
-    log_file = Path("logs.txt")
-
-    if not log_file.exists():
-        raise HTTPException(status_code=404, detail="日志文件不存在")
-
-    return FileResponse(
-        path=str(log_file),
-        filename="logs.txt",
-        media_type="text/plain"
-    )
->>>>>>> 238a7e11916fd85e489a82b689b3b96de1af46d9
