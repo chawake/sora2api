@@ -55,6 +55,7 @@ class Database:
             admin_password = "admin"
             api_key = "han1234"
             error_ban_threshold = 3
+            debug_enabled = False
 
             if config_dict:
                 global_config = config_dict.get("global", {})
@@ -64,11 +65,15 @@ class Database:
 
                 admin_config = config_dict.get("admin", {})
                 error_ban_threshold = admin_config.get("error_ban_threshold", 3)
+                debug_enabled = admin_config.get("debug_enabled", False)
+                # Fallback to [debug] section if not in [admin]
+                if not debug_enabled:
+                    debug_enabled = config_dict.get("debug", {}).get("enabled", False)
 
             await db.execute("""
-                INSERT INTO admin_config (id, admin_username, admin_password, api_key, error_ban_threshold)
-                VALUES (1, ?, ?, ?, ?)
-            """, (admin_username, admin_password, api_key, error_ban_threshold))
+                INSERT INTO admin_config (id, admin_username, admin_password, api_key, error_ban_threshold, debug_enabled)
+                VALUES (1, ?, ?, ?, ?, ?)
+            """, (admin_username, admin_password, api_key, error_ban_threshold, debug_enabled))
 
         # Ensure proxy_config has a row
         cursor = await db.execute("SELECT COUNT(*) FROM proxy_config")
@@ -259,6 +264,7 @@ class Database:
                     ("admin_username", "TEXT DEFAULT 'admin'"),
                     ("admin_password", "TEXT DEFAULT 'admin'"),
                     ("api_key", "TEXT DEFAULT 'han1234'"),
+                    ("debug_enabled", "BOOLEAN DEFAULT 0"),
                 ]
 
                 for col_name, col_type in columns_to_add:
@@ -409,6 +415,7 @@ class Database:
                     admin_password TEXT DEFAULT 'admin',
                     api_key TEXT DEFAULT 'han1234',
                     error_ban_threshold INTEGER DEFAULT 3,
+                    debug_enabled BOOLEAN DEFAULT 0,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -1014,16 +1021,16 @@ class Database:
                 return AdminConfig(**dict(row))
             # If no row exists, return a default config with placeholder values
             # This should not happen in normal operation as _ensure_config_rows should create it
-            return AdminConfig(admin_username="admin", admin_password="admin", api_key="han1234")
+            return AdminConfig(admin_username="admin", admin_password="admin", api_key="han1234", debug_enabled=False)
     
     async def update_admin_config(self, config: AdminConfig):
         """Update admin configuration"""
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("""
                 UPDATE admin_config
-                SET admin_username = ?, admin_password = ?, api_key = ?, error_ban_threshold = ?, updated_at = CURRENT_TIMESTAMP
+                SET admin_username = ?, admin_password = ?, api_key = ?, error_ban_threshold = ?, debug_enabled = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = 1
-            """, (config.admin_username, config.admin_password, config.api_key, config.error_ban_threshold))
+            """, (config.admin_username, config.admin_password, config.api_key, config.error_ban_threshold, config.debug_enabled))
             await db.commit()
     
     # Proxy config operations

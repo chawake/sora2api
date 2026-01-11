@@ -629,6 +629,11 @@ async def update_debug_config(
         # Update in-memory config
         config.set_debug_enabled(request.enabled)
 
+        # Update in database
+        admin_config = await db.get_admin_config()
+        admin_config.debug_enabled = request.enabled
+        await db.update_admin_config(admin_config)
+
         status = "enabled" if request.enabled else "disabled"
         return {"success": True, "message": f"Debug mode {status}", "enabled": request.enabled}
     except Exception as e:

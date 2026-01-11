@@ -92,6 +92,7 @@ class AdminConfig(BaseModel):
     admin_password: str  # Read from database, initialized from setting.toml on first startup
     api_key: str  # Read from database, initialized from setting.toml on first startup
     error_ban_threshold: int = 3
+    debug_enabled: bool = False
     updated_at: Optional[datetime] = None
 
 class ProxyConfig(BaseModel):

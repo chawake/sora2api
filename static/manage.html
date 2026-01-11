@@ -997,6 +997,28 @@
             checkAuth = () => { const t = localStorage.getItem('adminToken'); return t || (location.href = '/login', null), t },
             apiRequest = async (url, opts = {}) => { const t = checkAuth(); if (!t) return null; const r = await fetch(url, { ...opts, headers: { ...opts.headers, Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' } }); return r.status === 401 ? (localStorage.removeItem('adminToken'), location.href = '/login', null) : r },
             loadStats = async () => { try { const r = await apiRequest('/api/stats'); if (!r) return; const d = await r.json(); $('statTotal').textContent = d.total_tokens || 0; $('statActive').textContent = d.active_tokens || 0; $('statImages').textContent = (d.today_images || 0) + '/' + (d.total_images || 0); $('statVideos').textContent = (d.today_videos || 0) + '/' + (d.total_videos || 0); $('statErrors').textContent = (d.today_errors || 0) + '/' + (d.total_errors || 0) } catch (e) { console.error('Failed to load stats:', e) } },
+            loadLogs = async () => { try { const r = await apiRequest('/api/logs'); if (!r) return; window.allLogs = await r.json(); renderLogs() } catch (e) { console.error('Failed to load logs:', e) } },
+            renderLogs = () => {
+                const tb = $('logTableBody'); if (!tb) return; tb.innerHTML = window.allLogs.map(l => {
+                    const statusClass = l.status_code === 200 ? 'bg-green-50 text-green-700' : (l.status_code === -1 ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700');
+                    const statusText = l.status_code === -1 ? 'Generating' : l.status_code;
+                    const duration = l.duration === -1 ? '-' : l.duration.toFixed(1) + 's';
+                    const taskStatus = l.task_status ? `<span class="text-xs text-muted-foreground ml-1">(${l.task_status})</span>` : '';
+                    const watermark = l.watermark_method ? `<span class="inline-flex items-center rounded px-2 py-0.5 text-xs bg-gray-100 text-gray-700 ml-1" title="Watermark Method">${l.watermark_method}</span>` : '';
+                    return `<tr class="border-b transition-colors hover:bg-muted/50">
+                    <td class="p-3 align-middle text-sm text-center">${l.id}</td>
+                    <td class="p-3 align-middle text-sm">${l.token_email || '-'}<br/><span class="text-xs text-muted-foreground">${l.token_username || ''}</span></td>
+                    <td class="p-3 align-middle text-sm"><span class="font-medium">${l.operation}</span>${taskStatus}</td>
+                    <td class="p-3 align-middle text-sm text-center"><span class="inline-flex items-center rounded px-2 py-0.5 text-xs ${statusClass}">${statusText}</span></td>
+                    <td class="p-3 align-middle text-sm text-center">${duration}</td>
+                    <td class="p-3 align-middle text-sm text-center">${l.created_at ? new Date(l.created_at).toLocaleTimeString() : '-'}</td>
+                    <td class="p-3 align-middle text-sm text-right">
+                        ${watermark}
+                        <button onclick="showLogDetail(${l.id})" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3">Detail</button>
+                    </td>
+                </tr>`
+                }).join('')
+            },
             loadTokens = async () => { try { const r = await apiRequest('/api/tokens'); if (!r) return; allTokens = await r.json(); renderTokens() } catch (e) { console.error('Failed to load tokens:', e) } },
             formatExpiry = exp => { if (!exp) return '-'; const d = new Date(exp), now = new Date(), diff = d - now; const dateStr = d.toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }); const timeStr = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }); if (diff < 0) return `<span class="text-red-600">${dateStr} ${timeStr}</span>`; const days = Math.floor(diff / 864e5); if (days < 7) return `<span class="text-orange-600">${dateStr} ${timeStr}</span>`; return `${dateStr} ${timeStr}` },
             formatPlanType = type => { if (!type) return '-'; const typeMap = { 'chatgpt_team': 'Team', 'chatgpt_plus': 'Plus', 'chatgpt_pro': 'Pro', 'chatgpt_free': 'Free' }; return typeMap[type] || type },
