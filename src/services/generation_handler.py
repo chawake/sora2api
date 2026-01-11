@@ -1207,7 +1207,8 @@ class GenerationHandler:
     async def _log_request(self, token_id: Optional[int], operation: str,
                           request_data: Dict[str, Any], response_data: Dict[str, Any],
                           status_code: int, duration: float,
-                          watermark_method: Optional[str] = None):
+                          watermark_method: Optional[str] = None,
+                          task_id: Optional[str] = None):
         """Log request to database"""
         try:
             log = RequestLog(
