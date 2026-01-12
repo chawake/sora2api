@@ -288,6 +288,7 @@ class TokenManager:
 
         async with AsyncSession() as session:
             headers = {
+                "Authorization": f"Bearer {access_token}",
                 "Accept": "application/json",
                 "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
             }
