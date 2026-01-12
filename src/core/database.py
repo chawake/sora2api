@@ -221,6 +221,7 @@ class Database:
                     ("client_id", "TEXT"),
                     ("proxy_url", "TEXT"),
                     ("is_expired", "BOOLEAN DEFAULT 0"),
+                    ("updated_at", "TIMESTAMP"),
                 ]
 
                 for col_name, col_type in columns_to_add:
@@ -349,7 +350,8 @@ class Database:
                     video_enabled BOOLEAN DEFAULT 1,
                     image_concurrency INTEGER DEFAULT -1,
                     video_concurrency INTEGER DEFAULT -1,
-                    is_expired BOOLEAN DEFAULT 0
+                    is_expired BOOLEAN DEFAULT 0,
+                    updated_at TIMESTAMP
                 )
             """)
 
