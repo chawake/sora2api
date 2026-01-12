@@ -537,7 +537,7 @@ class GenerationHandler:
             await self.token_manager.record_usage(token_obj.id, is_video=is_video)
             
             # Poll for results with timeout
-            async for chunk in self._poll_task_result(task_id, token_obj.token, is_video, stream, prompt, token_obj.id, watermark_info):
+            async for chunk in self._poll_task_result(task_id, token_obj.token, is_video, stream, prompt, token_obj.id, log_id, start_time):
                 yield chunk
             
             # Record success
@@ -596,12 +596,6 @@ class GenerationHandler:
             if is_video and token_obj and self.concurrency_manager:
                 await self.concurrency_manager.release_video(token_obj.id)
 
-            # Record error (check if it's an overload error)
-            if token_obj:
-                error_str = str(e).lower()
-                is_overload = "heavy_load" in error_str or "under heavy load" in error_str
-                await self.token_manager.record_error(token_obj.id, is_overload=is_overload)
-
             # Parse error message to check if it's a structured error (JSON)
             error_response = None
             try:
@@ -609,15 +603,31 @@ class GenerationHandler:
             except:
                 pass
 
+            # Check for CF shield/429 error
+            is_cf_or_429 = False
+            if error_response and isinstance(error_response, dict):
+                error_info = error_response.get("error", {})
+                if error_info.get("code") == "cf_shield_429":
+                    is_cf_or_429 = True
+
+            # Record error (check if it's an overload error or CF/429 error)
+            if token_obj:
+                error_str = str(e).lower()
+                is_overload = "heavy_load" in error_str or "under heavy load" in error_str
+                # Don't record error for CF shield/429 (not token's fault)
+                if not is_cf_or_429:
+                    await self.token_manager.record_error(token_obj.id, is_overload=is_overload)
+
             # Update log entry with error data
             duration = time.time() - start_time
             if log_id:
                 if error_response:
-                    # Structured error (e.g., unsupported_country_code)
+                    # Structured error (e.g., unsupported_country_code, cf_shield_429)
+                    status_code = 429 if is_cf_or_429 else 400
                     await self.db.update_request_log(
                         log_id,
                         response_body=json.dumps(error_response),
-                        status_code=400,
+                        status_code=status_code,
                         duration=duration
                     )
                 else:
@@ -677,10 +687,20 @@ class GenerationHandler:
                 if is_video and token_id and self.concurrency_manager:
                     await self.concurrency_manager.release_video(token_id)
                     debug_logger.log_info(f"Released concurrency slot for token {token_id} due to timeout")
-
+                # Update task status to failed
                 await self.db.update_task(task_id, "failed", 0, error_message=f"Generation timeout after {elapsed_time:.1f} seconds")
+                
+                # Update request log with timeout error
+                if log_id and start_time:
+                    duration = time.time() - start_time
+                    await self.db.update_request_log(
+                        log_id,
+                        response_body=json.dumps({"error": f"Generation timeout after {elapsed_time:.1f} seconds"}),
+                        status_code=408,
+                        duration=duration
+                    )
+                
                 raise Exception(f"Upstream API timeout: Generation exceeded {timeout} seconds limit")
-
 
             await asyncio.sleep(poll_interval)
 
@@ -1379,6 +1399,20 @@ class GenerationHandler:
             yield "data: [DONE]\n\n"
 
         except Exception as e:
+            # Parse error to check for CF shield/429
+            error_response = None
+            try:
+                error_response = json.loads(str(e))
+            except:
+                pass
+
+            # Check for CF shield/429 error
+            is_cf_or_429 = False
+            if error_response and isinstance(error_response, dict):
+                error_info = error_response.get("error", {})
+                if error_info.get("code") == "cf_shield_429":
+                    is_cf_or_429 = True
+
             # Log failed character creation
             duration = time.time() - start_time
             await self._log_request(
@@ -1392,15 +1426,25 @@ class GenerationHandler:
                     "success": False,
                     "error": str(e)
                 },
-                status_code=500,
+                status_code=429 if is_cf_or_429 else 500,
                 duration=duration
             )
 
+            # Record error (check if it's an overload error or CF/429 error)
+            if token_obj:
+                error_str = str(e).lower()
+                is_overload = "heavy_load" in error_str or "under heavy load" in error_str
+                # Don't record error for CF shield/429 (not token's fault)
+                if not is_cf_or_429:
+                    await self.token_manager.record_error(token_obj.id, is_overload=is_overload)
+            
             debug_logger.log_error(
                 error_message=f"Character creation failed: {str(e)}",
-                status_code=500,
+                status_code=429 if is_cf_or_429 else 500,
                 response_text=str(e)
             )
+
+            
             raise
 
     async def _handle_character_and_video_generation(self, video_data, prompt: str, model_config: Dict) -> AsyncGenerator[str, None]:
@@ -1595,14 +1639,30 @@ class GenerationHandler:
                 duration=duration
             )
 
-            # Record error (check if it's an overload error)
+            # Parse error to check for CF shield/429
+            error_response = None
+            try:
+                error_response = json.loads(str(e))
+            except:
+                pass
+
+            # Check for CF shield/429 error
+            is_cf_or_429 = False
+            if error_response and isinstance(error_response, dict):
+                error_info = error_response.get("error", {})
+                if error_info.get("code") == "cf_shield_429":
+                    is_cf_or_429 = True
+
+            # Record error (check if it's an overload error or CF/429 error)
             if token_obj:
                 error_str = str(e).lower()
                 is_overload = "heavy_load" in error_str or "under heavy load" in error_str
-                await self.token_manager.record_error(token_obj.id, is_overload=is_overload)
+                # Don't record error for CF shield/429 (not token's fault)
+                if not is_cf_or_429:
+                    await self.token_manager.record_error(token_obj.id, is_overload=is_overload)
             debug_logger.log_error(
                 error_message=f"Character and video generation failed: {str(e)}",
-                status_code=500,
+                status_code=429 if is_cf_or_429 else 500,
                 response_text=str(e)
             )
             raise
@@ -1688,14 +1748,30 @@ class GenerationHandler:
             await self.token_manager.record_success(token_obj.id, is_video=True)
 
         except Exception as e:
-            # Record error (check if it's an overload error)
+            # Parse error to check for CF shield/429
+            error_response = None
+            try:
+                error_response = json.loads(str(e))
+            except:
+                pass
+
+            # Check for CF shield/429 error
+            is_cf_or_429 = False
+            if error_response and isinstance(error_response, dict):
+                error_info = error_response.get("error", {})
+                if error_info.get("code") == "cf_shield_429":
+                    is_cf_or_429 = True
+
+            # Record error (check if it's an overload error or CF/429 error)
             if token_obj:
                 error_str = str(e).lower()
                 is_overload = "heavy_load" in error_str or "under heavy load" in error_str
-                await self.token_manager.record_error(token_obj.id, is_overload=is_overload)
+            # Don't record error for CF shield/429 (not token's fault)
+                if not is_cf_or_429:
+                    await self.token_manager.record_error(token_obj.id, is_overload=is_overload)
             debug_logger.log_error(
                 error_message=f"Remix generation failed: {str(e)}",
-                status_code=500,
+                status_code=429 if is_cf_or_429 else 500,
                 response_text=str(e)
             )
             raise
