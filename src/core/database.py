@@ -696,8 +696,9 @@ class Database:
                           image_enabled: Optional[bool] = None,
                           video_enabled: Optional[bool] = None,
                           image_concurrency: Optional[int] = None,
-                          video_concurrency: Optional[int] = None):
-        """Update token (AT, ST, RT, client_id, proxy_url, remark, expiry_time, subscription info, image_enabled, video_enabled)"""
+                          video_concurrency: Optional[int] = None,
+                          username: Optional[str] = None):
+        """Update token (AT, ST, RT, client_id, proxy_url, remark, expiry_time, subscription info, image_enabled, video_enabled, username)"""
         async with aiosqlite.connect(self.db_path) as db:
             # Build dynamic update query
             updates = []
@@ -754,16 +755,24 @@ class Database:
             if image_concurrency is not None:
                 updates.append("image_concurrency = ?")
                 params.append(image_concurrency)
-
+                
             if video_concurrency is not None:
                 updates.append("video_concurrency = ?")
                 params.append(video_concurrency)
 
+            if username is not None:
+                updates.append("username = ?")
+                params.append(username)
+
             if updates:
+                query = f"UPDATE tokens SET {', '.join(updates)}, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
                 params.append(token_id)
-                query = f"UPDATE tokens SET {', '.join(updates)} WHERE id = ?"
                 await db.execute(query, params)
                 await db.commit()
+                return True
+            return False
+
+
 
     # Token stats operations
     async def get_token_stats(self, token_id: int) -> Optional[TokenStats]:

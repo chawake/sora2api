@@ -650,11 +650,11 @@ class GenerationHandler:
         poll_interval = config.poll_interval
         max_attempts = int(timeout / poll_interval)  # Calculate max attempts based on timeout
         last_progress = 0
-        start_time = time.time()
+        polling_start_time = time.time()
         # watermark_info is passed from caller, don't re-initialize
-        last_heartbeat_time = start_time  # Track last heartbeat for image generation
+        last_heartbeat_time = polling_start_time  # Track last heartbeat for image generation
         heartbeat_interval = 10  # Send heartbeat every 10 seconds for image generation
-        last_status_output_time = start_time  # Track last status output time for video generation
+        last_status_output_time = polling_start_time  # Track last status output time for video generation
         video_status_interval = 30  # Output status every 30 seconds for video generation
 
         debug_logger.log_info(f"Starting task polling: task_id={task_id}, is_video={is_video}, timeout={timeout}s, max_attempts={max_attempts}")
@@ -665,10 +665,14 @@ class GenerationHandler:
             debug_logger.log_info(f"Watermark-free mode: {'ENABLED' if watermark_free_config.watermark_free_enabled else 'DISABLED'}")
             if not watermark_free_config.watermark_free_enabled and watermark_info is not None:
                 watermark_info["method"] = "watermark_disabled"
+        
+        # Ensure meaningful default for watermark method if undefined
+        if is_video and watermark_info is not None and watermark_info.get("method") is None:
+             watermark_info["method"] = "Standard"
 
         for attempt in range(max_attempts):
             # Check if timeout exceeded
-            elapsed_time = time.time() - start_time
+            elapsed_time = time.time() - polling_start_time
             if elapsed_time > timeout:
                 debug_logger.log_error(
                     error_message=f"Task timeout: {elapsed_time:.1f}s > {timeout}s",

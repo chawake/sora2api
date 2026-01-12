@@ -1007,7 +1007,8 @@ class TokenManager:
                 token_id,
                 plan_type=plan_type,
                 plan_title=plan_title,
-                subscription_end=subscription_end
+                subscription_end=subscription_end,
+                username=user_info.get("username")
             )
 
             # Update token Sora2 info in database
