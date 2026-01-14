@@ -267,16 +267,37 @@ class GenerationHandler:
         Returns:
             Tuple of (cleaned_prompt, style_id)
         """
-        # Extract {style} pattern
-        match = re.search(r'\{([^}]+)\}', prompt)
-        if match:
-            style_id = match.group(1).strip()
-            # Remove {style} from prompt
-            cleaned_prompt = re.sub(r'\{[^}]+\}', '', prompt).strip()
-            # Clean up extra whitespace
-            cleaned_prompt = ' '.join(cleaned_prompt.split())
-            debug_logger.log_info(f"Extracted style: '{style_id}' from prompt: '{prompt}'")
-            return cleaned_prompt, style_id
+        # Valid style IDs
+        VALID_STYLES = {
+            "festive", "kakalaka", "news", "selfie", "handheld",
+            "golden", "anime", "retro", "nostalgic", "comic"
+        }
+
+        # Iterate through all matches of {content} to find a valid style
+        # This handles cases where there are other curly braces in the prompt (e.g. "{block} {anime}")
+        matches = list(re.finditer(r'\{([^}]+)\}', prompt))
+        
+        for match in matches:
+            full_match = match.group(0)
+            style_candidate = match.group(1).strip()
+
+            # Check if it's a single word (no spaces) and in valid styles list
+            if ' ' not in style_candidate and style_candidate.lower() in VALID_STYLES:
+                # Valid style found - remove THIS specific match from prompt
+                cleaned_prompt = prompt.replace(full_match, '', 1).strip()
+                
+                # Clean up extra whitespace
+                cleaned_prompt = ' '.join(cleaned_prompt.split())
+                
+                debug_logger.log_info(f"Extracted style: '{style_candidate}' from prompt: '{prompt}'")
+                return cleaned_prompt, style_candidate.lower()
+
+        # No valid style found in any brace pair
+        # Check if there was a match that looked like a style but wasn't valid (for logging)
+        if matches:
+             # Just log the first invalid one for info if needed, or just return
+             pass
+             
         return prompt, None
 
     async def _download_file(self, url: str) -> bytes:
