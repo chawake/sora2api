@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 import secrets
 from pydantic import BaseModel
+from apscheduler.triggers.cron import CronTrigger
 from ..core.auth import AuthManager
 from ..core.config import config
 from ..services.token_manager import TokenManager
@@ -22,18 +23,20 @@ proxy_manager: ProxyManager = None
 db: Database = None
 generation_handler = None
 concurrency_manager: ConcurrencyManager = None
+scheduler = None
 
 # Store active admin tokens (in production, use Redis or database)
 active_admin_tokens = set()
 
-def set_dependencies(tm: TokenManager, pm: ProxyManager, database: Database, gh=None, cm: ConcurrencyManager = None):
+def set_dependencies(tm: TokenManager, pm: ProxyManager, database: Database, gh=None, cm: ConcurrencyManager = None, sched=None):
     """Set dependencies"""
-    global token_manager, proxy_manager, db, generation_handler, concurrency_manager
+    global token_manager, proxy_manager, db, generation_handler, concurrency_manager, scheduler
     token_manager = tm
     proxy_manager = pm
     db = database
     generation_handler = gh
     concurrency_manager = cm
+    scheduler = sched
 
 def verify_admin_token(authorization: str = Header(None)):
     """Verify admin token from Authorization header"""
@@ -69,8 +72,8 @@ class AddTokenRequest(BaseModel):
     remark: Optional[str] = None
     image_enabled: bool = True  # Enable image generation
     video_enabled: bool = True  # Enable video generation
-    image_concurrency: int = -1  # Image concurrency limit (-1 for no limit)
-    video_concurrency: int = -1  # Video concurrency limit (-1 for no limit)
+    image_concurrency: int = 1  # Image concurrency limit (default: 1)
+    video_concurrency: int = 3  # Video concurrency limit (default: 3)
 
 class ST2ATRequest(BaseModel):
     st: str  # Session Token
@@ -146,6 +149,13 @@ class UpdateWatermarkFreeConfigRequest(BaseModel):
     custom_parse_url: Optional[str] = None
     custom_parse_token: Optional[str] = None
 
+class BatchDisableRequest(BaseModel):
+    token_ids: List[int]
+
+class BatchUpdateProxyRequest(BaseModel):
+    token_ids: List[int]
+    proxy_url: Optional[str] = None
+
 # Auth endpoints
 @router.post("/api/login", response_model=LoginResponse)
 async def login(request: LoginRequest):
@@ -177,9 +187,9 @@ async def get_tokens(token: str = Depends(verify_admin_token)) -> List[dict]:
         stats = await db.get_token_stats(token.id)
         result.append({
             "id": token.id,
-            "token": token.token,  # Complete Access Token
-            "st": token.st,  # Complete Session Token
-            "rt": token.rt,  # Complete Refresh Token
+            "token": token.token,  # 完整的Access Token
+            "st": token.st,  # 完整的Session Token
+            "rt": token.rt,  # 完整的Refresh Token
             "client_id": token.client_id,  # Client ID
             "proxy_url": token.proxy_url,  # Proxy URL
             "email": token.email,
@@ -194,21 +204,21 @@ async def get_tokens(token: str = Depends(verify_admin_token)) -> List[dict]:
             "image_count": stats.image_count if stats else 0,
             "video_count": stats.video_count if stats else 0,
             "error_count": stats.error_count if stats else 0,
-            # Subscription info
+            # 订阅信息
             "plan_type": token.plan_type,
             "plan_title": token.plan_title,
             "subscription_end": token.subscription_end.isoformat() if token.subscription_end else None,
-            # Sora2 info
+            # Sora2信息
             "sora2_supported": token.sora2_supported,
             "sora2_invite_code": token.sora2_invite_code,
             "sora2_redeemed_count": token.sora2_redeemed_count,
             "sora2_total_count": token.sora2_total_count,
             "sora2_remaining_count": token.sora2_remaining_count,
             "sora2_cooldown_until": token.sora2_cooldown_until.isoformat() if token.sora2_cooldown_until else None,
-            # Feature toggles
+            # 功能开关
             "image_enabled": token.image_enabled,
             "video_enabled": token.video_enabled,
-            # Concurrency limits
+            # 并发限制
             "image_concurrency": token.image_concurrency,
             "video_concurrency": token.video_concurrency
         })
@@ -314,7 +324,7 @@ async def disable_token(token_id: int, token: str = Depends(verify_admin_token))
 
 @router.post("/api/tokens/{token_id}/test")
 async def test_token(token_id: int, token: str = Depends(verify_admin_token)):
-    """Test if a token is valid and refresh Sora2 info"""
+    """Test if a token is valid"""
     try:
         result = await token_manager.test_token(token_id)
         response = {
@@ -324,16 +334,6 @@ async def test_token(token_id: int, token: str = Depends(verify_admin_token)):
             "email": result.get("email"),
             "username": result.get("username")
         }
-
-        # Include Sora2 info if available
-        if result.get("valid"):
-            response.update({
-                "sora2_supported": result.get("sora2_supported"),
-                "sora2_invite_code": result.get("sora2_invite_code"),
-                "sora2_redeemed_count": result.get("sora2_redeemed_count"),
-                "sora2_total_count": result.get("sora2_total_count"),
-                "sora2_remaining_count": result.get("sora2_remaining_count")
-            })
 
         return response
     except Exception as e:
@@ -349,15 +349,25 @@ async def delete_token(token_id: int, token: str = Depends(verify_admin_token)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/api/tokens/batch/test-update")
-async def batch_test_update(token: str = Depends(verify_admin_token)):
-    """Test and update all tokens by fetching their status from upstream"""
+async def batch_test_update(request: BatchDisableRequest = None, token: str = Depends(verify_admin_token)):
+    """Test and update selected tokens or all tokens by fetching their status from upstream"""
     try:
-        tokens = await db.get_all_tokens()
+        if request and request.token_ids:
+            # Test only selected tokens
+            tokens = []
+            for token_id in request.token_ids:
+                token_obj = await db.get_token(token_id)
+                if token_obj:
+                    tokens.append(token_obj)
+        else:
+            # Test all tokens (backward compatibility)
+            tokens = await db.get_all_tokens()
+
         success_count = 0
         failed_count = 0
         results = []
 
-        for  token_obj  in  tokens :
+        for token_obj in tokens:
             try:
                 # Test token and update account info (same as single test)
                 result = await token_manager.test_token(token_obj.id)
@@ -373,7 +383,7 @@ async def batch_test_update(token: str = Depends(verify_admin_token)):
 
         return {
             "success": True,
-            "message" : f"Test complete: { success_count } successful tests, { failed_count } failed tests" ,
+            "message": f"测试完成：成功 {success_count} 个，失败 {failed_count} 个",
             "success_count": success_count,
             "failed_count": failed_count,
             "results": results
@@ -382,41 +392,92 @@ async def batch_test_update(token: str = Depends(verify_admin_token)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/tokens/batch/enable-all")
-async def batch_enable_all(token: str = Depends(verify_admin_token)):
-    """Enable all disabled tokens"""
+async def batch_enable_all(request: BatchDisableRequest = None, token: str = Depends(verify_admin_token)):
+    """Enable selected tokens or all disabled tokens"""
     try:
-        tokens = await db.get_all_tokens()
-        enabled_count = 0
-
-        for  token_obj  in  tokens :
-            if not token_obj.is_active:
-                await token_manager.enable_token(token_obj.id)
+        if request and request.token_ids:
+            # Enable only selected tokens
+            enabled_count = 0
+            for token_id in request.token_ids:
+                await token_manager.enable_token(token_id)
                 enabled_count += 1
+        else:
+            # Enable all disabled tokens (backward compatibility)
+            tokens = await db.get_all_tokens()
+            enabled_count = 0
+            for token_obj in tokens:
+                if not token_obj.is_active:
+                    await token_manager.enable_token(token_obj.id)
+                    enabled_count += 1
 
         return {
             "success": True,
-            "message" : f" { enabled_count } disabled tokens have been enabled" ,
+            "message": f"已启用 {enabled_count} 个Token",
             "enabled_count": enabled_count
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/tokens/batch/delete-disabled")
-async def batch_delete_disabled(token: str = Depends(verify_admin_token)):
-    """Delete all disabled tokens"""
+async def batch_delete_disabled(request: BatchDisableRequest = None, token: str = Depends(verify_admin_token)):
+    """Delete selected tokens or all disabled tokens"""
     try:
-        tokens = await db.get_all_tokens()
-        deleted_count = 0
-
-        for  token_obj  in  tokens :
-            if not token_obj.is_active:
-                await token_manager.delete_token(token_obj.id)
+        if request and request.token_ids:
+            # Delete only selected tokens
+            deleted_count = 0
+            for token_id in request.token_ids:
+                await token_manager.delete_token(token_id)
                 deleted_count += 1
+        else:
+            # Delete all disabled tokens (backward compatibility)
+            tokens = await db.get_all_tokens()
+            deleted_count = 0
+            for token_obj in tokens:
+                if not token_obj.is_active:
+                    await token_manager.delete_token(token_obj.id)
+                    deleted_count += 1
 
         return {
             "success": True,
-            "message" : f" { deleted_count } disabled tokens have been deleted" ,
+            "message": f"已删除 {deleted_count} 个Token",
             "deleted_count": deleted_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/api/tokens/batch/disable-selected")
+async def batch_disable_selected(request: BatchDisableRequest, token: str = Depends(verify_admin_token)):
+    """Disable selected tokens"""
+    try:
+        disabled_count = 0
+        for token_id in request.token_ids:
+            await token_manager.disable_token(token_id)
+            disabled_count += 1
+
+        return {
+            "success": True,
+            "message": f"已禁用 {disabled_count} 个Token",
+            "disabled_count": disabled_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/api/tokens/batch/update-proxy")
+async def batch_update_proxy(request: BatchUpdateProxyRequest, token: str = Depends(verify_admin_token)):
+    """Batch update proxy for selected tokens"""
+    try:
+        updated_count = 0
+        for token_id in request.token_ids:
+            await token_manager.update_token(
+                token_id=token_id,
+                proxy_url=request.proxy_url
+            )
+            updated_count += 1
+
+        return {
+            "success": True,
+            "message": f"已更新 {updated_count} 个Token的代理",
+            "updated_count": updated_count
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -702,11 +763,6 @@ async def update_debug_config(
         # Update in-memory config
         config.set_debug_enabled(request.enabled)
 
-        # Update in database
-        admin_config = await db.get_admin_config()
-        admin_config.debug_enabled = request.enabled
-        await db.update_admin_config(admin_config)
-
         status = "enabled" if request.enabled else "disabled"
         return {"success": True, "message": f"Debug mode {status}", "enabled": request.enabled}
     except Exception as e:
@@ -803,65 +859,6 @@ async def get_stats(token: str = Depends(verify_admin_token)):
         "today_errors": today_errors
     }
 
-# Sora2 endpoints
-@router.post("/api/tokens/{token_id}/sora2/activate")
-async def activate_sora2(
-    token_id: int,
-    invite_code: str,
-    token: str = Depends(verify_admin_token)
-):
-    """Activate Sora2 with invite code"""
-    try:
-        # Get token
-        token_obj = await db.get_token(token_id)
-        if not token_obj:
-            raise HTTPException(status_code=404, detail="Token not found")
-
-        # Activate Sora2
-        result = await token_manager.activate_sora2_invite(token_obj.token, invite_code)
-
-        if result.get("success"):
-            # Get new invite code after activation
-            sora2_info = await token_manager.get_sora2_invite_code(token_obj.token, token_id)
-
-            # Get remaining count
-            sora2_remaining_count = 0
-            try:
-                remaining_info = await token_manager.get_sora2_remaining_count(token_obj.token, token_id)
-                if remaining_info.get("success"):
-                    sora2_remaining_count = remaining_info.get("remaining_count", 0)
-            except Exception as e:
-                print(f"Failed to get Sora2 remaining count: {e}")
-
-            # Update database
-            await db.update_token_sora2(
-                token_id,
-                supported=True,
-                invite_code=sora2_info.get("invite_code"),
-                redeemed_count=sora2_info.get("redeemed_count", 0),
-                total_count=sora2_info.get("total_count", 0),
-                remaining_count=sora2_remaining_count
-            )
-
-            return {
-                "success": True,
-                "message": "Sora2 activated successfully",
-                "already_accepted": result.get("already_accepted", False),
-                "invite_code": sora2_info.get("invite_code"),
-                "redeemed_count": sora2_info.get("redeemed_count", 0),
-                "total_count": sora2_info.get("total_count", 0),
-                "sora2_remaining_count": sora2_remaining_count
-            }
-        else:
-            return {
-                "success": False,
-                "message": "Failed to activate Sora2"
-            }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to activate Sora2: {str(e)}")
-
 # Logs endpoints
 @router.get("/api/logs")
 async def get_logs(limit: int = 100, token: str = Depends(verify_admin_token)):
@@ -877,7 +874,6 @@ async def get_logs(limit: int = 100, token: str = Depends(verify_admin_token)):
             "operation": log.get("operation"),
             "status_code": log.get("status_code"),
             "duration": log.get("duration"),
-            "watermark_method": log.get("watermark_method"),
             "created_at": log.get("created_at"),
             "request_body": log.get("request_body"),
             "response_body": log.get("response_body"),
@@ -903,20 +899,6 @@ async def clear_logs(token: str = Depends(verify_admin_token)):
         return {"success": True, "message": "所有日志已清空"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/api/admin/logs/download")
-async def download_logs(token: str = Depends(verify_admin_token)):
-    """Download system logs"""
-    log_file = Path("logs.txt")
-    if not log_file.exists():
-        # Create empty log file if it doesn't exist
-        log_file.touch()
-    
-    return FileResponse(
-        log_file, 
-        media_type="text/plain", 
-        filename=f"logs_{datetime.now().strftime('%Y%m%d')}.txt"
-    )
 
 # Cache config endpoints
 @router.post("/api/cache/config")
@@ -998,8 +980,8 @@ async def get_cache_config(token: str = Depends(verify_admin_token)):
         "config": {
             "enabled": config.cache_enabled,
             "timeout": config.cache_timeout,
-            "base_url": config.cache_base_url,  # Return actual configured value, may be empty string
-            "effective_base_url": config.cache_base_url or f"http://{config.server_host}:{config.server_port}"  # Actual effective value
+            "base_url": config.cache_base_url,  # 返回实际配置的值，可能为空字符串
+            "effective_base_url": config.cache_base_url or f"http://{config.server_host}:{config.server_port}"  # 实际生效的值
         }
     }
 
@@ -1113,6 +1095,24 @@ async def update_at_auto_refresh_enabled(
         # Update database
         await db.update_token_refresh_config(enabled)
 
+        # Dynamically start or stop scheduler
+        if scheduler:
+            if enabled:
+                # Start scheduler if not already running
+                if not scheduler.running:
+                    scheduler.add_job(
+                        token_manager.batch_refresh_all_tokens,
+                        CronTrigger(hour=0, minute=0),
+                        id='batch_refresh_tokens',
+                        name='Batch refresh all tokens',
+                        replace_existing=True
+                    )
+                    scheduler.start()
+            else:
+                # Stop scheduler if running
+                if scheduler.running:
+                    scheduler.remove_job('batch_refresh_tokens')
+
         return {
             "success": True,
             "message": f"AT auto refresh {'enabled' if enabled else 'disabled'} successfully",
@@ -1121,59 +1121,54 @@ async def update_at_auto_refresh_enabled(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update AT auto refresh enabled status: {str(e)}")
 
-
-@router.get("/api/android-credentials", summary="Get Android credentials")
-async def get_android_credentials(token: str = Depends(verify_admin_token)) -> dict:
-    """Get current Android credentials configuration"""
+# Task management endpoints
+@router.post("/api/tasks/{task_id}/cancel")
+async def cancel_task(task_id: str, token: str = Depends(verify_admin_token)):
+    """Cancel a running task"""
     try:
-        credentials = await db.get_android_credentials()
-        return {
-            "success": True,
-            "data": {
-                "sora_auth_token": credentials.get('sora_auth_token', ''),
-                "sora_refresh_token": credentials.get('sora_refresh_token', ''),
-                "sora_client_id": credentials.get('sora_client_id', 'app_OHnYmJt5u1XEdhDUx0ig1ziv')
-            }
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get Android credentials: {str(e)}")
+        # Get task from database
+        task = await db.get_task(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="任务不存在")
 
+        # Check if task is still processing
+        if task.status not in ["processing"]:
+            return {"success": False, "message": f"任务状态为 {task.status},无法取消"}
 
-@router.post("/api/android-credentials", summary="Update Android credentials")
-async def update_android_credentials(
-    request: dict,
-    token: str = Depends(verify_admin_token)
-) -> dict:
-    """Update Android credentials configuration"""
-    try:
-        sora_auth_token = request.get("sora_auth_token", "").strip()
-        sora_refresh_token = request.get("sora_refresh_token", "").strip()
-        sora_client_id = request.get("sora_client_id", "app_OHnYmJt5u1XEdhDUx0ig1ziv").strip()
+        # Update task status to failed
+        await db.update_task(task_id, "failed", 0, error_message="用户手动取消任务")
 
-        # Validate required fields
-        if not sora_auth_token or not sora_refresh_token:
-            raise HTTPException(
-                status_code=400, 
-                detail="Both SORA_AUTH_TOKEN and SORA_REFRESH_TOKEN are required"
-            )
+        # Update request log if exists
+        logs = await db.get_recent_logs(limit=1000)
+        for log in logs:
+            if log.get("task_id") == task_id and log.get("status_code") == -1:
+                import time
+                duration = time.time() - (log.get("created_at").timestamp() if log.get("created_at") else time.time())
+                await db.update_request_log(
+                    log.get("id"),
+                    response_body='{"error": "用户手动取消任务"}',
+                    status_code=499,
+                    duration=duration
+                )
+                break
 
-        # Update database
-        await db.update_android_credentials(
-            sora_auth_token=sora_auth_token,
-            sora_refresh_token=sora_refresh_token,
-            sora_client_id=sora_client_id
-        )
-
-        return {
-            "success": True,
-            "message": "Android credentials updated successfully",
-            "data": {
-                "sora_auth_token": "***" + sora_auth_token[-4:] if len(sora_auth_token) > 4 else "***",
-                "sora_refresh_token": "***" + sora_refresh_token[-4:] if len(sora_refresh_token) > 4 else "***",
-                "sora_client_id": sora_client_id
-            }
-        }
+        return {"success": True, "message": "任务已取消"}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update Android credentials: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"取消任务失败: {str(e)}")
+
+# Debug logs download endpoint
+@router.get("/api/admin/logs/download")
+async def download_debug_logs(token: str = Depends(verify_admin_token)):
+    """Download debug logs file (logs.txt)"""
+    log_file = Path("logs.txt")
+
+    if not log_file.exists():
+        raise HTTPException(status_code=404, detail="日志文件不存在")
+
+    return FileResponse(
+        path=str(log_file),
+        filename="logs.txt",
+        media_type="text/plain"
+    )

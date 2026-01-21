@@ -16,8 +16,6 @@ from ..core.database import Database
 from ..core.models import Task, RequestLog
 from ..core.config import config
 from ..core.logger import debug_logger
-import traceback
-import sys
 
 # Model configuration
 MODEL_CONFIG = {
@@ -156,6 +154,52 @@ MODEL_CONFIG = {
         "model": "sy_ore",
         "size": "large",
         "require_pro": True
+    },
+    # Prompt enhancement models
+    "prompt-enhance-short-10s": {
+        "type": "prompt_enhance",
+        "expansion_level": "short",
+        "duration_s": 10
+    },
+    "prompt-enhance-short-15s": {
+        "type": "prompt_enhance",
+        "expansion_level": "short",
+        "duration_s": 15
+    },
+    "prompt-enhance-short-20s": {
+        "type": "prompt_enhance",
+        "expansion_level": "short",
+        "duration_s": 20
+    },
+    "prompt-enhance-medium-10s": {
+        "type": "prompt_enhance",
+        "expansion_level": "medium",
+        "duration_s": 10
+    },
+    "prompt-enhance-medium-15s": {
+        "type": "prompt_enhance",
+        "expansion_level": "medium",
+        "duration_s": 15
+    },
+    "prompt-enhance-medium-20s": {
+        "type": "prompt_enhance",
+        "expansion_level": "medium",
+        "duration_s": 20
+    },
+    "prompt-enhance-long-10s": {
+        "type": "prompt_enhance",
+        "expansion_level": "long",
+        "duration_s": 10
+    },
+    "prompt-enhance-long-15s": {
+        "type": "prompt_enhance",
+        "expansion_level": "long",
+        "duration_s": 15
+    },
+    "prompt-enhance-long-20s": {
+        "type": "prompt_enhance",
+        "expansion_level": "long",
+        "duration_s": 20
     }
 }
 
@@ -170,7 +214,6 @@ class GenerationHandler:
         self.load_balancer = load_balancer
         self.db = db
         self.concurrency_manager = concurrency_manager
-        self.proxy_manager = proxy_manager
         self.file_cache = FileCache(
             cache_dir="tmp",
             default_timeout=config.cache_timeout,
@@ -273,31 +316,24 @@ class GenerationHandler:
             "golden", "anime", "retro", "nostalgic", "comic"
         }
 
-        # Iterate through all matches of {content} to find a valid style
-        # This handles cases where there are other curly braces in the prompt (e.g. "{block} {anime}")
-        matches = list(re.finditer(r'\{([^}]+)\}', prompt))
-        
-        for match in matches:
-            full_match = match.group(0)
+        # Extract {style} pattern
+        match = re.search(r'\{([^}]+)\}', prompt)
+        if match:
             style_candidate = match.group(1).strip()
 
             # Check if it's a single word (no spaces) and in valid styles list
             if ' ' not in style_candidate and style_candidate.lower() in VALID_STYLES:
-                # Valid style found - remove THIS specific match from prompt
-                cleaned_prompt = prompt.replace(full_match, '', 1).strip()
-                
+                # Valid style found - remove {style} from prompt
+                cleaned_prompt = re.sub(r'\{[^}]+\}', '', prompt).strip()
                 # Clean up extra whitespace
                 cleaned_prompt = ' '.join(cleaned_prompt.split())
-                
                 debug_logger.log_info(f"Extracted style: '{style_candidate}' from prompt: '{prompt}'")
                 return cleaned_prompt, style_candidate.lower()
+            else:
+                # Not a valid style - treat as normal prompt
+                debug_logger.log_info(f"'{style_candidate}' is not a valid style (contains spaces or not in style list), treating as normal prompt")
+                return prompt, None
 
-        # No valid style found in any brace pair
-        # Check if there was a match that looked like a style but wasn't valid (for logging)
-        if matches:
-             # Just log the first invalid one for info if needed, or just return
-             pass
-             
         return prompt, None
 
     async def _download_file(self, url: str) -> bytes:
@@ -366,7 +402,13 @@ class GenerationHandler:
         model_config = MODEL_CONFIG[model]
         is_video = model_config["type"] == "video"
         is_image = model_config["type"] == "image"
-        watermark_info: Dict[str, Any] = {"method": None}
+        is_prompt_enhance = model_config["type"] == "prompt_enhance"
+
+        # Handle prompt enhancement
+        if is_prompt_enhance:
+            async for chunk in self._handle_prompt_enhance(prompt, model_config, stream):
+                yield chunk
+            return
 
         # Non-streaming mode: only check availability
         if not stream:
@@ -449,8 +491,21 @@ class GenerationHandler:
 
         task_id = None
         is_first_chunk = True  # Track if this is the first chunk
+        log_id = None  # Initialize log_id
 
         try:
+            # Create initial log entry BEFORE submitting task to upstream
+            # This ensures the log is created even if upstream fails
+            log_id = await self._log_request(
+                token_obj.id,
+                f"generate_{model_config['type']}",
+                {"model": model, "prompt": prompt, "has_image": image is not None},
+                {},  # Empty response initially
+                -1,  # -1 means in-progress
+                -1.0,  # -1.0 means in-progress
+                task_id=None  # Will be updated after task submission
+            )
+
             # Upload image if provided
             media_id = None
             if image:
@@ -531,7 +586,7 @@ class GenerationHandler:
                     media_id=media_id,
                     token_id=token_obj.id
                 )
-            
+
             # Save task to database
             task = Task(
                 task_id=task_id,
@@ -543,22 +598,15 @@ class GenerationHandler:
             )
             await self.db.create_task(task)
 
-            # Create initial log entry (status_code=-1, duration=-1.0 means in-progress)
-            log_id = await self._log_request(
-                token_obj.id,
-                f"generate_{model_config['type']}",
-                {"model": model, "prompt": prompt, "has_image": image is not None},
-                {},  # Empty response initially
-                -1,  # -1 means in-progress
-                -1.0,  # -1.0 means in-progress
-                task_id=task_id
-            )
+            # Update log entry with task_id now that we have it
+            if log_id:
+                await self.db.update_request_log_task_id(log_id, task_id)
 
             # Record usage
             await self.token_manager.record_usage(token_obj.id, is_video=is_video)
             
             # Poll for results with timeout
-            async for chunk in self._poll_task_result(task_id, token_obj.token, is_video, stream, prompt, token_obj.id, log_id, start_time, watermark_info=watermark_info):
+            async for chunk in self._poll_task_result(task_id, token_obj.token, is_video, stream, prompt, token_obj.id, log_id, start_time):
                 yield chunk
             
             # Record success
@@ -601,8 +649,7 @@ class GenerationHandler:
                     log_id,
                     response_body=json.dumps(response_data),
                     status_code=200,
-                    duration=duration,
-                    watermark_method=watermark_info.get("method")
+                    duration=duration
                 )
 
         except Exception as e:
@@ -663,19 +710,17 @@ class GenerationHandler:
     
     async def _poll_task_result(self, task_id: str, token: str, is_video: bool,
                                 stream: bool, prompt: str, token_id: int = None,
-                                log_id: int = None, start_time: float = None,
-                                watermark_info: Optional[Dict[str, Any]] = None) -> AsyncGenerator[str, None]:
+                                log_id: int = None, start_time: float = None) -> AsyncGenerator[str, None]:
         """Poll for task result with timeout"""
         # Get timeout from config
         timeout = config.video_timeout if is_video else config.image_timeout
         poll_interval = config.poll_interval
         max_attempts = int(timeout / poll_interval)  # Calculate max attempts based on timeout
         last_progress = 0
-        polling_start_time = time.time()
-        # watermark_info is passed from caller, don't re-initialize
-        last_heartbeat_time = polling_start_time  # Track last heartbeat for image generation
+        start_time = time.time()
+        last_heartbeat_time = start_time  # Track last heartbeat for image generation
         heartbeat_interval = 10  # Send heartbeat every 10 seconds for image generation
-        last_status_output_time = polling_start_time  # Track last status output time for video generation
+        last_status_output_time = start_time  # Track last status output time for video generation
         video_status_interval = 30  # Output status every 30 seconds for video generation
 
         debug_logger.log_info(f"Starting task polling: task_id={task_id}, is_video={is_video}, timeout={timeout}s, max_attempts={max_attempts}")
@@ -684,16 +729,10 @@ class GenerationHandler:
         if is_video:
             watermark_free_config = await self.db.get_watermark_free_config()
             debug_logger.log_info(f"Watermark-free mode: {'ENABLED' if watermark_free_config.watermark_free_enabled else 'DISABLED'}")
-            if not watermark_free_config.watermark_free_enabled and watermark_info is not None:
-                watermark_info["method"] = "watermark_disabled"
-        
-        # Ensure meaningful default for watermark method if undefined
-        if is_video and watermark_info is not None and watermark_info.get("method") is None:
-             watermark_info["method"] = "Standard"
 
         for attempt in range(max_attempts):
             # Check if timeout exceeded
-            elapsed_time = time.time() - polling_start_time
+            elapsed_time = time.time() - start_time
             if elapsed_time > timeout:
                 debug_logger.log_error(
                     error_message=f"Task timeout: {elapsed_time:.1f}s > {timeout}s",
@@ -713,9 +752,10 @@ class GenerationHandler:
                 if is_video and token_id and self.concurrency_manager:
                     await self.concurrency_manager.release_video(token_id)
                     debug_logger.log_info(f"Released concurrency slot for token {token_id} due to timeout")
+
                 # Update task status to failed
                 await self.db.update_task(task_id, "failed", 0, error_message=f"Generation timeout after {elapsed_time:.1f} seconds")
-                
+
                 # Update request log with timeout error
                 if log_id and start_time:
                     duration = time.time() - start_time
@@ -725,8 +765,9 @@ class GenerationHandler:
                         status_code=408,
                         duration=duration
                     )
-                
+
                 raise Exception(f"Upstream API timeout: Generation exceeded {timeout} seconds limit")
+
 
             await asyncio.sleep(poll_interval)
 
@@ -751,6 +792,9 @@ class GenerationHandler:
                             # Update last_progress for tracking
                             last_progress = progress_pct
                             status = task.get("status", "processing")
+
+                            # Update database with current progress
+                            await self.db.update_task(task_id, "processing", progress_pct)
 
                             # Output status every 30 seconds (not just when progress changes)
                             current_time = time.time()
@@ -853,60 +897,24 @@ class GenerationHandler:
                                         # Get watermark-free video URL based on parse method
                                         if parse_method == "custom":
                                             # Use custom parse server
+                                            if not watermark_config.custom_parse_url or not watermark_config.custom_parse_token:
+                                                raise Exception("Custom parse server URL or token not configured")
+
                                             if stream:
                                                 yield self._format_stream_chunk(
-                                                    reasoning_content=f"Video published successfully. Post ID: {post_id}\nUsing Android API to get watermark-free URL...\n"
+                                                    reasoning_content=f"Video published successfully. Post ID: {post_id}\nUsing custom parse server to get watermark-free URL...\n"
                                                 )
 
-                                            try:
-                                                from .sora_custom_extractor import SoraCustomAPIExtractor
-                                                android_extractor = SoraCustomAPIExtractor(self.sora_client, self.proxy_manager)
-                                                watermark_free_url = await android_extractor.get_clean_video_url(post_id)
-
-                                                if watermark_free_url:
-                                                    debug_logger.log_info(f"Android API extraction succeeded: {watermark_free_url}")
-                                                    if watermark_info is not None:
-                                                        watermark_info["method"] = "android_success"
-                                                    if stream:
-                                                        yield self._format_stream_chunk(
-                                                            reasoning_content="✅ Android API extraction successful!\n"
-                                                        )
-                                                else:
-                                                    debug_logger.log_info("Android API failed, falling back to third-party")
-                                                    if watermark_info is not None:
-                                                        watermark_info["method"] = "android_fallback_third_party"
-                                                    if stream:
-                                                        yield self._format_stream_chunk(
-                                                            reasoning_content="Android API extraction failed, falling back to third-party...\n"
-                                                        )
-                                                    watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
-                                                    debug_logger.log_info("Fallback to third-party parse")
-
-                                            except ImportError:
-                                                debug_logger.log_info("Android API module not available, using third-party")
-                                                if watermark_info is not None:
-                                                    watermark_info["method"] = "android_fallback_third_party"
-                                                if stream:
-                                                    yield self._format_stream_chunk(
-                                                        reasoning_content="Android API module not available, using third-party...\n"
-                                                    )
-                                                watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
-
-                                            except Exception as e:
-                                                debug_logger.log_info(f"Android API error: {e}, falling back to third-party")
-                                                if watermark_info is not None:
-                                                    watermark_info["method"] = "android_fallback_third_party"
-                                                if stream:
-                                                    yield self._format_stream_chunk(
-                                                        reasoning_content=f"Android API extraction failed ({str(e)}), falling back to third-party...\n"
-                                                    )
-                                                watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
+                                            debug_logger.log_info(f"Using custom parse server: {watermark_config.custom_parse_url}")
+                                            watermark_free_url = await self.sora_client.get_watermark_free_url_custom(
+                                                parse_url=watermark_config.custom_parse_url,
+                                                parse_token=watermark_config.custom_parse_token,
+                                                post_id=post_id
+                                            )
                                         else:
                                             # Use third-party parse (default)
                                             watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
                                             debug_logger.log_info(f"Using third-party parse server")
-                                            if watermark_info is not None:
-                                                watermark_info["method"] = "third_party"
 
                                         debug_logger.log_info(f"Watermark-free URL: {watermark_free_url}")
 
@@ -966,8 +974,6 @@ class GenerationHandler:
                                             status_code=500,
                                             response_text=str(publish_error)
                                         )
-                                        if watermark_info is not None:
-                                            watermark_info["method"] = "watermark_publish_failed"
                                         if stream:
                                             yield self._format_stream_chunk(
                                                 reasoning_content=f"Warning: Failed to get watermark-free version - {str(publish_error)}\nFalling back to normal video...\n"
@@ -1150,20 +1156,61 @@ class GenerationHandler:
                         )
             
             except Exception as e:
-                # Log full traceback
-                error_msg = f"Polling attempt {attempt + 1}/{max_attempts} failed: {str(e)}"
-                print(f"ERROR: {error_msg}", file=sys.stderr)
-                traceback.print_exc()
-                debug_logger.log_info(error_msg)
-                
-                # Critical error check
-                if "Android API" in str(e) or "parse" in str(e).lower():
-                     print("CRITICAL ERROR DETECTED: Aborting loop.", file=sys.stderr)
-                     if stream:
-                        yield self._format_stream_chunk(content=f"❌ Critical Error: {str(e)}", finish_reason="STOP")
-                        yield "data: [DONE]\n\n"
-                     return
+                # Check for CF shield/429 error - don't retry these
+                error_str = str(e)
+                is_cf_or_429 = False
+                try:
+                    error_response = json.loads(error_str)
+                    if isinstance(error_response, dict):
+                        error_info = error_response.get("error", {})
+                        if error_info.get("code") == "cf_shield_429":
+                            is_cf_or_429 = True
+                except (json.JSONDecodeError, ValueError):
+                    pass
 
+                # CF shield/429 detected - fail immediately
+                if is_cf_or_429:
+                    debug_logger.log_error(
+                        error_message="CF Shield/429 detected during polling, failing task immediately",
+                        status_code=429,
+                        response_text=error_str
+                    )
+                    # Update task status to failed
+                    await self.db.update_task(task_id, "failed", 0, error_message="Cloudflare challenge or rate limit (429) triggered")
+
+                    # Update request log with CF/429 error
+                    if log_id and start_time:
+                        duration = time.time() - start_time
+                        await self.db.update_request_log(
+                            log_id,
+                            response_body=json.dumps({"error": "Cloudflare challenge or rate limit (429) triggered"}),
+                            status_code=429,
+                            duration=duration
+                        )
+
+                    # Release resources
+                    if not is_video and token_id:
+                        await self.load_balancer.token_lock.release_lock(token_id)
+                        if self.concurrency_manager:
+                            await self.concurrency_manager.release_image(token_id)
+                    if is_video and token_id and self.concurrency_manager:
+                        await self.concurrency_manager.release_video(token_id)
+
+                    # Send error message to client if streaming
+                    if stream:
+                        yield self._format_stream_chunk(
+                            reasoning_content="**CF Shield/429 Error**\\n\\nCloudflare challenge or rate limit (429) triggered\\n"
+                        )
+                        yield self._format_stream_chunk(
+                            content="❌ Generation failed: Cloudflare challenge or rate limit (429) triggered. Please change proxy or reduce request frequency.",
+                            finish_reason="STOP"
+                        )
+                        yield "data: [DONE]\\n\\n"
+
+                    # Exit polling immediately
+                    return
+
+                # For other errors, retry if not last attempt
                 if attempt >= max_attempts - 1:
                     raise e
                 continue
@@ -1272,10 +1319,8 @@ class GenerationHandler:
 
     async def _log_request(self, token_id: Optional[int], operation: str,
                           request_data: Dict[str, Any], response_data: Dict[str, Any],
-                          status_code: int, duration: float,
-                          watermark_method: Optional[str] = None,
-                          task_id: Optional[str] = None):
-        """Log request to database"""
+                          status_code: int, duration: float, task_id: Optional[str] = None) -> Optional[int]:
+        """Log request to database and return log ID"""
         try:
             log = RequestLog(
                 token_id=token_id,
@@ -1284,14 +1329,67 @@ class GenerationHandler:
                 request_body=json.dumps(request_data),
                 response_body=json.dumps(response_data),
                 status_code=status_code,
-                duration=duration,
-                watermark_method=watermark_method,
+                duration=duration
             )
             return await self.db.log_request(log)
         except Exception as e:
             # Don't fail the request if logging fails
             print(f"Failed to log request: {e}")
             return None
+
+    # ==================== Prompt Enhancement Handler ====================
+
+    async def _handle_prompt_enhance(self, prompt: str, model_config: Dict, stream: bool) -> AsyncGenerator[str, None]:
+        """Handle prompt enhancement request
+
+        Args:
+            prompt: Original prompt to enhance
+            model_config: Model configuration
+            stream: Whether to stream response
+        """
+        expansion_level = model_config["expansion_level"]
+        duration_s = model_config["duration_s"]
+
+        # Select token
+        token_obj = await self.load_balancer.select_token(for_video_generation=True)
+        if not token_obj:
+            error_msg = "No available tokens for prompt enhancement"
+            if stream:
+                yield self._format_stream_chunk(reasoning_content=f"**Error:** {error_msg}", is_first=True)
+                yield self._format_stream_chunk(finish_reason="STOP")
+            else:
+                yield self._format_non_stream_response(error_msg)
+            return
+
+        try:
+            # Call enhance_prompt API
+            enhanced_prompt = await self.sora_client.enhance_prompt(
+                prompt=prompt,
+                token=token_obj.token,
+                expansion_level=expansion_level,
+                duration_s=duration_s,
+                token_id=token_obj.id
+            )
+
+            if stream:
+                # Stream response
+                yield self._format_stream_chunk(
+                    content=enhanced_prompt,
+                    is_first=True
+                )
+                yield self._format_stream_chunk(finish_reason="STOP")
+            else:
+                # Non-stream response
+                yield self._format_non_stream_response(enhanced_prompt)
+
+        except Exception as e:
+            error_msg = f"Prompt enhancement failed: {str(e)}"
+            debug_logger.log_error(error_msg)
+            if stream:
+                yield self._format_stream_chunk(content=f"Error: {error_msg}", is_first=True)
+                yield self._format_stream_chunk(finish_reason="STOP")
+            else:
+                yield self._format_non_stream_response(error_msg)
 
     # ==================== Character Creation and Remix Handlers ====================
 
@@ -1463,14 +1561,12 @@ class GenerationHandler:
                 # Don't record error for CF shield/429 (not token's fault)
                 if not is_cf_or_429:
                     await self.token_manager.record_error(token_obj.id, is_overload=is_overload)
-            
+
             debug_logger.log_error(
                 error_message=f"Character creation failed: {str(e)}",
                 status_code=429 if is_cf_or_429 else 500,
                 response_text=str(e)
             )
-
-            
             raise
 
     async def _handle_character_and_video_generation(self, video_data, prompt: str, model_config: Dict) -> AsyncGenerator[str, None]:
@@ -1792,7 +1888,7 @@ class GenerationHandler:
             if token_obj:
                 error_str = str(e).lower()
                 is_overload = "heavy_load" in error_str or "under heavy load" in error_str
-            # Don't record error for CF shield/429 (not token's fault)
+                # Don't record error for CF shield/429 (not token's fault)
                 if not is_cf_or_429:
                     await self.token_manager.record_error(token_obj.id, is_overload=is_overload)
             debug_logger.log_error(

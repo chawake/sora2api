@@ -3,8 +3,8 @@
 
   const btnSend = $('btnSend');
   const btnClear = $('btnClear');
-  const btnCopyLog = $('btnCopyLog'); // May not exist (global log button removed)
-  // Legacy log container might not exist, create hidden node as fallback to avoid null reference
+  const btnCopyLog = $('btnCopyLog'); // 可能不存在（已移除全局日志按钮）
+  // 旧版日志容器可能不存在，兜底创建隐藏节点以避免空引用
   const out =
     $('output') ||
     (() => {
@@ -80,7 +80,7 @@
   const btnClearDone = $('btnClearDone');
   const btnClearAll = $('btnClearAll');
   const taskStorageKey = 'gen_tasks_v1';
-  // Role mounting: Isolated by mode to avoid illusion of 'storyboard mount affecting single/same prompt'
+  // 角色挂载：按模式隔离，避免“分镜挂载影响单次/同提示”的错觉
   const roleStorageKeyLegacy = 'gen_roles_v1';
   const roleStorageKeyMain = 'gen_roles_main_v1';
   const roleStorageKeyMulti = 'gen_roles_multi_v1';
@@ -143,10 +143,10 @@
   const DRAFT_KEY = 'gen_prompt_draft_v1';
   let draftTimer = null;
   let previewHintTimer = null;
-  let applyingMainFiles = false; // Prevent set files triggering change recursively
-  // Advanced settings open by default: Reduce 'expand/collapse' actions (fits high-frequency workflow)
+  let applyingMainFiles = false; // 防止 set files 触发 change 后递归
+  // 高级设置默认常驻显示：减少“展开/收起”这种额外操作（更符合自用高频工作流）
   let advancedOpen = true;
-  // "Copies/Default Copies" isolated by mode: Avoid pollution of storyboard default (should be 1)
+  // “生成份数/默认份数”按模式隔离：避免单次/同提示的份数污染分镜默认份数（分镜默认应为 1）
   let batchConcurrencyByType = {};
 
   let tasks = [];
@@ -161,13 +161,13 @@
   let multiPrompts = [];
   const multiPromptRoles = {};
   // storyboardShots: { text, count, fileDataUrl, fileName, roles: [], useGlobalRoles?: boolean }
-  // useGlobalRoles=false means shot is manually excluded: no longer auto-mount 'Global Roles' (future global changes won't affect it)
+  // useGlobalRoles=false 表示该分镜被手动排除：不再自动挂载“全局角色”（后续全局变更也不会影响它）
   let storyboardShots = [];
   const STORYBOARD_RUN_KEY = 'gen_storyboard_run_v1';
   let storyboardRunCounter = parseInt(localStorage.getItem(STORYBOARD_RUN_KEY) || '0', 10) || 0;
   let tagFilter = '';
 
-  // Upload preview state (for immediate alerts on 'model/orientation/empty prompt')
+  // 上传文件预览状态（用于“模型/横竖/提示词为空”即时提醒）
   let previewObjectUrl = null;
   let lastPreviewSignature = '';
   let lastPreviewInfo = null; // { w, h, orientation, isImage, isVideo }
@@ -195,7 +195,7 @@
       .replace(/'/g, '&#39;');
   };
 
-  // Default Avatar: Pure local data URI (avoids external placeholder block/offline issues)
+  // 默认头像：纯本地 data URI（避免外链占位图被拦截/离线不可用）
   const DEFAULT_ROLE_AVATAR = (() => {
     const svg =
       '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">' +
@@ -209,7 +209,7 @@
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   })();
 
-  // URL Whitelist: Sora/OpenAI domains or common media extensions
+  // URL 白名单：Sora/OpenAI 域名或常见媒体扩展名
   const isValidMediaUrl = (u) => {
     if (!u) return false;
     const s = u.toString();
@@ -218,7 +218,7 @@
     return domainOk || extOk;
   };
 
-  // ===== Download-friendly naming & Same-origin /tmp rewrite (Solves 'hash name + manual rename' pain point) =====
+  // ===== 下载友好命名 & 同源 /tmp 重写（解决“哈希英文名 + 手动改名”痛点） =====
   const padNum = (n, width = 2) => {
     const v = Math.max(0, parseInt(String(n ?? '0'), 10) || 0);
     const s = String(v);
@@ -228,16 +228,16 @@
   const sanitizeFilename = (name, fallback = 'download') => {
     let s = String(name || '').trim();
     if (!s) return fallback;
-    // Remove control chars, avoid Windows/browser save failure
+    // 去掉控制字符，避免 Windows/浏览器保存失败
     s = s.replace(/[\u0000-\u001f\u007f]/g, '');
-    // Windows forbidden chars: \ / : * ? " < > |
+    // Windows 禁用字符：\ / : * ? " < > |
     s = s.replace(/[\\/:*?"<>|]/g, '-');
     // 合并空白
     s = s.replace(/\s+/g, ' ').trim();
-    // No trailing dot or space (Windows)
+    // 不允许以点或空格结尾（Windows）
     s = s.replace(/[. ]+$/g, '');
     if (!s) return fallback;
-    // Control length, avoid system truncation/failure (conservative)
+    // 控制长度，避免过长导致系统截断/失败（保守）
     if (s.length > 120) s = s.slice(0, 120).trim();
     return s || fallback;
   };
@@ -252,8 +252,8 @@
   };
 
   const normalizeTmpDownloadUrl = (url) => {
-    // Goal: Rewrite `http://127.0.0.1:8000/tmp/xxx.mp4` to `/tmp/xxx.mp4`
-    // So download works with same-origin and custom filename regardless of access host.
+    // 目标：把 `http://127.0.0.1:8000/tmp/xxx.mp4` 统一重写成 `/tmp/xxx.mp4`
+    // 这样无论用户用 127.0.0.1 / 局域网 IP / 域名访问，都能同源下载并应用 download 文件名。
     try {
       const u = new URL(String(url || ''), window.location.href);
       if (u && u.pathname && u.pathname.startsWith('/tmp/')) {
@@ -270,7 +270,7 @@
     const ext = mediaExtFromUrl(url, ty);
     const id = task && typeof task.id === 'number' ? task.id : null;
 
-    // Storyboard task: Named by "Title + Shot#/Total + Copy# + TaskID", for easy batch sorting
+    // 分镜任务：按“分镜组标题 + 镜号/总数 + 第几份 + 任务ID”命名，便于批量后按名称排序
     if (task && task.storyboard) {
       const sb = task.storyboard || {};
       const run = parseInt(String(sb.run || '0'), 10) || 0;
@@ -279,17 +279,17 @@
       const take = parseInt(String(sb.take || '1'), 10) || 1;
       const takes = parseInt(String(sb.takes || '1'), 10) || 1;
 
-      const titleRaw = String(sb.title || (run ? `StoryboardGroup${run}` : 'Storyboard')).trim();
-      const title = sanitizeFilename(titleRaw, run ? `StoryboardGroup${run}` : 'Storyboard');
-      const shotPart = idx ? `Shot${padNum(idx, 2)}${total ? `of${padNum(total, 2)}` : ''}` : `Shot${padNum(ordinal, 2)}`;
-      const takePart = takes > 1 ? `Take${take}` : '';
+      const titleRaw = String(sb.title || (run ? `分镜组${run}` : '分镜')).trim();
+      const title = sanitizeFilename(titleRaw, run ? `分镜组${run}` : '分镜');
+      const shotPart = idx ? `分镜${padNum(idx, 2)}${total ? `of${padNum(total, 2)}` : ''}` : `分镜${padNum(ordinal, 2)}`;
+      const takePart = takes > 1 ? `第${take}份` : '';
       const idPart = id ? `T${id}` : '';
       const parts = [title, shotPart, takePart, idPart].filter(Boolean);
-      return `${sanitizeFilename(parts.join('_'), 'Storyboard')}.${ext}`;
+      return `${sanitizeFilename(parts.join('_'), '分镜')}.${ext}`;
     }
 
-    // Normal task: TaskID + Prompt Snippet (Optional)
-    const prefix = id ? `Task${id}` : `${ty === 'image' ? 'Image' : 'Video'}${padNum(ordinal, 3)}`;
+    // 普通任务：任务ID + 提示词片段（可选）
+    const prefix = id ? `任务${id}` : `${ty === 'image' ? '图片' : '视频'}${padNum(ordinal, 3)}`;
     const hintRaw = task && task.promptSnippet ? String(task.promptSnippet).trim() : '';
     const hint = hintRaw ? sanitizeFilename(hintRaw.slice(0, 26), '') : '';
     return `${sanitizeFilename(hint ? `${prefix}_${hint}` : prefix, prefix)}.${ext}`;
@@ -303,7 +303,7 @@
       a.href = href;
       if (filename) a.download = String(filename);
       a.rel = 'noreferrer';
-      // No force new tab: Avoid browser 'popup' block
+      // 不强制新标签：避免被浏览器当作“弹窗”拦截
       a.target = '';
       document.body.appendChild(a);
       a.click();
@@ -325,7 +325,7 @@
     title.className = 'title';
     title.textContent =
       opts.title ||
-      (safeType === 'success' ? 'Success' : safeType === 'error' ? 'Error' : safeType === 'warn' ? 'Warning' : 'Info');
+      (safeType === 'success' ? '成功' : safeType === 'error' ? '出错了' : safeType === 'warn' ? '注意' : '提示');
 
     const desc = document.createElement('div');
     desc.className = 'desc';
@@ -344,7 +344,7 @@
     };
     const timer = setTimeout(close, duration);
 
-    // Optional action button: For 'light reminders', non-interrupting
+    // 可选操作按钮：用于“轻提醒”，不打断输入流
     if (opts.action && typeof opts.action === 'object' && opts.action.text && typeof opts.action.onClick === 'function') {
       const actions = document.createElement('div');
       actions.className = 'actions';
@@ -385,7 +385,7 @@
     } catch (_) {
       /* fallback below */
     }
-    // Compat HTTP/Insecure: Use hidden textarea
+    // 兼容 HTTP / 非安全环境：使用隐藏 textarea
     const ta = document.createElement('textarea');
     ta.value = content;
     ta.setAttribute('readonly', 'readonly');
@@ -427,7 +427,7 @@
   const openPreviewModal = (url, type = 'video', taskId = null) => {
     if (!previewModal || !previewModalMedia) return;
     if (!url || !isValidMediaUrl(url)) {
-      showToast('Invalid preview link', 'warn');
+      showToast('无效的预览链接', 'warn');
       return;
     }
 
@@ -444,7 +444,7 @@
     if (previewModalTaskId) {
       if (tid) {
         previewModalTaskId.style.display = 'inline-flex';
-        previewModalTaskId.textContent = `Task ${tid}`;
+        previewModalTaskId.textContent = `任务 ${tid}`;
       } else {
         previewModalTaskId.style.display = 'none';
         previewModalTaskId.textContent = '';
@@ -465,10 +465,10 @@
         previewModalWatermark.style.display = 'inline-flex';
         previewModalWatermark.textContent =
           stage === 'cancelled'
-            ? 'Watermark Cancelled'
+            ? '已取消去水印'
             : stage === 'ready'
-              ? 'No Watermark'
-              : `Removing Watermark${attempt > 0 ? ` · ${attempt}` : ''}`;
+              ? '无水印'
+              : `去水印中${attempt > 0 ? ` · ${attempt}` : ''}`;
       } else {
         previewModalWatermark.style.display = 'none';
         previewModalWatermark.textContent = '';
@@ -491,14 +491,14 @@
       } catch (_) {
         // 至少保证有 download 属性（无值时浏览器会用 URL 文件名）
         previewModalDownload.setAttribute('download', '');
-        previewModalDownload.title = 'Download';
+        previewModalDownload.title = '下载';
       }
     }
     if (btnPreviewLocateTask) {
       btnPreviewLocateTask.disabled = !tid;
     }
 
-    // Fallback: If preview modal opens, mark as seen regardless of tab (avoid persistent red dot)
+    // 兜底：无论用户是否切到“预览”Tab，只要打开了预览弹层，就视为已读（避免红点反复冒出来）
     if (tid) {
       try {
         markPreviewSeen(tid);
@@ -565,7 +565,7 @@
     const tid = taskId ? parseInt(String(taskId), 10) : 0;
     const t = tid ? tasks.find((x) => x.id === tid) : null;
     if (!t || !t.storyboard) {
-      showToast('Storyboard task not found', 'warn');
+      showToast('未找到该分镜任务', 'warn');
       return;
     }
     const sbLabel = t.storyboard && t.storyboard.label ? String(t.storyboard.label) : '';
@@ -579,7 +579,7 @@
       }
     }
     if (editStoryboardModalMeta) {
-      editStoryboardModalMeta.textContent = sbLabel ? `Modify Prompt (${sbLabel})` : 'Modify Prompt (Current Shot Only)';
+      editStoryboardModalMeta.textContent = sbLabel ? `修改分镜提示词（${sbLabel}）` : '修改分镜提示词（仅影响当前分镜任务）';
     }
     editStoryboardModalState = { taskId: tid };
     editStoryboardTextarea.value = String(t.promptUser || '');
@@ -607,20 +607,20 @@
 
     const nextShotText = String(editStoryboardTextarea.value || '').trim();
     if (!nextShotText) {
-      showToast('Please modify the prompt first (cannot be empty)', 'warn');
+      showToast('请先修改分镜提示词（不能为空）', 'warn');
       return;
     }
 
     const apiKey = $('apiKey').value.trim();
     const baseUrl = getBaseUrl();
     if (!apiKey || !baseUrl) {
-      showToast('Please enter API Key and Server URL');
+      showToast('请先填写 API Key 和服务器地址');
       return;
     }
 
     const nextSend = rebuildStoryboardPromptSend(t.promptSend, t.promptUser, nextShotText);
     closeEditStoryboardModal();
-    showToast('Modification submitted, retrying shot...', 'info', { title: 'Shot Retry' });
+    showToast('已提交修改，正在重试该分镜…', 'info', { title: '分镜重试' });
     await runJobs(
       [
         {
@@ -726,7 +726,7 @@
   const humanizeUpstreamError = (raw) => {
     const text = String(raw?.message || raw?.error?.message || raw || '').trim();
 
-    // Try extracting JSON from "API request failed: 400 - {json}"
+    // 尝试从 “API request failed: 400 - {json}” 中提取 JSON
     let inner = null;
     const jsonStart = text.indexOf('{');
     if (jsonStart >= 0) {
@@ -744,7 +744,7 @@
     const msg = err && err.message ? String(err.message) : '';
     const merged = (msg || text || '').trim();
 
-    // Typical: Region restriction (common user confusion)
+    // 典型：地区限制（用户最常见困惑点之一）
     const ccFromText = (() => {
       const m = merged.match(/\(([A-Za-z]{2})\)/);
       return m ? m[1] : '';
@@ -752,38 +752,38 @@
     if (
       code === 'unsupported_country_code' ||
       /not available in your country/i.test(merged) ||
-      /not available in your country|region not available|Sora.*not available/i.test(merged)
+      /国家\/地区不可用|地区不可用|Sora.*不可用/i.test(merged)
     ) {
-      const cc = param || ccFromText || 'Unknown';
+      const cc = param || ccFromText || '未知';
       return {
         type: 'error',
-        title: 'Region Restriction',
-        message: `Sora is not available in your current region (${cc}).\nSolution: Switch proxy/VPN to a supported region.`
+        title: '地区限制',
+        message: `Sora 在你当前网络出口地区不可用（${cc}）。\n解决：切换代理/机房到支持地区后再试。`
       };
     }
 
-    // Typical: Cloudflare challenge (Frequent on Sora web)
+    // 典型：Cloudflare challenge（Sora 网页端经常触发）
     if (/Just a moment|Enable JavaScript and cookies to continue|__cf_bm|cloudflare/i.test(text)) {
       return {
         type: 'error',
-        title: 'Cloudflare Blocked',
-        message: 'Cloudflare block triggered.\nSolution: Change IP/Proxy or reduce concurrency.'
+        title: 'Cloudflare 拦截',
+        message: '触发 Cloudflare 风控拦截。\n解决：更换更“干净”的出口 IP/代理，或降低并发与请求频率。'
       };
     }
 
-    // Fallback: Extract error.message from JSON
+    // 兜底：把 JSON 里的 error.message 拿出来
     if (merged) {
       return {
-        type: /warn|limit|blocked|guardrail|violation|unsupported|restricted/i.test(merged) ? 'warn' : 'error',
-        title: 'Generation Failed',
+        type: /warn|limit|blocked|guardrail|违规|不支持|限制/i.test(merged) ? 'warn' : 'error',
+        title: '生成失败',
         message: merged
       };
     }
 
-    return { type: 'error', title: 'Generation Failed', message: 'Unknown Error (No readable info from upstream)' };
+    return { type: 'error', title: '生成失败', message: '未知错误（上游未返回可读信息）' };
   };
 
-  // Content Policy/Safety Hit: For storyboard fallback (Show 'Modify Prompt' button on error)
+  // 内容政策/审查命中：用于分镜兜底（出现审查报错时提供“修改分镜提示词”按钮）
   const isContentPolicyViolation = (raw) => {
     const s = String(raw || '').trim();
     if (!s) return false;
@@ -791,8 +791,8 @@
       /Content Policy Violation/i.test(s) ||
       /may violate our content policies/i.test(s) ||
       /content policies?/i.test(s) && /violate|violation/i.test(s) ||
-      /Content.*(Policy|Review|Moderation)/.test(s) ||
-      /Review failed|Moderation failed|Content non-compliant|Content violation/.test(s)
+      /内容.*(政策|审核|审查)/.test(s) ||
+      /审核未通过|审查未通过|内容不合规|内容违规/.test(s)
     );
   };
 
@@ -810,8 +810,8 @@
     if (!files.length) {
       filePreviewBox.style.display = 'none';
       filePreviewMedia.innerHTML = '';
-      filePreviewName.textContent = 'No file selected';
-      filePreviewKind.textContent = 'Asset';
+      filePreviewName.textContent = '未选择文件';
+      filePreviewKind.textContent = '素材';
       filePreviewMeta.textContent = '';
       renderChips(filePreviewHints, []);
       setBannerText('');
@@ -827,11 +827,11 @@
     const mixed = imgCount > 0 && vidCount > 0;
 
     const first = files[0];
-    const name = first?.name || 'Untitled';
-    filePreviewName.textContent = files.length > 1 ? `${files.length} Files (${name} etc)` : name;
+    const name = first?.name || '未命名文件';
+    filePreviewName.textContent = files.length > 1 ? `${files.length} 个文件（${name} 等）` : name;
 
-    // Asset Type Tag
-    const kindText = mixed ? `Mixed(${imgCount}Img/${vidCount}Vid)` : vidCount ? `Video(${vidCount})` : `Image(${imgCount})`;
+    // 素材类型标签
+    const kindText = mixed ? `混合(${imgCount}图/${vidCount}视频)` : vidCount ? `视频(${vidCount})` : `图片(${imgCount})`;
     filePreviewKind.textContent = kindText;
 
     const signature = `${files.length}:${name}:${first.size}:${first.lastModified}:${first.type}`;
@@ -843,9 +843,9 @@
     let h = 0;
     let orientation = '';
 
-    // Media Preview: Recreate objectURL only when file changes (avoids clear/re-render flicker during typing)
+    // 预览媒体：只有文件变化才重新创建 objectURL，避免输入提示词时闪烁/浪费
     if (needReload) {
-      // Clear old preview
+      // 清理旧预览
       if (previewObjectUrl) {
         try {
           URL.revokeObjectURL(previewObjectUrl);
@@ -880,7 +880,7 @@
         v.preload = 'metadata';
         filePreviewMedia.appendChild(v);
         lastPreviewInfo = { w: 0, h: 0, orientation: '', isImage: false, isVideo: true };
-        // Attempt to get resolution (non-blocking)
+        // 尽力拿到分辨率（不阻塞 UI）
         v.addEventListener(
           'loadedmetadata',
           () => {
@@ -888,7 +888,7 @@
             const vh = v.videoHeight || 0;
             const o = detectOrientation(vw, vh);
             const base = filePreviewMeta.textContent || '';
-            const extra = vw && vh ? ` · ${vw}x${vh}${o ? `(${o === 'portrait' ? 'Vert' : o === 'landscape' ? 'Horiz' : 'Sq'})` : ''}` : '';
+            const extra = vw && vh ? ` · ${vw}x${vh}${o ? `(${o === 'portrait' ? '竖' : o === 'landscape' ? '横' : '方'})` : ''}` : '';
             if (extra && !base.includes(`${vw}x${vh}`)) {
               filePreviewMeta.textContent = base + extra;
               notifyHeight();
@@ -897,7 +897,7 @@
           { once: true }
         );
       } else {
-        filePreviewMedia.innerHTML = `<div style="padding:12px;color:#cbd5e1;font-size:12px;">Cannot preview this file type</div>`;
+        filePreviewMedia.innerHTML = `<div style="padding:12px;color:#cbd5e1;font-size:12px;">无法预览该文件类型</div>`;
         lastPreviewInfo = { w: 0, h: 0, orientation: '', isImage: false, isVideo: false };
       }
     } else if (lastPreviewInfo) {
@@ -908,24 +908,24 @@
 
     const sizeText = formatBytes(first.size);
     const dimText = w && h ? `${w}x${h}` : '';
-    const orientationText = orientation === 'portrait' ? 'Vert' : orientation === 'landscape' ? 'Horiz' : orientation === 'square' ? 'Sq' : '';
+    const orientationText = orientation === 'portrait' ? '竖' : orientation === 'landscape' ? '横' : orientation === 'square' ? '方' : '';
     const modelLabel = getSelectedModelLabel();
 
     filePreviewMeta.textContent = [
-      `Current Model: ${modelLabel}`,
-      `File: ${sizeText}`,
-      dimText ? `Resolution: ${dimText}${orientationText ? `(${orientationText})` : ''}` : ''
+      `当前模型：${modelLabel}`,
+      `文件：${sizeText}`,
+      dimText ? `分辨率：${dimText}${orientationText ? `(${orientationText})` : ''}` : ''
     ]
       .filter(Boolean)
       .join(' · ');
 
-    // Recommended Model: Special hint for "Image First Frame" orientation match (common confusion)
+    // 推荐模型：仅对“图片首帧”特别提示横竖匹配（最常见困惑点）
     if (isImage && orientation) {
       if (modelInfo.isVideo) {
         const dur = modelInfo.duration || '15s';
         if (orientation === 'portrait') currentRecommendedModel = `sora-video-portrait-${dur}`;
         if (orientation === 'landscape') currentRecommendedModel = `sora-video-landscape-${dur}`;
-        // square not strongly recommended
+        // square 不强推
       } else if (modelInfo.isImage) {
         if (orientation === 'portrait') currentRecommendedModel = 'sora-image-portrait';
         if (orientation === 'landscape') currentRecommendedModel = 'sora-image-landscape';
@@ -937,20 +937,20 @@
     }
 
     const chips = [];
-    if (mixed) chips.push({ text: 'Mixed: Avoid mixing Img/Vid', kind: 'warn' });
-    if (modelInfo.isImage && vidCount > 0) chips.push({ text: 'Img Model + Vid Asset: Video ignored', kind: 'warn' });
-    if (modelInfo.isVideo && imgCount > 0 && !promptText) chips.push({ text: 'Img First Frame + Empty Prompt: Results may vary', kind: 'warn' });
-    if (currentRecommendedModel && currentRecommendedModel !== modelId) chips.push({ text: `Recommended: ${currentRecommendedModel}`, kind: 'info' });
-    if (!chips.length) chips.push({ text: 'Ready', kind: 'ok' });
+    if (mixed) chips.push({ text: '混合选择：建议不要图/视频混用（容易跑偏）', kind: 'warn' });
+    if (modelInfo.isImage && vidCount > 0) chips.push({ text: '图片模型 + 视频素材：视频不会被使用', kind: 'warn' });
+    if (modelInfo.isVideo && imgCount > 0 && !promptText) chips.push({ text: '图片首帧但提示词为空：结果可能与图无关', kind: 'warn' });
+    if (currentRecommendedModel && currentRecommendedModel !== modelId) chips.push({ text: `推荐模型：${currentRecommendedModel}`, kind: 'info' });
+    if (!chips.length) chips.push({ text: '已就绪', kind: 'ok' });
     renderChips(filePreviewHints, chips);
 
-    // Banner: Keep only the most critical line to avoid noise
+    // Banner：只保留最关键一句，避免信息噪声
     if (modelInfo.isVideo && imgCount > 0 && !promptText) {
-      setBannerText('Tip: Image uploaded without prompt. Image is "Reference/First Frame". Add action/shot description to avoid random results.');
+      setBannerText('提示：你上传了图片但没写提示词。图片只是“参考/首帧”，建议补一句你希望画面发生什么（动作/镜头/风格），否则容易跑偏。');
     } else if (modelInfo.isImage && vidCount > 0) {
-      setBannerText('Tip: Video uploaded but model is "Image". Video will be ignored.');
+      setBannerText('提示：你上传的是视频，但当前模型是“图片”。视频不会参与生成；请切换到视频模型或换成图片文件。');
     } else if (mixed) {
-      setBannerText('Tip: Mixed assets selected. Recommended to separate batches.');
+      setBannerText('提示：你同时选了图片和视频。建议分开跑（同一批只放同类型文件），可减少异常与不相关结果。');
     } else {
       setBannerText('');
     }
@@ -985,7 +985,7 @@
     }
   };
 
-  // ===== Unread Preview Red Dot: Based on "Task ID seen" =====
+  // ===== 预览未读红点：基于“任务 id 是否已看过” =====
   const getCurrentPreviewTaskIds = () =>
     (Array.isArray(tasks) ? tasks : [])
       .filter((t) => t && t.url)
@@ -1013,8 +1013,8 @@
       previewSeenTaskIds = new Set(
         Array.isArray(arr)
           ? arr
-            .map((x) => parseInt(String(x), 10))
-            .filter((n) => !isNaN(n) && n > 0)
+              .map((x) => parseInt(String(x), 10))
+              .filter((n) => !isNaN(n) && n > 0)
           : []
       );
     } catch (_) {
@@ -1037,13 +1037,13 @@
 
   const hasUnseenPreviews = () => getCurrentPreviewTaskIds().some((id) => !previewSeenTaskIds.has(id));
 
-  // ===== Preview Filter (All/Video/Image/Storyboard) =====
+  // ===== 预览过滤（全部/视频/图片/分镜）=====
   const normalizePreviewFilter = (v) => {
     const s = String(v || '').toLowerCase();
     return s === 'video' || s === 'image' || s === 'storyboard' ? s : 'all';
   };
   const previewFilterLabel = (f) =>
-    f === 'video' ? 'Video' : f === 'image' ? 'Image' : f === 'storyboard' ? 'Storyboard' : 'All';
+    f === 'video' ? '视频' : f === 'image' ? '图片' : f === 'storyboard' ? '分镜' : '全部';
   let previewFilter = normalizePreviewFilter(localStorage.getItem(PREVIEW_FILTER_KEY) || 'all');
 
   const taskMatchesPreviewFilter = (t, f) => {
@@ -1079,7 +1079,7 @@
     }
     syncPreviewFilterButtons();
     if (render) renderPreviews();
-    if (toast) showToast(`Preview Filter: ${previewFilterLabel(previewFilter)}`, 'info', { duration: 1400 });
+    if (toast) showToast(`预览过滤：${previewFilterLabel(previewFilter)}`, 'info', { duration: 1400 });
   };
 
   const updateUnreadDots = () => {
@@ -1138,29 +1138,29 @@
   const renderLogPanel = () => {
     if (!logListContainer || !logDetailContent) return;
     if (!tasks.length) {
-      logListContainer.innerHTML = '<div class="muted" style="padding:12px;">No tasks</div>';
+      logListContainer.innerHTML = '<div class="muted" style="padding:12px;">暂无任务</div>';
       logDetailId.textContent = '';
       logDetailStatus.textContent = '';
       logDetailMeta.textContent = '';
-      logDetailContent.textContent = 'No Logs';
+      logDetailContent.textContent = '暂无日志';
       return;
     }
 
-    // Ensure current selected task is valid
+    // 确保当前选中任务合法
     if (!currentLogTaskId || !tasks.find((t) => t.id === currentLogTaskId)) {
       currentLogTaskId = tasks[0].id;
     }
 
-    // Render left list
+    // 渲染左侧列表
     const statusMap = {
-      queue: 'Queued',
-      running: 'Running',
-      retrying: 'Retrying',
-      done: 'Completed',
-      error: 'Failed',
-      stalled: 'Stalled',
-      character_done: 'Role Created',
-      character_error: 'Role Failed'
+      queue: '排队中',
+      running: '生成中',
+      retrying: '重试中',
+      done: '已完成',
+      error: '失败',
+      stalled: '中断',
+      character_done: '角色卡成功',
+      character_error: '角色卡失败'
     };
     logListContainer.innerHTML = tasks
       .map((t) => {
@@ -1170,7 +1170,7 @@
             ? t.status === 'done'
               ? statusMap.character_done
               : statusMap.character_error
-            : statusMap[t.status] || 'Unknown';
+            : statusMap[t.status] || '未知';
         const msg = t.message || '';
         return `
           <div class="log-card ${active ? 'active' : ''}" data-logitem="${t.id}" style="cursor:pointer;">
@@ -1180,7 +1180,7 @@
             </div>
             <div class="log-card-body" style="padding:8px 10px;">
               <div class="task-log-title" style="font-weight:600; font-size:13px; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeAttr(t.promptSnippet || '')}">
-                ${escapeHtml(t.promptSnippet || '(Empty Prompt)')}
+                ${escapeHtml(t.promptSnippet || '(空提示)')}
               </div>
               ${msg ? `<div class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(msg)}</div>` : ''}
             </div>
@@ -1199,7 +1199,7 @@
       });
     });
 
-    // Render right details
+    // 渲染右侧详情
     const current = tasks.find((t) => t.id === currentLogTaskId) || tasks[0];
     if (current) {
       const statusText =
@@ -1207,14 +1207,14 @@
           ? current.status === 'done'
             ? statusMap.character_done
             : statusMap.character_error
-          : statusMap[current.status] || 'Unknown';
+          : statusMap[current.status] || '未知';
       logDetailId.textContent = `#${current.id}`;
       logDetailStatus.textContent = statusText;
       logDetailMeta.textContent =
         (current.meta && [current.meta.resolution, current.meta.duration, current.meta.info].filter(Boolean).join(' · ')) ||
         current.message ||
         '';
-      logDetailContent.textContent = getTaskLogText(current) || 'No Logs';
+      logDetailContent.textContent = getTaskLogText(current) || '暂无日志';
       logDetailContent.scrollTop = logDetailContent.scrollHeight;
     }
   };
@@ -1223,7 +1223,7 @@
   const renderTaskLogList = renderLogPanel;
 
   const setTaskCount = () => {
-    taskCount.textContent = `${tasks.length} Tasks`;
+    taskCount.textContent = `${tasks.length} 个任务`;
   };
 
   const renderTasks = () => {
@@ -1235,8 +1235,8 @@
       : baseList;
     const filtered = statusFilter
       ? byTag.filter((t) =>
-        statusFilter === 'running' ? t.status === 'running' || t.status === 'retrying' : t.status === statusFilter
-      )
+          statusFilter === 'running' ? t.status === 'running' || t.status === 'retrying' : t.status === statusFilter
+        )
       : byTag;
     const counts = {
       running: tasks.filter((t) => t.status === 'running' || t.status === 'retrying').length,
@@ -1251,42 +1251,42 @@
     const hiddenCount = baseList.length - filtered.length;
     const groupBar = `
       <div class="chips" style="margin-bottom:6px;">
-        <button class="pill-btn ${statusFilter ? '' : 'active'}" data-filter="">All (${totalCount})</button>
-        <button class="pill-btn ${statusFilter === 'running' ? 'active' : ''}" data-filter="running">Running (${counts.running})</button>
-        <button class="pill-btn ${statusFilter === 'queue' ? 'active' : ''}" data-filter="queue">Queued (${counts.queue})</button>
-        <button class="pill-btn ${statusFilter === 'done' ? 'active' : ''}" data-filter="done">Done (${counts.done})</button>
-        <button class="pill-btn ${statusFilter === 'error' ? 'active' : ''}" data-filter="error">Failed (${counts.error})</button>
+        <button class="pill-btn ${statusFilter ? '' : 'active'}" data-filter="">全部 (${totalCount})</button>
+        <button class="pill-btn ${statusFilter === 'running' ? 'active' : ''}" data-filter="running">运行中 (${counts.running})</button>
+        <button class="pill-btn ${statusFilter === 'queue' ? 'active' : ''}" data-filter="queue">排队中 (${counts.queue})</button>
+        <button class="pill-btn ${statusFilter === 'done' ? 'active' : ''}" data-filter="done">已完成 (${counts.done})</button>
+        <button class="pill-btn ${statusFilter === 'error' ? 'active' : ''}" data-filter="error">失败 (${counts.error})</button>
       </div>
       <div class="chips" style="margin-bottom:6px;">
-        <span class="muted" style="padding:6px 2px;">Tags</span>
-        <button class="pill-btn ${tagFilter ? '' : 'active'}" data-tag="">All</button>
-        <button class="pill-btn ${tagFilter === 'storyboard' ? 'active' : ''}" data-tag="storyboard">Storyboard (${tagCounts.storyboard})</button>
+        <span class="muted" style="padding:6px 2px;">标签</span>
+        <button class="pill-btn ${tagFilter ? '' : 'active'}" data-tag="">全部</button>
+        <button class="pill-btn ${tagFilter === 'storyboard' ? 'active' : ''}" data-tag="storyboard">分镜 (${tagCounts.storyboard})</button>
       </div>
-      ${hiddenCount > 0 ? `<div class="banner">Hidden ${hiddenCount} non-matching tasks</div>` : ''}
+      ${hiddenCount > 0 ? `<div class="banner">已隐藏 ${hiddenCount} 条不匹配的任务</div>` : ''}
     `;
 
     const html = filtered
       .map((t) => {
         const statusText =
           t.timedOut
-            ? 'Network Timeout'
+            ? '网络超时'
             : t.type === 'character' && t.status === 'done'
-              ? 'Role Created'
+              ? '角色卡创建成功'
               : t.type === 'character' && t.status === 'error'
-                ? 'Role Failed'
+                ? '角色卡创建失败'
                 : (() => {
-                  const retryCount =
-                    typeof t.retryCount === 'number' ? t.retryCount : parseInt(String(t.retryCount || '0'), 10) || 0;
-                  const statusMap = {
-                    queue: 'Queued',
-                    running: 'Generating',
-                    retrying: `Retrying${retryCount > 0 ? ` · ${retryCount}` : ''}`,
-                    done: 'Completed',
-                    error: 'Failed',
-                    stalled: 'Stalled'
-                  };
-                  return statusMap[t.status] || 'Unknown';
-                })();
+                    const retryCount =
+                      typeof t.retryCount === 'number' ? t.retryCount : parseInt(String(t.retryCount || '0'), 10) || 0;
+                    const statusMap = {
+                      queue: '排队中',
+                      running: '生成中',
+                      retrying: `重试中${retryCount > 0 ? ` · ${retryCount}` : ''}`,
+                      done: '已完成',
+                      error: '失败',
+                      stalled: '中断'
+                    };
+                    return statusMap[t.status] || '未知';
+                  })();
         const statusClass = `status ${t.timedOut ? 'timedout' : t.status}`;
         const msg = t.message || '';
         const msgColor = t.status === 'retrying' ? '#b45309' : '#f87171';
@@ -1295,7 +1295,7 @@
         const stepClass = t.status === 'error' ? 'error' : 'active';
         const missingUrlWarn =
           t.type !== 'character' && t.status === 'done' && !t.url
-            ? '<div style="margin-top:6px;font-size:12px;color:#b45309;">Video URL missing, generation may have failed or backend returned no link</div>'
+            ? '<div style="margin-top:6px;font-size:12px;color:#b45309;">未返回视频链接，可能生成失败或后端未返回地址</div>'
             : '';
         const progress = t.progress ?? (t.status === 'done' ? 100 : 0);
         const safeTitle = escapeAttr(t.promptUser || t.promptSnippet || '-');
@@ -1313,8 +1313,8 @@
         const sbChip =
           sb && sb.label
             ? `<span class="task-tag-chip storyboard" title="${escapeAttr(
-              [sb.title, sb.label].filter(Boolean).join(' · ')
-            )}">${escapeHtml(sb.label)}</span>`
+                [sb.title, sb.label].filter(Boolean).join(' · ')
+              )}">${escapeHtml(sb.label)}</span>`
             : '';
         const sbTitleChip =
           sb && sb.title
@@ -1325,13 +1325,13 @@
           typeof t.wmAttempt === 'number' ? t.wmAttempt : parseInt(String(t.wmAttempt || '0'), 10) || 0;
         const wmLabel = wmStage
           ? wmStage === 'cancelled'
-            ? 'Watermark Cancelled'
+            ? '已取消去水印'
             : wmStage === 'ready'
-              ? 'Watermark Free Ready'
-              : 'Waiting for Watermark Removal'
+              ? '无水印已就绪'
+              : '等待去水印'
           : '';
         const wmChip = wmStage
-          ? `<span class="task-tag-chip watermark" title="Removing Watermark">${wmLabel}${wmAttempt > 0 ? ` · ${wmAttempt}` : ''}</span>`
+          ? `<span class="task-tag-chip watermark" title="去水印处理中">${wmLabel}${wmAttempt > 0 ? ` · ${wmAttempt}` : ''}</span>`
           : '';
         const progressWidth = Math.max(0, Math.min(100, progress));
         if (t.collapsed && t.status === 'done') {
@@ -1347,11 +1347,11 @@
                 ${sbTitleChip}
               </div>
               <div class="task-title ellipsis" data-task-title="1" title="${safeTitle}">${displayTitle}</div>
-              <div class="muted" style="font-size:12px;">Collapsed. Click to expand.</div>
+              <div class="muted" style="font-size:12px;">已折叠，点击展开查看详情</div>
             </div>
             <div class="task-actions">
-              ${t.url ? `<button class="link-btn" data-url="${escapeHtml(t.url)}" data-type="${escapeAttr(t.type || 'video')}">Preview</button>` : ''}
-              <button class="link-btn" data-expand="${t.id}">Expand</button>
+              ${t.url ? `<button class="link-btn" data-url="${escapeHtml(t.url)}" data-type="${escapeAttr(t.type || 'video')}">预览</button>` : ''}
+              <button class="link-btn" data-expand="${t.id}">展开</button>
             </div>
           </div>
         `;
@@ -1371,12 +1371,12 @@
               <div data-task-msg="1" style="font-size:12px;color:${msgColor};${msg ? '' : 'display:none;'}">${safeMsg}</div>
               ${missingUrlWarn}
               <div>
-                <div class="progress-shell" data-task-progress-shell="1" role="progressbar" aria-label="Task Progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressWidth}">
+                <div class="progress-shell" data-task-progress-shell="1" role="progressbar" aria-label="任务进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressWidth}">
                   <div class="progress-bar" data-task-progress-bar="1" style="width:${progressWidth}%;"></div>
                 </div>
                 <div class="progress-info">
-                  <span data-task-progress-text="1">Progress: ${progress}%</span>
-                  <span class="muted">Queue · Gen · Done</span>
+                  <span data-task-progress-text="1">进度：${progress}%</span>
+                  <span class="muted">排队 · 生成 · 完成</span>
                 </div>
                 <div class="task-steps">
                   <div class="task-step ${stepIdx >= 1 ? stepClass : ''}"></div>
@@ -1386,29 +1386,32 @@
               </div>
             </div>
             <div class="task-actions">
-              ${t.url ? `<button class="link-btn" data-url="${escapeHtml(t.url)}" data-type="${escapeAttr(t.type || 'video')}">Preview</button>` : ''}
-              ${t.status === 'running' && t.wmCanCancel && t.remoteTaskId
-            ? `<button class="link-btn" data-cancel-wm="${t.id}" ${t.wmCancelling ? 'disabled' : ''}>${t.wmCancelling ? 'Cancelling...' : 'Cancel Wait'
-            }</button>`
-            : ''
-          }
-              ${canEditStoryboardPrompt ? `<button class="link-btn" data-edit-storyboard="${t.id}">Modify Prompt</button>` : ''}
-              ${t.status === 'retrying' &&
-            t.retryMode === 'submit' &&
-            (typeof t.retryCount === 'number' ? t.retryCount : parseInt(String(t.retryCount || '0'), 10) || 0) >= 3
-            ? `<button class="link-btn" data-abort-retry="${t.id}">Abort Retry</button>`
-            : ''
-          }
-              ${t.timedOut || t.status === 'error' || (!t.url && t.status === 'done') ? `<button class="link-btn" data-retry="${t.id}">Retry</button>` : ''}
-              ${t.status === 'stalled' ? `<button class="link-btn" data-continue="${t.id}">Continue</button>` : ''}
-              ${t.promptUser ? `<button class="link-btn" data-reuse="${t.id}">Reuse Prompt</button>` : ''}
-              <button class="link-btn" data-log="${t.id}">View Log</button>
+              ${t.url ? `<button class="link-btn" data-url="${escapeHtml(t.url)}" data-type="${escapeAttr(t.type || 'video')}">预览</button>` : ''}
+              ${
+                t.status === 'running' && t.wmCanCancel && t.remoteTaskId
+                  ? `<button class="link-btn" data-cancel-wm="${t.id}" ${t.wmCancelling ? 'disabled' : ''}>${
+                      t.wmCancelling ? '取消中...' : '取消去水印等待'
+                    }</button>`
+                  : ''
+              }
+              ${canEditStoryboardPrompt ? `<button class="link-btn" data-edit-storyboard="${t.id}">修改分镜提示词</button>` : ''}
+              ${
+                t.status === 'retrying' &&
+                t.retryMode === 'submit' &&
+                (typeof t.retryCount === 'number' ? t.retryCount : parseInt(String(t.retryCount || '0'), 10) || 0) >= 3
+                  ? `<button class="link-btn" data-abort-retry="${t.id}">中断重试</button>`
+                  : ''
+              }
+              ${t.timedOut || t.status === 'error' || (!t.url && t.status === 'done') ? `<button class="link-btn" data-retry="${t.id}">重试</button>` : ''}
+              ${t.status === 'stalled' ? `<button class="link-btn" data-continue="${t.id}">继续</button>` : ''}
+              ${t.promptUser ? `<button class="link-btn" data-reuse="${t.id}">复用提示</button>` : ''}
+              <button class="link-btn" data-log="${t.id}">查看日志</button>
             </div>
           </div>
         `;
       })
       .join('');
-    taskList.innerHTML = groupBar + (html || '<div class="muted">No Tasks</div>');
+    taskList.innerHTML = groupBar + (html || '<div class="muted">暂无任务</div>');
 
     const flashCard = (btn) => {
       const card = btn.closest('.task-card');
@@ -1427,7 +1430,7 @@
     const flashPreview = (url, info = null) => {
       setRightTab('preview');
       try {
-        // If current filter hides target, auto-switch to visible filter (avoids 'Clicked but Empty' issue)
+        // 若当前过滤会把目标结果隐藏，则自动切换到可见的过滤条件（避免“点了查看但预览空白”）
         const tid = info && typeof info.taskId === 'number' ? info.taskId : null;
         const hintType = info && info.type ? String(info.type) : '';
         const t = tid ? tasks.find((x) => x.id === tid) : tasks.find((x) => x && x.url === url);
@@ -1440,7 +1443,7 @@
         if (t && !taskMatchesPreviewFilter(t, previewFilter)) {
           setPreviewFilter(desired, { toast: true });
         } else {
-          // Fallback: Ensure DOM rebuilt with current filter
+          // 兜底：确保 DOM 已按当前过滤重建
           renderPreviews();
         }
       } catch (_) {
@@ -1478,7 +1481,7 @@
         if (t && t.promptUser) {
           promptBox.value = t.promptUser;
           analyzePromptHints();
-          showToast('Prompt filled');
+          showToast('提示已填充');
           smoothFocus(promptBox);
           flashCard(btn);
         }
@@ -1504,8 +1507,8 @@
             /* ignore */
           }
         }
-        updateTask(id, { status: 'error', message: 'Auto-retry aborted (Click "Retry" to restart)' });
-        showToast('Auto-retry aborted', 'warn', { title: 'Aborted' });
+        updateTask(id, { status: 'error', message: '已中断自动重试（可点击“重试”再次发起）' });
+        showToast('已中断自动重试', 'warn', { title: '已中断' });
         flashCard(btn);
       });
     });
@@ -1516,32 +1519,32 @@
         const apiKey = $('apiKey').value.trim();
         const baseUrl = getBaseUrl();
         if (!apiKey || !baseUrl) {
-          showToast('Please enter API Key and Server URL');
+          showToast('请先填写 API Key 和服务器地址');
           return;
         }
         if (!t) {
-          showToast('Task not found, cannot retry', 'error', { title: 'Retry Failed', duration: 2600 });
+          showToast('未找到该任务，无法重试', 'error', { title: '重试失败', duration: 2600 });
           return;
         }
         const job = {
           taskId: id,
           promptSend: t.promptSend || '',
           promptUser: t.promptUser || '',
-          // Allow "Empty Prompt + Asset Only" retry: Assets kept in memory (lost on refresh)
+          // 允许“空提示词 + 仅素材”的任务重试：素材仅保留在内存（刷新后不保证存在）
           file: t._inputFile || null,
           fileDataUrl: t._inputFileDataUrl || null,
           model: t.model || $('model').value,
           storyboard: t.storyboard || null
         };
         if (!job.promptSend && !job.file && !job.fileDataUrl) {
-          showToast('Task has no reusable prompt/asset, retrying anyway (may fail)', 'warn', {
-            title: 'Empty Retry',
+          showToast('该任务没有可复用的提示词/素材，仍将尝试重试（可能失败）', 'warn', {
+            title: '空输入重试',
             duration: 4200
           });
         } else if (!job.promptSend && (job.file || job.fileDataUrl)) {
-          showToast('Empty prompt retry: submitting with assets only (Allowed)', 'info', { title: 'Retrying', duration: 2200 });
+          showToast('空提示词重试：将只带素材提交（允许）', 'info', { title: '正在重试', duration: 2200 });
         } else {
-          showToast('Retrying task...', 'info');
+          showToast('正在重试该任务', 'info');
         }
         await runJobs(
           [job],
@@ -1559,11 +1562,11 @@
         const apiKey = $('apiKey').value.trim();
         const baseUrl = getBaseUrl();
         if (!apiKey || !baseUrl) {
-          showToast('Please enter API Key and Server URL');
+          showToast('请先填写 API Key 和服务器地址');
           return;
         }
         if (!t) {
-          showToast('Task not found, cannot continue', 'error', { title: 'Continue Failed', duration: 2600 });
+          showToast('未找到该任务，无法继续', 'error', { title: '继续失败', duration: 2600 });
           return;
         }
         const job = {
@@ -1576,14 +1579,14 @@
           storyboard: t.storyboard || null
         };
         if (!job.promptSend && !job.file && !job.fileDataUrl) {
-          showToast('Task has no reusable prompt/asset, continuing anyway (may fail)', 'warn', {
-            title: 'Empty Continue',
+          showToast('该任务没有可复用的提示词/素材，仍将尝试继续（可能失败）', 'warn', {
+            title: '空输入继续',
             duration: 4200
           });
         } else if (!job.promptSend && (job.file || job.fileDataUrl)) {
-          showToast('Empty prompt continue: submitting with assets only (Allowed)', 'info', { title: 'Continuing', duration: 2200 });
+          showToast('空提示词继续：将只带素材提交（允许）', 'info', { title: '正在继续', duration: 2200 });
         } else {
-          showToast('Continuing task...', 'info');
+          showToast('正在继续该任务', 'info');
         }
         await runJobs(
           [job],
@@ -1605,7 +1608,7 @@
           setRightTab('log');
           smoothFocus(logTaskPanel || out);
         } else {
-          showToast('Task Log Not Found');
+          showToast('未找到该任务日志');
         }
         flashCard(btn);
       });
@@ -1615,13 +1618,13 @@
         const id = parseInt(btn.getAttribute('data-cancel-wm'), 10);
         const t = tasks.find((x) => x.id === id);
         if (!t || !t.remoteTaskId) {
-          showToast('Missing task_id, cannot cancel watermark wait');
+          showToast('缺少 task_id，无法取消去水印等待');
           return;
         }
         const apiKey = $('apiKey').value.trim();
         const baseUrl = getBaseUrl();
         if (!apiKey || !baseUrl) {
-          showToast('Please enter API Key and Server URL');
+          showToast('请先填写 API Key 和服务器地址');
           return;
         }
         if (t.wmCancelling) return;
@@ -1641,10 +1644,10 @@
           if (!resp.ok) {
             throw new Error('HTTP ' + resp.status);
           }
-          showToast('Watermark cancel request sent', 'success');
+          showToast('已发送取消去水印请求', 'success');
         } catch (e) {
           updateTask(id, { wmCancelling: false });
-          showToast(`Cancel failed: ${e?.message || String(e)}`, 'error');
+          showToast(`取消失败: ${e?.message || String(e)}`, 'error');
         }
         flashCard(btn);
       });
@@ -1672,9 +1675,9 @@
 
     setTaskCount();
     updateTaskBubble();
-    // Log Panel: Update only when viewing to avoid re-rendering log list on every streaming chunk
+    // 日志面板只有在用户正在查看时才更新，避免流式更新导致每个 chunk 都重绘日志列表
     if (currentRightTab === 'log') renderLogPanel();
-    // Sync task state to Admin Console (Task Orb/Drawer), throttled to avoid cross-iframe redraws on every chunk
+    // 任务状态同步给管理台（任务球/抽屉），用节流发送避免流式每个 chunk 都跨 iframe 重绘
     schedulePostTaskState({ immediate: true });
   };
 
@@ -1683,7 +1686,7 @@
     const fullList = tasks.filter((t) => t && t.url && isValidMediaUrl(t.url));
     const list = fullList.filter((t) => taskMatchesPreviewFilter(t, previewFilter));
     previewGrid.innerHTML = '';
-    // Prevent URL dedup set from growing indefinitely (Memory usage protection)
+    // 防止 URL 去重集合无限增长（任务多、URL 长时会占内存）
     try {
       const limit = 1200;
       while (previewKnown.size > limit) {
@@ -1697,7 +1700,7 @@
     if (previewCount) {
       const nextText = !fullList.length
         ? ''
-        : `Showing ${list.length}/${fullList.length}${previewFilter === 'all' ? '' : ` · ${previewFilterLabel(previewFilter)}`}`;
+        : `显示 ${list.length}/${fullList.length}${previewFilter === 'all' ? '' : ` · ${previewFilterLabel(previewFilter)}`}`;
       const prevText = previewCountLastText || (previewCount.textContent || '');
       if (prevText !== nextText) {
         previewCount.textContent = nextText;
@@ -1706,7 +1709,7 @@
           const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
           if (reduce) throw new Error('reduced-motion');
           if (nextText) {
-            // Light debounce: Avoid excess redraw flicker noise
+            // 轻防抖：避免流式频繁重绘导致“闪烁噪声”
             if (previewCountFlashTimer) clearTimeout(previewCountFlashTimer);
             previewCount.classList.remove('count-flash');
             void previewCount.offsetWidth;
@@ -1714,7 +1717,7 @@
             previewCountFlashTimer = setTimeout(() => {
               try {
                 previewCount.classList.remove('count-flash');
-              } catch (_) { }
+              } catch (_) {}
               previewCountFlashTimer = null;
             }, 1900);
           }
@@ -1725,8 +1728,8 @@
     }
 
     if (fullList.length === 0) {
-      // Empty Preview: Clear dedup set; Unread dot controlled by 'seen task IDs'
-      previewGrid.innerHTML = '<div class="muted" style="padding:12px;">No previews. Will appear here after generation.</div>';
+      // 预览为空：清空 URL 去重集合即可；未读红点由“已看过的任务 id 集合”控制
+      previewGrid.innerHTML = '<div class="muted" style="padding:12px;">暂无预览结果。生成完成后会在这里出现。</div>';
       previewsHydrated = true;
       updateUnreadDots();
       return;
@@ -1734,7 +1737,7 @@
 
     if (list.length === 0) {
       previewGrid.innerHTML =
-        '<div class="muted" style="padding:12px;">No results for current filter. Switch to "All".</div>';
+        '<div class="muted" style="padding:12px;">当前过滤条件下暂无结果。可切换到“全部”查看。</div>';
       previewsHydrated = true;
       updateUnreadDots();
       return;
@@ -1767,7 +1770,7 @@
     const card = document.createElement('div');
     card.className = 'preview-card';
     try {
-      // Set maintains insertion order: Keep recent URLs only, avoid unbound growth
+      // Set 有插入顺序：只保留最近一段时间的 URL，避免无上限增长
       const limit = 1200;
       while (previewKnown.size > limit) {
         const first = previewKnown.values().next().value;
@@ -1781,7 +1784,7 @@
       setTimeout(() => {
         try {
           card.classList.remove('preview-new');
-        } catch (_) { }
+        } catch (_) {}
       }, 3600);
     }
     // Escape URLs for HTML attributes/text (avoid `&bar` style entity decoding).
@@ -1803,10 +1806,10 @@
       wrap.style.gap = '6px';
 
       const badge = document.createElement('div');
-      badge.className = 'task-id-pill'; // Unified badge style
-      badge.textContent = `Task ${taskId}`;
+      badge.className = 'task-id-pill'; // 统一编号视觉
+      badge.textContent = `任务 ${taskId}`;
       badge.style.cursor = 'pointer';
-      badge.title = 'Click to locate task card';
+      badge.title = '点击定位到任务卡片';
       wrap.appendChild(badge);
 
       const t = tasks.find((x) => x.id === taskId);
@@ -1825,10 +1828,10 @@
         wm.className = 'task-tag-chip watermark';
         wm.textContent =
           wmStage === 'cancelled'
-            ? 'Watermark Cancelled'
+            ? '已取消去水印'
             : wmStage === 'ready'
-              ? 'No Watermark'
-              : `Removing Watermark${wmAttempt > 0 ? ` · ${wmAttempt}` : ''}`;
+              ? '无水印'
+              : `去水印中${wmAttempt > 0 ? ` · ${wmAttempt}` : ''}`;
         wrap.appendChild(wm);
       }
       card.style.position = 'relative';
@@ -1862,24 +1865,24 @@
       <span class="preview-url muted" title="${safeUrlAttr}">${safeUrlText}</span>
       ${meta ? `<span class="chip">${escapeHtml(meta)}</span>` : ''}
       <div class="preview-actions">
-        <button class="link-btn" data-open="1">View</button>
-        ${taskId ? `<button class="link-btn" data-focus-task="${taskId}">Locate Task</button>` : ''}
+        <button class="link-btn" data-open="1">查看</button>
+        ${taskId ? `<button class="link-btn" data-focus-task="${taskId}">定位任务</button>` : ''}
         <a class="link-btn" href="${downloadHref}" download="${escapeHtml(downloadName || '')}" rel="noreferrer" title="${escapeHtml(
-      downloadName || 'Download'
-    )}">Download</a>
-        <button class="link-btn" data-copy="${safeUrlAttr}">Copy Link</button>
+          downloadName || '下载'
+        )}">下载</a>
+        <button class="link-btn" data-copy="${safeUrlAttr}">复制链接</button>
       </div>
     `;
     card.appendChild(info);
     previewGrid.prepend(card);
 
-    // If viewing Preview tab, mark new preview as seen (avoids reappearing red dot)
+    // 如果用户正在看“预览”页，新产出的预览默认视为已读（避免离开后红点又冒出来）
     if (taskId && currentRightTab === 'preview') {
       markPreviewSeen(taskId);
     }
     updateUnreadDots();
 
-    // Click to Play/Pause support even with native controls hidden
+    // 隐藏原生控件后仍支持点击播放/暂停
     if (type !== 'image') {
       const v = card.querySelector('video');
       if (v) {
@@ -1894,8 +1897,8 @@
     card.querySelectorAll('[data-copy]').forEach((btn) => {
       btn.addEventListener('click', () => {
         navigator.clipboard.writeText(btn.getAttribute('data-copy')).then(
-          () => showToast('Link Copied'),
-          () => showToast('Copy Failed')
+          () => showToast('已复制链接'),
+          () => showToast('复制失败')
         );
       });
     });
@@ -2001,7 +2004,7 @@
             storyboard: t.storyboard || null
           };
           if (base.status === 'running' || base.status === 'queue') {
-            return { ...base, status: 'stalled', message: 'Task interrupted by refresh, click Continue or Retry', progress: base.progress ?? 0 };
+            return { ...base, status: 'stalled', message: '刷新后任务可能中断，请点击继续或重试', progress: base.progress ?? 0 };
           }
           return base;
         });
@@ -2040,13 +2043,13 @@
   };
 
   const loadRolesFromStorage = () => {
-    // Main Prompt (Single/Same) Global Mount: Compat legacy key, avoid loss on upgrade
+    // 主提示（单次/同提示）全局挂载：兼容旧 key，避免升级后丢失
     try {
       const rawMain = localStorage.getItem(roleStorageKeyMain);
       const rawLegacy = localStorage.getItem(roleStorageKeyLegacy);
       const parsed = JSON.parse((rawMain || rawLegacy || '[]').toString());
       attachedRoles = Array.isArray(parsed) ? parsed : [];
-      // First migration: Write legacy to main, then read main only
+      // 首次迁移：把 legacy 写回 main，后续就只读 main
       if (!rawMain && rawLegacy) {
         try {
           localStorage.setItem(roleStorageKeyMain, JSON.stringify(attachedRoles));
@@ -2058,7 +2061,7 @@
       attachedRoles = [];
     }
 
-    // Multi-Prompt/Storyboard: Independent 'Global Roles' per mode
+    // 多提示/分镜：各自独立的“本模式全局角色”
     try {
       const parsed = JSON.parse((localStorage.getItem(roleStorageKeyMulti) || '[]').toString());
       attachedRolesMulti = Array.isArray(parsed) ? parsed : [];
@@ -2084,8 +2087,8 @@
       promptUser: promptUser || '',
       promptSend: promptSend || '',
       url: null,
-      // Preset mediaType: Choose correct img/video component in preview (avoids 'Gen Image but apply Video logic')
-      // Will be corrected after streaming real URL.
+      // 预设 mediaType：用于预览区正确选择 img/video 组件（避免“生成图片但套用视频逻辑”）
+      // 后续会在流式解析出真实 URL 后再次校正。
       type: modelInfo.isImage ? 'image' : modelInfo.isVideo ? 'video' : 'video',
       meta: null,
       logTail: '',
@@ -2102,14 +2105,14 @@
       wmAttempt: 0,
       wmCanCancel: false,
       wmCancelling: false,
-      // Task Tag/Group: For 'Storyboard' filter and numbering
+      // 任务标签/分组：用于“分镜”筛选与编号展示
       tag: extra && extra.storyboard ? 'storyboard' : '',
       storyboard: extra && extra.storyboard ? extra.storyboard : null
     };
     tasks.unshift(t);
-    // High freq addTask under streaming/concurrency: Throttle render & persist to avoid lag
+    // 流式/并发下 addTask 也可能很频繁：用节流渲染与节流持久化避免卡顿
     scheduleRender({ tasks: true, previews: false });
-    // Placeholder card creation is critical: Persist immediately to avoid loss on refresh
+    // 占位卡创建属于“对象恒常性”关键节点：尽量立即落盘，避免用户刷新后丢失
     schedulePersistTasks({ immediate: true });
     if (currentRightTab !== 'tasks') {
       unread.tasks = true;
@@ -2119,11 +2122,11 @@
   };
 
   const collapseTimers = new Map();
-  // Task-level 'Auto-retry/Abort retry' handle (Avoid UI decoupling)
+  // 任务级“自动重试/中断重试”控制柄（避免 UI 与运行时脱钩）
   // Map<taskId, { cancelled: boolean, abortFetch: null | (() => void) }>
   const taskRetryControls = new Map();
 
-  // ===== Render/Persist Throttling (Critical: Avoid lag from full redraw on every chunk) =====
+  // ===== 渲染/持久化节流（关键：解决流式每 chunk 全量重绘导致的卡顿） =====
   let renderQueued = false;
   let needRenderTasks = false;
   let needRenderPreviews = false;
@@ -2154,14 +2157,14 @@
       return;
     }
     if (persistTasksTimer) return;
-    // Slight delay to merge multiple updateTask into one localStorage write
+    // 轻微延迟把多次 updateTask 合并成一次 localStorage 写入
     persistTasksTimer = setTimeout(() => {
       persistTasksTimer = null;
       persistTasks();
     }, 400);
   };
 
-  // ===== Task Card "Incremental DOM Update" (Critical: Avoid full redraw on every chunk) =====
+  // ===== 任务卡“增量 DOM 更新”（关键：解决流式每个 chunk 全量重绘导致的卡顿） =====
   let taskDomSyncQueued = false;
   const taskDomSyncMap = new Map(); // Map<taskId, taskSnapshot>
 
@@ -2172,16 +2175,16 @@
     const card = taskList.querySelector(`.task-card[data-id="${id}"]`);
     if (!card) return;
 
-    // Progress Bar (Update value/width only, no full card rebuild)
+    // 进度条（仅更新数值/宽度，不重建整卡）
     const progress = Math.max(0, Math.min(100, parseInt(String(t.progress ?? (t.status === 'done' ? 100 : 0)), 10) || 0));
     const bar = card.querySelector('[data-task-progress-bar="1"]');
     if (bar) bar.style.width = `${progress}%`;
     const shell = card.querySelector('[data-task-progress-shell="1"]');
     if (shell) shell.setAttribute('aria-valuenow', String(progress));
     const pText = card.querySelector('[data-task-progress-text="1"]');
-    if (pText) pText.textContent = `Progress: ${progress}%`;
+    if (pText) pText.textContent = `进度：${progress}%`;
 
-    // Task Message (Frequent changes in running/retrying, update only this line)
+    // 任务消息（运行中/重试中会变化很频繁，改为只更新这一行）
     const msgEl = card.querySelector('[data-task-msg="1"]');
     if (msgEl) {
       const msg = String(t.message || '');
@@ -2216,7 +2219,7 @@
     });
   };
 
-  // Log Tab: Update only when viewing, merged via rAF, avoid redraw on every logFull
+  // 日志 Tab：仅当用户正在查看时才更新，并做 rAF 合并，避免 logFull 每条都重绘
   let logPanelSyncQueued = false;
   const scheduleLogPanelSync = () => {
     if (logPanelSyncQueued) return;
@@ -2236,12 +2239,12 @@
     if (idx < 0) return;
     const base = tasks[idx];
     const merged = { ...base, ...patch };
-    // Correct status if subsequent message indicates Role Card success
-    if (patch.message && /Role Created|Role Card Created/.test(patch.message)) {
+    // 若后续补打的 message 表明角色卡成功，则校正状态
+    if (patch.message && /角色卡创建成功/.test(patch.message)) {
       merged.status = 'done';
       merged.type = merged.type || 'character';
     }
-    // Merge Log: Keep full log & truncate
+    // 合并日志：保留完整日志并截断
     if (patch.logTail !== undefined) {
       merged.logTail = patch.logTail;
     }
@@ -2264,7 +2267,7 @@
         collapseTimers.set(id, timer);
       }
     }
-    // Task list updates almost every time, but Preview Wall only on url/meta/tag changes
+    // 任务列表基本每次都要更新（进度/状态/消息），但预览墙只在 url/meta/tag 等关键字段变化时更新
     const affectsPreview =
       patch.url !== undefined ||
       patch.type !== undefined ||
@@ -2274,7 +2277,7 @@
       patch.storyboard !== undefined ||
       patch.tag !== undefined;
 
-    // "Full Task List Redraw" is expensive: Use "Incremental DOM" for streaming, leave full render for structural changes
+    // “全量重绘任务列表”很贵：流式输出时只做“增量 DOM 更新”，把全量 render 留给结构性变化
     const patchKeys = patch && typeof patch === 'object' ? Object.keys(patch) : [];
     const onlyLogPatch =
       patchKeys.length > 0 && patchKeys.every((k) => k === 'logFull' || k === 'logTail');
@@ -2296,7 +2299,7 @@
       'remoteTaskId'
     ]);
     let needFullTasksRender = patchKeys.some((k) => heavyKeys.has(k));
-    // Fallback: Status correction via message (e.g. "Role Created")
+    // 兜底：某些情况下会通过 message 修正 status（例如“角色卡创建成功”）
     if ((merged && merged.status) !== (base && base.status)) needFullTasksRender = true;
     if ((merged && !!merged.timedOut) !== (base && !!base.timedOut)) needFullTasksRender = true;
 
@@ -2304,21 +2307,21 @@
       scheduleRender({ tasks: true, previews: affectsPreview });
       schedulePostTaskState({ immediate: true });
     } else {
-      // Incremental: Update progress/msg only (No UI lag, no event rebind)
+      // 增量更新：只更新该任务卡的进度/消息（不卡 UI、不重绑事件）
       const needDom = patch.progress !== undefined || patch.message !== undefined;
       if (needDom) scheduleTaskCardDomSync(id, merged);
       if (affectsPreview) scheduleRender({ tasks: false, previews: true });
-      // Log Tab: Refresh only when viewing (Updating logFull every entry is laggy)
+      // 日志 Tab：用户正在查看时才刷新（logFull 每条都更新会非常卡）
       if (
         currentRightTab === 'log' &&
         (patch.logFull !== undefined || patch.logTail !== undefined || patch.message !== undefined)
       ) {
         scheduleLogPanelSync();
       }
-      // Sync to Admin Drawer: No logFull/logTail needed (Drawer doesn't show log), avoid useless cross-iframe redraw
+      // 给管理台任务抽屉同步：logFull/logTail 不需要（抽屉不展示日志），避免无意义跨 iframe 重绘
       if (!onlyLogPatch) schedulePostTaskState({ immediate: false });
     }
-    // Sync memory log buffer for copy/display
+    // 同步内存日志缓存，便于复制与展示
     if (patch.logFull !== undefined || patch.logTail !== undefined) {
       const logText =
         (patch.logFull || patch.logTail || taskLogBuffer[id] || '').slice(-LOG_STORE_LIMIT);
@@ -2334,10 +2337,10 @@
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'task_count', running, total }, '*');
       }
-    } catch (_) { }
+    } catch (_) {}
   };
 
-  // Task List State (For Admin Drawer): Throttled send, avoid triggering parent re-render on every chunk
+  // 任务列表状态（给管理台任务抽屉用）：节流发送，避免流式每个 chunk 都触发父页面重渲染
   let postTaskStateTimer = null;
   const postTaskStateNow = () => {
     try {
@@ -2379,11 +2382,11 @@
   let onlyRunning = false;
   let densePreview = localStorage.getItem(PREVIEW_DENSE_KEY) === '1';
   let statusFilter = '';
-  // Preview Unread: Use "Seen Task IDs" set, prevent red dot flicker on URL change/redraw
+  // 预览未读：用“已看过的任务 id”做集合判定，避免 URL 变化/重渲染导致红点反复出现
   let previewSeenTaskIds = new Set();
   let logVersion = 0;
   let logSeenVersion = 0;
-  const previewKnown = new Set(); // Prevent duplicate cards for same URL
+  const previewKnown = new Set(); // 仅用于避免同一 URL 重复加卡
   let previewsHydrated = false;
   let previewCountLastText = '';
   let previewCountFlashTimer = null;
@@ -2408,7 +2411,7 @@
     updateUnreadDots();
   };
 
-  // Core: Execute a batch of tasks (concurrency supported)
+  // 核心：执行一组任务（支持并发）
   const runJobs = async (jobs, apiKey, baseUrl, concurrency = 1) => {
     if (!jobs || !jobs.length) return;
     const poolSize = Math.min(concurrency, jobs.length);
@@ -2421,8 +2424,8 @@
       const promptSnippet = promptUser.slice(0, 80) || (job.file ? job.file.name : '(空提示)');
       const extra = { storyboard: job.storyboard || null, model: job.model };
 
-      // Task Warm-start: Create placeholder first, avoid log conflicts & enhance 'object permanence'
-      // "Retry/Continue" keeps position: Reuses existing taskId, updates status in-place.
+      // 任务热启动：先创建占位任务，避免并发时日志串号 & 增强“对象恒常性”
+      // 但“重试/继续”要求不改变任务卡位置：允许复用现有 taskId，原地变为“重试中/生成中”。
       let taskId =
         typeof job.taskId === 'number' ? job.taskId : parseInt(String(job.taskId || ''), 10) || null;
       if (taskId && !tasks.find((t) => t && t.id === taskId)) {
@@ -2432,22 +2435,22 @@
       if (!taskId) {
         taskId = addTask(promptSnippet, promptUser, promptSend, extra);
       } else {
-        // If same task running (e.g. repeated Retry clicks), abort old first, then start new.
+        // 若同一任务正在跑（比如用户连续点“重试”），先中断旧的，再启动新的。
         const prev = taskRetryControls.get(taskId);
         if (prev) {
           prev.cancelled = true;
           try {
             if (typeof prev.abortFetch === 'function') prev.abortFetch();
-          } catch (_) { }
+          } catch (_) {}
         }
         taskLogBuffer[taskId] = '';
         updateTask(taskId, {
           status: 'queue',
           progress: 0,
           timedOut: false,
-          message: 'Preparing...',
+          message: '准备中…',
           model: job.model,
-          // Refresh media type on reuse: avoids video preview logic if switching to image model
+          // 复用 taskId 时同步刷新媒体类型：避免上一轮是视频，本轮切到图片后预览仍按视频渲染
           type: parseModelId(job.model).isImage ? 'image' : 'video',
           promptSnippet,
           promptUser,
@@ -2470,11 +2473,11 @@
         }
       }
 
-      // Placeholder state: Immediate "Queued" feedback, avoids confusion about missing tasks.
-      updateTask(taskId, { status: 'queue', model: job.model, errorKind: '', progress: 0, timedOut: false, message: 'Preparing...' });
+      // 占位态：让用户立刻看到“任务已入队”，避免误以为只生成了分镜 1。
+      updateTask(taskId, { status: 'queue', model: job.model, errorKind: '', progress: 0, timedOut: false, message: '准备中…' });
 
-      // Record input assets for this task (allows "Empty Prompt Retry/Continue").
-      // Note: Keep in memory only, avoid huge dataURL in localStorage (prevents lag/quota error).
+      // 记录本次任务的输入素材（用于“空提示也能重试/继续”）。
+      // 注意：这里只保留在内存中，避免把大文件 dataURL 写进 localStorage（防卡顿/超额）。
       try {
         const tRef = tasks.find((x) => x && x.id === taskId);
         if (tRef) {
@@ -2496,10 +2499,10 @@
       const contentArr = [];
       if (promptSend) contentArr.push({ type: 'text', text: promptSend });
 
-      // Read file (may be slow)
+      // 读文件（可能比较慢）
       try {
         if (job.file) {
-          logTask(taskId, `Reading file: ${job.file.name}`);
+          logTask(taskId, `读取文件: ${job.file.name}`);
           const dataUrl = await fileToDataUrl(job.file);
           if ((job.file.type || '').startsWith('video')) {
             contentArr.push({ type: 'video_url', video_url: { url: dataUrl } });
@@ -2516,8 +2519,8 @@
           }
         }
       } catch (_) {
-        updateTask(taskId, { status: 'error', message: 'Read file failed (Retry or change file)', progress: 0 });
-        showToast('Read file failed (Retry or change file)', 'error', { title: 'Read Failed', duration: 4200 });
+        updateTask(taskId, { status: 'error', message: '读取文件失败（请重试或更换文件）', progress: 0 });
+        showToast('读取文件失败（请重试或更换文件）', 'error', { title: '文件读取失败', duration: 4200 });
         return;
       }
 
@@ -2532,7 +2535,7 @@
         ]
       };
 
-      // Manual "Retry/Continue" must switch tag to "Retrying" in-place (drop fail tag)
+      // 手动“重试/继续”必须原地变为“重试中”标签（不再保留失败标签）
       if (job.taskId) {
         updateTask(taskId, { status: 'retrying', retryMode: 'manual', retryCount: 0, progress: 0, message: '' });
       } else {
@@ -2549,169 +2552,105 @@
       taskRetryControls.set(taskId, retryCtl);
 
       try {
-        // Submission Phase: Don't fail easily (Auto-retry, show "Abort Retry" after 3 attempts)
-        const MAX_RETRY = 9999;
-        for (let attempt = 1; attempt <= MAX_RETRY + 1; attempt++) {
-          let lastChunk = '';
-          let contentAccumulated = '';  // Accumulate all content fields
-          let characterCreated = false;
-          let characterCardInfo = null;
-          let hadError = false;
-          let finished = false;
-          let logBufferAttempt = '';
-          let watermarkWaitSeen = false; // once seen, disable the 10-min hard timeout and rely on explicit cancel
-          let progressMarkerSeen = false; // once seen, do NOT auto-resubmit (avoid duplicates)
-          const controller = new AbortController();
-          retryCtl.abortFetch = () => controller.abort();
-          const HARD_TIMEOUT = 600000; // 10 分钟总超时
-          let hardTimer = null;
-          const clearTimers = () => {
-            if (hardTimer) clearTimeout(hardTimer);
-          };
+      // 提交上游阶段：不轻易判失败（自动重试，3 次后提供"中断重试"按钮）
+      const MAX_RETRY = 9999;
+      for (let attempt = 1; attempt <= MAX_RETRY + 1; attempt++) {
+        let lastChunk = '';
+        let contentAccumulated = '';  // 累积所有 content 字段
+        let characterCreated = false;
+        let characterCardInfo = null;
+        let hadError = false;
+        let finished = false;
+        let logBufferAttempt = '';
+        let watermarkWaitSeen = false; // once seen, disable the 10-min hard timeout and rely on explicit cancel
+        let progressMarkerSeen = false; // once seen, do NOT auto-resubmit (avoid duplicates)
+        const controller = new AbortController();
+        retryCtl.abortFetch = () => controller.abort();
+        const HARD_TIMEOUT = 600000; // 10 分钟总超时
+        let hardTimer = null;
+        const clearTimers = () => {
+          if (hardTimer) clearTimeout(hardTimer);
+        };
 
-          try {
-            if (retryCtl.cancelled) {
-              updateTask(taskId, { status: 'error', message: 'Auto-retry aborted (Click Retry to restart)' });
-              return;
-            }
-            // attempt=1: Normal generation (or first manual retry)
-            // attempt>1: Auto-retry for "Submission failed" errors
-            if (attempt > 1) {
-              updateTask(taskId, {
-                status: 'retrying',
-                retryMode: 'submit',
-                retryCount: attempt - 1,
-                timedOut: false,
-                progress: 0
-              });
-            } else if (job.taskId) {
-              updateTask(taskId, { status: 'retrying', retryMode: 'manual', retryCount: 0, timedOut: false, progress: 0 });
-            } else {
-              updateTask(taskId, { status: 'running', timedOut: false, progress: 0 });
-            }
-
-            const resp = await fetch(url, {
-              method: 'POST',
-              headers: {
-                Authorization: 'Bearer ' + apiKey,
-                'Content-Type': 'application/json',
-                Accept: 'text/event-stream'
-              },
-              body: JSON.stringify(body),
-              signal: controller.signal
+        try {
+          if (retryCtl.cancelled) {
+            updateTask(taskId, { status: 'error', message: '已中断自动重试（可点击“重试”再次发起）' });
+            return;
+          }
+          // attempt=1：正常生成（或手动重试的首次尝试）
+          // attempt>1：仅用于“提交上游失败”类可重试错误的自动重试
+          if (attempt > 1) {
+            updateTask(taskId, {
+              status: 'retrying',
+              retryMode: 'submit',
+              retryCount: attempt - 1,
+              timedOut: false,
+              progress: 0
             });
+          } else if (job.taskId) {
+            updateTask(taskId, { status: 'retrying', retryMode: 'manual', retryCount: 0, timedOut: false, progress: 0 });
+          } else {
+            updateTask(taskId, { status: 'running', timedOut: false, progress: 0 });
+          }
 
-            if (!resp.ok || !resp.body) {
-              throw new Error('HTTP ' + resp.status);
-            }
+          const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+              Authorization: 'Bearer ' + apiKey,
+              'Content-Type': 'application/json',
+              Accept: 'text/event-stream'
+            },
+            body: JSON.stringify(body),
+            signal: controller.signal
+          });
 
-            const reader = resp.body.getReader();
-            const decoder = new TextDecoder();
-            let mediaUrl = null;
-            // Inference by model default: Avoid mismatch if URL has no ext (Image task but Video preview)
-            let mediaType = parseModelId(job.model).isImage ? 'image' : 'video';
-            let mediaMeta = null;
+          if (!resp.ok || !resp.body) {
+            throw new Error('HTTP ' + resp.status);
+          }
 
-            hardTimer = setTimeout(() => controller.abort(), HARD_TIMEOUT);
+          const reader = resp.body.getReader();
+          const decoder = new TextDecoder();
+          let mediaUrl = null;
+          // 默认按模型推断：避免 URL 无扩展名时误判（图片任务却用 video 预览）
+          let mediaType = parseModelId(job.model).isImage ? 'image' : 'video';
+          let mediaMeta = null;
 
-            logTask(taskId, 'Connected, receiving stream...');
-            while (true) {
-              const { value, done } = await reader.read();
-              if (done) break;
-              const chunk = decoder.decode(value, { stream: true });
-              lastChunk = chunk || lastChunk;
-              chunk.split(/\n\n/).forEach((line) => {
-                if (!line.startsWith('data:')) return;
-                const data = line.replace(/^data:\s*/, '');
-                if (data === '[DONE]') {
-                  logTask(taskId, '[DONE]');
-                  finished = true;
-                  return;
-                }
-                logTask(taskId, data);
-                logBufferAttempt = (logBufferAttempt + data + '\n').slice(-LOG_STORE_LIMIT);
-                try {
-                  const obj = JSON.parse(data);
-                  const choice = (obj.choices && obj.choices[0]) || {};
-                  const delta = choice.delta || {};
-                  if (obj.error) {
-                    const pretty = humanizeUpstreamError(obj.error);
-                    const errMsg = pretty.message || obj.error.message || obj.error.code || 'Generation Failed';
-                    // Auto-retry only for "Submission Fail/Net Glitch (No Progress)"; Avoid double-order
-                    if (isRetryable(errMsg) && !progressMarkerSeen && !watermarkWaitSeen) {
-                      const retryErr = new Error(errMsg);
-                      retryErr.__submitRetryable = true;
-                      throw retryErr;
-                    }
-                    // Content Policy Hit: No auto-retry, provide fallback to "Modify Prompt"
-                    if (isContentPolicyViolation(errMsg)) {
-                      hadError = true;
-                      const isSb = !!(job.storyboard && job.storyboard.label);
-                      const msg = isSb ? 'Content Policy Check Failed (Modify shot prompt and retry)' : 'Content Policy Check Failed (Adjust prompt and retry)';
-                      updateTask(taskId, {
-                        status: 'error',
-                        errorKind: 'policy',
-                        message: msg,
-                        logTail: lastChunk,
-                        logFull: logBufferAttempt,
-                        progress: 0
-                      });
-                      showToast(msg, 'warn', { title: 'Policy Violation', duration: 5200 });
-                      return;
-                    }
-                    hadError = true;
-                    updateTask(taskId, { status: 'error', message: errMsg, logTail: lastChunk, logFull: logBufferAttempt });
-                    showToast(errMsg || 'Generation Failed', pretty.type === 'warn' ? 'warn' : 'error', {
-                      title: pretty.title || 'Generation Failed',
-                      duration: 4200
-                    });
-                    return;
+          hardTimer = setTimeout(() => controller.abort(), HARD_TIMEOUT);
+
+          logTask(taskId, '连接成功，开始接收流...');
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            lastChunk = chunk || lastChunk;
+            chunk.split(/\n\n/).forEach((line) => {
+              if (!line.startsWith('data:')) return;
+              const data = line.replace(/^data:\s*/, '');
+              if (data === '[DONE]') {
+                logTask(taskId, '[DONE]');
+                finished = true;
+                return;
+              }
+              logTask(taskId, data);
+              logBufferAttempt = (logBufferAttempt + data + '\n').slice(-LOG_STORE_LIMIT);
+              try {
+                const obj = JSON.parse(data);
+                const choice = (obj.choices && obj.choices[0]) || {};
+                const delta = choice.delta || {};
+                if (obj.error) {
+                  const pretty = humanizeUpstreamError(obj.error);
+                  const errMsg = pretty.message || obj.error.message || obj.error.code || '生成失败';
+                  // 仅“提交上游失败/网络瞬断（未进入进度阶段）”自动重试；避免已提交后重复下单
+                  if (isRetryable(errMsg) && !progressMarkerSeen && !watermarkWaitSeen) {
+                    const retryErr = new Error(errMsg);
+                    retryErr.__submitRetryable = true;
+                    throw retryErr;
                   }
-                  const rc = delta.reasoning_content || (choice.message && choice.message.content) || '';
-
-                  // Watermark-free waiting (structured, from backend delta.wm)
-                  if (delta && delta.wm && typeof delta.wm === 'object') {
-                    const wm = delta.wm || {};
-                    const stage = wm.stage ? String(wm.stage) : '';
-                    const attempt =
-                      typeof wm.attempt === 'number' ? wm.attempt : parseInt(String(wm.attempt || '0'), 10) || 0;
-                    const canCancel = !!wm.can_cancel;
-                    const remoteTaskId = wm.task_id ? String(wm.task_id) : '';
-                    const patch = { wmStage: stage, wmAttempt: attempt, wmCanCancel: canCancel };
-                    if (remoteTaskId) patch.remoteTaskId = remoteTaskId;
-                    updateTask(taskId, patch);
-
-                    // Once we enter watermark-free waiting, do not enforce the 10-min hard timeout.
-                    if (!watermarkWaitSeen) {
-                      watermarkWaitSeen = true;
-                      if (hardTimer) {
-                        clearTimeout(hardTimer);
-                        hardTimer = null;
-                      }
-                    }
-                  }
-
-                  // Parse embedded JSON in delta.content (character_card)
-                  const rawContent =
-                    delta.content ||
-                    (choice.message && choice.message.content) ||
-                    obj.content ||
-                    '';
-                  const finishReason = choice.finish_reason || choice.native_finish_reason || delta.finish_reason;
-                  const deltaContent = typeof delta.content === 'string' ? delta.content : '';
-                  const deltaReasoning = typeof delta.reasoning_content === 'string' ? delta.reasoning_content : '';
-
-                  // Accumulate content fields
-                  if (deltaContent) {
-                    contentAccumulated += deltaContent;
-                  }
-
-                  // Policy Check: Sora may return as reasoning/content (not always obj.error)
-                  const policyText = [deltaReasoning, deltaContent, rc, rawContent].filter(Boolean).join('\n');
-                  if (!hadError && isContentPolicyViolation(policyText)) {
+                  // 内容审查命中：不要自动重试，直接给“可修改分镜提示词”的兜底入口
+                  if (isContentPolicyViolation(errMsg)) {
                     hadError = true;
                     const isSb = !!(job.storyboard && job.storyboard.label);
-                    const msg = isSb ? 'Content Policy Check Failed (Modify shot prompt and retry)' : 'Content Policy Check Failed (Adjust prompt and retry)';
+                    const msg = isSb ? '内容审查未通过（可修改分镜提示词后重试）' : '内容审查未通过（请调整提示词后重试）';
                     updateTask(taskId, {
                       status: 'error',
                       errorKind: 'policy',
@@ -2720,367 +2659,431 @@
                       logFull: logBufferAttempt,
                       progress: 0
                     });
-                    showToast(msg, 'warn', { title: 'Policy Violation', duration: 5200 });
+                    showToast(msg, 'warn', { title: '内容审查未通过', duration: 5200 });
                     return;
                   }
-                  const characterFailHit =
-                    /角色卡创建失败|Character creation failed/i.test(deltaContent) ||
-                    /角色卡创建失败|Character creation failed/i.test(deltaReasoning) ||
-                    /角色卡创建失败|Character creation failed/i.test(rawContent || '') ||
-                    (/character_card/i.test(rawContent || '') && finishReason === 'STOP' && !characterCreated && !mediaUrl);
-                  if (!hadError && characterFailHit) {
-                    const msg =
-                      (deltaContent || deltaReasoning || rawContent || 'Character Creation Failed')
-                        .replace(/^❌\s*/, '')
-                        .trim();
-                    hadError = true;
-                    updateTask(taskId, {
-                      status: 'error',
-                      type: 'character',
-                      message: msg,
-                      logTail: lastChunk,
-                      logFull: logBufferAttempt,
-                      progress: 0
-                    });
-                    return;
-                  }
-                  let innerObj = null;
-                  if (typeof rawContent === 'string' && rawContent.trim().startsWith('{')) {
-                    try {
-                      innerObj = JSON.parse(rawContent);
-                    } catch (_) {
-                      innerObj = null;
+                  hadError = true;
+                  updateTask(taskId, { status: 'error', message: errMsg, logTail: lastChunk, logFull: logBufferAttempt });
+                  showToast(errMsg || '生成失败', pretty.type === 'warn' ? 'warn' : 'error', {
+                    title: pretty.title || '生成失败',
+                    duration: 4200
+                  });
+                  return;
+                }
+                const rc = delta.reasoning_content || (choice.message && choice.message.content) || '';
+
+                // Watermark-free waiting (structured, from backend delta.wm)
+                if (delta && delta.wm && typeof delta.wm === 'object') {
+                  const wm = delta.wm || {};
+                  const stage = wm.stage ? String(wm.stage) : '';
+                  const attempt =
+                    typeof wm.attempt === 'number' ? wm.attempt : parseInt(String(wm.attempt || '0'), 10) || 0;
+                  const canCancel = !!wm.can_cancel;
+                  const remoteTaskId = wm.task_id ? String(wm.task_id) : '';
+                  const patch = { wmStage: stage, wmAttempt: attempt, wmCanCancel: canCancel };
+                  if (remoteTaskId) patch.remoteTaskId = remoteTaskId;
+                  updateTask(taskId, patch);
+
+                  // Once we enter watermark-free waiting, do not enforce the 10-min hard timeout.
+                  if (!watermarkWaitSeen) {
+                    watermarkWaitSeen = true;
+                    if (hardTimer) {
+                      clearTimeout(hardTimer);
+                      hardTimer = null;
                     }
                   }
+                }
 
-                  if (typeof rc === 'string' && /(blocked|guardrail|违规|不支持|限制)/i.test(rc)) {
-                    hadError = true;
-                    const pretty = humanizeUpstreamError(rc);
-                    updateTask(taskId, {
-                      status: 'error',
-                      message: pretty.message || rc.trim(),
-                      logTail: lastChunk,
-                      logFull: logBufferAttempt
-                    });
-                    showToast(pretty.message || rc.trim(), pretty.type === 'warn' ? 'warn' : 'error', {
-                      title: pretty.title || 'Generation Failed',
-                      duration: 4200
-                    });
-                    return;
-                  }
-                  // Character Card Event: Mark as success directly
-                  const cardPayload = obj.event === 'character_card' || obj.card ? obj : innerObj && innerObj.event === 'character_card' ? innerObj : null;
-                  if (!cardPayload && typeof data === 'string' && data.includes('"character_card"')) {
-                    try {
-                      const temp = JSON.parse(data);
-                      if (temp && (temp.event === 'character_card' || temp.card)) {
-                        cardPayload = temp;
-                      }
-                    } catch (_) { }
-                  }
-                  if (cardPayload && (cardPayload.event === 'character_card' || cardPayload.card)) {
-                    const card = cardPayload.card || {};
-                    characterCreated = true;
-                    characterCardInfo = card;
-                    syncRoleCardToLibrary(card);
-                    showToast(`Character Created: @${card.username || card.display_name || 'User'}`);
-                    updateTask(taskId, {
-                      status: 'done',
-                      type: 'character',
-                      message: `Character Created: @${card.username || 'User'}`,
-                      meta: { display: card.display_name || card.username || '' },
-                      logTail: lastChunk,
-                      logFull: logBufferAttempt
-                    });
-                    return;
-                  }
-                  // Progress: Structured field or percentage in reasoning_content
-                  const currentProgress =
-                    tasks.find((t) => t.id === taskId && !isNaN(parseFloat(t.progress)))?.progress ?? 0;
-                  let progressVal = null;
-                  const pctMatch = data.match(/(\d{1,3})%/);
-                  if (pctMatch) progressMarkerSeen = true;
-                  if (obj.progress !== undefined && !isNaN(parseFloat(obj.progress))) {
-                    progressVal = parseFloat(obj.progress);
-                    progressMarkerSeen = true;
-                  }
-                  if (obj.delta && typeof obj.delta.reasoning_content === 'string') {
-                    const m = obj.delta.reasoning_content.match(/(\d{1,3})%/);
-                    if (m) progressVal = Math.max(progressVal ?? 0, parseFloat(m[1]));
-                    if (m) progressMarkerSeen = true;
-                  }
-                  if (!progressVal && pctMatch) {
-                    progressVal = Math.min(100, parseFloat(pctMatch[1]));
-                  }
-                  if (!isNaN(progressVal)) {
-                    const merged = Math.max(currentProgress, progressVal);
-                    updateTask(taskId, { progress: merged });
-                  }
+                // 解析 delta.content 里嵌入的 JSON（character_card）
+                const rawContent =
+                  delta.content ||
+                  (choice.message && choice.message.content) ||
+                  obj.content ||
+                  '';
+                const finishReason = choice.finish_reason || choice.native_finish_reason || delta.finish_reason;
+                const deltaContent = typeof delta.content === 'string' ? delta.content : '';
+                const deltaReasoning = typeof delta.reasoning_content === 'string' ? delta.reasoning_content : '';
 
-                  // 结构化字段优先
-                  const output0 = (obj.output && obj.output[0]) || null;
-                  const deltaOut0 = (delta.output && delta.output[0]) || null;
-                  // Trust upstream explicit type (image/video) even if URL lacks extension.
-                  const declaredTypeRaw = (output0 && output0.type) || (deltaOut0 && deltaOut0.type) || obj.type || '';
-                  const declaredType = String(declaredTypeRaw || '').toLowerCase();
-                  const declaredHint = declaredType === 'image' || declaredType === 'video' ? declaredType : '';
-                  const typeHintFromFields =
-                    declaredHint ||
-                    (obj.image_url && obj.image_url.url ? 'image' : '') ||
-                    (obj.video_url && obj.video_url.url ? 'video' : '') ||
-                    (output0 && output0.image_url ? 'image' : '') ||
-                    (output0 && output0.video_url ? 'video' : '') ||
-                    (deltaOut0 && deltaOut0.image_url ? 'image' : '') ||
-                    (deltaOut0 && deltaOut0.video_url ? 'video' : '') ||
-                    '';
-                  const candidates = [
-                    obj.url,
-                    obj.video_url && obj.video_url.url,
-                    obj.image_url && obj.image_url.url,
-                    output0 && (output0.url || output0.video_url || output0.image_url),
-                    deltaOut0 && (deltaOut0.url || deltaOut0.video_url || deltaOut0.image_url)
-                  ].filter(Boolean);
+                // 累积 content 字段
+                if (deltaContent) {
+                  contentAccumulated += deltaContent;
+                }
 
-                  // Capture remote task_id from delta.output if present (used by watermark cancel button)
-                  if (delta.output && delta.output[0] && delta.output[0].task_id) {
-                    updateTask(taskId, { remoteTaskId: String(delta.output[0].task_id) });
-                    progressMarkerSeen = true;
+                // 内容审查：Sora 可能以 reasoning/content 形式返回（不一定走 obj.error）
+                const policyText = [deltaReasoning, deltaContent, rc, rawContent].filter(Boolean).join('\n');
+                if (!hadError && isContentPolicyViolation(policyText)) {
+                  hadError = true;
+                  const isSb = !!(job.storyboard && job.storyboard.label);
+                  const msg = isSb ? '内容审查未通过（可修改分镜提示词后重试）' : '内容审查未通过（请调整提示词后重试）';
+                  updateTask(taskId, {
+                    status: 'error',
+                    errorKind: 'policy',
+                    message: msg,
+                    logTail: lastChunk,
+                    logFull: logBufferAttempt,
+                    progress: 0
+                  });
+                  showToast(msg, 'warn', { title: '内容审查未通过', duration: 5200 });
+                  return;
+                }
+                const characterFailHit =
+                  /角色卡创建失败|Character creation failed/i.test(deltaContent) ||
+                  /角色卡创建失败|Character creation failed/i.test(deltaReasoning) ||
+                  /角色卡创建失败|Character creation failed/i.test(rawContent || '') ||
+                  (/character_card/i.test(rawContent || '') && finishReason === 'STOP' && !characterCreated && !mediaUrl);
+                if (!hadError && characterFailHit) {
+                  const msg =
+                    (deltaContent || deltaReasoning || rawContent || '角色卡创建失败')
+                    .replace(/^❌\s*/, '')
+                    .trim();
+                  hadError = true;
+                  updateTask(taskId, {
+                    status: 'error',
+                    type: 'character',
+                    message: msg,
+                    logTail: lastChunk,
+                    logFull: logBufferAttempt,
+                    progress: 0
+                  });
+                  return;
+                }
+                let innerObj = null;
+                if (typeof rawContent === 'string' && rawContent.trim().startsWith('{')) {
+                  try {
+                    innerObj = JSON.parse(rawContent);
+                  } catch (_) {
+                    innerObj = null;
                   }
+                }
 
-                  let extractedUrl = candidates[0];
+                if (typeof rc === 'string' && /(blocked|guardrail|违规|不支持|限制)/i.test(rc)) {
+                  hadError = true;
+                  const pretty = humanizeUpstreamError(rc);
+                  updateTask(taskId, {
+                    status: 'error',
+                    message: pretty.message || rc.trim(),
+                    logTail: lastChunk,
+                    logFull: logBufferAttempt
+                  });
+                  showToast(pretty.message || rc.trim(), pretty.type === 'warn' ? 'warn' : 'error', {
+                    title: pretty.title || '生成失败',
+                    duration: 4200
+                  });
+                  return;
+                }
+                // 角色卡事件：直接标记为角色卡成功
+                const cardPayload = obj.event === 'character_card' || obj.card ? obj : innerObj && innerObj.event === 'character_card' ? innerObj : null;
+                if (!cardPayload && typeof data === 'string' && data.includes('"character_card"')) {
+                  try {
+                    const temp = JSON.parse(data);
+                    if (temp && (temp.event === 'character_card' || temp.card)) {
+                      cardPayload = temp;
+                    }
+                  } catch (_) {}
+                }
+                if (cardPayload && (cardPayload.event === 'character_card' || cardPayload.card)) {
+                  const card = cardPayload.card || {};
+                  characterCreated = true;
+                  characterCardInfo = card;
+                  syncRoleCardToLibrary(card);
+                  showToast(`角色卡创建成功：@${card.username || card.display_name || '角色'}`);
+                  updateTask(taskId, {
+                    status: 'done',
+                    type: 'character',
+                    message: `角色卡创建成功：@${card.username || '角色'}`,
+                    meta: { display: card.display_name || card.username || '' },
+                    logTail: lastChunk,
+                    logFull: logBufferAttempt
+                  });
+                  return;
+                }
+                // 进度：结构化字段或 reasoning_content 中的百分比
+                const currentProgress =
+                  tasks.find((t) => t.id === taskId && !isNaN(parseFloat(t.progress)))?.progress ?? 0;
+                let progressVal = null;
+                const pctMatch = data.match(/(\d{1,3})%/);
+                if (pctMatch) progressMarkerSeen = true;
+                if (obj.progress !== undefined && !isNaN(parseFloat(obj.progress))) {
+                  progressVal = parseFloat(obj.progress);
+                  progressMarkerSeen = true;
+                }
+                if (obj.delta && typeof obj.delta.reasoning_content === 'string') {
+                  const m = obj.delta.reasoning_content.match(/(\d{1,3})%/);
+                  if (m) progressVal = Math.max(progressVal ?? 0, parseFloat(m[1]));
+                  if (m) progressMarkerSeen = true;
+                }
+                if (!progressVal && pctMatch) {
+                  progressVal = Math.min(100, parseFloat(pctMatch[1]));
+                }
+                if (!isNaN(progressVal)) {
+                  const merged = Math.max(currentProgress, progressVal);
+                  updateTask(taskId, { progress: merged });
+                }
 
-                  // <video src> or direct media link in content/markdown
-                  if (!extractedUrl && obj.content) {
-                    const htmlMatch = obj.content.match(/<video[^>]+src=['"]([^'"]+)['"]/i);
-                    if (htmlMatch) extractedUrl = htmlMatch[1];
-                    const mdMatch = obj.content.match(/https?:[^\s)"'<>]+\.(mp4|mov|m4v|webm|png|jpg|jpeg|webp)/i);
-                    if (!extractedUrl && mdMatch) extractedUrl = mdMatch[0];
-                  }
-                  // Fallback: extract media link from last chunk
-                  if (!extractedUrl) {
-                    const urlMatch = lastChunk.match(/https?:[^\s)"'<>]+\.(mp4|mov|m4v|webm|png|jpg|jpeg|webp)/i);
-                    if (urlMatch) extractedUrl = urlMatch[0];
-                  }
+                // 结构化字段优先
+                const output0 = (obj.output && obj.output[0]) || null;
+                const deltaOut0 = (delta.output && delta.output[0]) || null;
+                // 上游有时会给出明确 type（image/video），即使 URL 没有扩展名也应信任它。
+                const declaredTypeRaw = (output0 && output0.type) || (deltaOut0 && deltaOut0.type) || obj.type || '';
+                const declaredType = String(declaredTypeRaw || '').toLowerCase();
+                const declaredHint = declaredType === 'image' || declaredType === 'video' ? declaredType : '';
+                const typeHintFromFields =
+                  declaredHint ||
+                  (obj.image_url && obj.image_url.url ? 'image' : '') ||
+                  (obj.video_url && obj.video_url.url ? 'video' : '') ||
+                  (output0 && output0.image_url ? 'image' : '') ||
+                  (output0 && output0.video_url ? 'video' : '') ||
+                  (deltaOut0 && deltaOut0.image_url ? 'image' : '') ||
+                  (deltaOut0 && deltaOut0.video_url ? 'video' : '') ||
+                  '';
+                const candidates = [
+                  obj.url,
+                  obj.video_url && obj.video_url.url,
+                  obj.image_url && obj.image_url.url,
+                  output0 && (output0.url || output0.video_url || output0.image_url),
+                  deltaOut0 && (deltaOut0.url || deltaOut0.video_url || deltaOut0.image_url)
+                ].filter(Boolean);
 
-                  if (extractedUrl) {
-                    mediaUrl = extractedUrl;
+                // Capture remote task_id from delta.output if present (used by watermark cancel button)
+                if (delta.output && delta.output[0] && delta.output[0].task_id) {
+                  updateTask(taskId, { remoteTaskId: String(delta.output[0].task_id) });
+                  progressMarkerSeen = true;
+                }
+
+                let extractedUrl = candidates[0];
+
+                // content/markdown 中的 <video src> 或直接的媒体链接
+                if (!extractedUrl && obj.content) {
+                  const htmlMatch = obj.content.match(/<video[^>]+src=['"]([^'"]+)['"]/i);
+                  if (htmlMatch) extractedUrl = htmlMatch[1];
+                  const mdMatch = obj.content.match(/https?:[^\s)"'<>]+\.(mp4|mov|m4v|webm|png|jpg|jpeg|webp)/i);
+                  if (!extractedUrl && mdMatch) extractedUrl = mdMatch[0];
+                }
+                // 从最新 chunk 中兜底提取媒体链接
+                if (!extractedUrl) {
+                  const urlMatch = lastChunk.match(/https?:[^\s)"'<>]+\.(mp4|mov|m4v|webm|png|jpg|jpeg|webp)/i);
+                  if (urlMatch) extractedUrl = urlMatch[0];
+                }
+
+                if (extractedUrl) {
+                  mediaUrl = extractedUrl;
+                }
+                if (mediaUrl) {
+                  const u = mediaUrl.toString();
+                  const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
+                  const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
+                  mediaType = typeHintFromFields || extHint || modelHint;
+                  const reso =
+                    obj.resolution ||
+                    (obj.meta && obj.meta.resolution) ||
+                    (obj.width && obj.height ? `${obj.width}x${obj.height}` : null);
+                  const dur = obj.duration || (obj.meta && obj.meta.duration) || (obj.length && `${obj.length}s`);
+                  mediaMeta = [reso, dur].filter(Boolean).join(' · ');
+                  updateTask(taskId, {
+                    url: mediaUrl,
+                    type: mediaType,
+                    meta: { resolution: reso || '', duration: dur || '' },
+                    logTail: lastChunk,
+                    logFull: logBufferAttempt,
+                    progress: 100
+                  });
+                } else {
+                  updateTask(taskId, { logTail: lastChunk, logFull: logBufferAttempt });
+                }
+
+                // choices.delta/content 兜底提取任意 http(s) 链接
+                if (!mediaUrl) {
+                  const choice = (obj.choices && obj.choices[0]) || {};
+                  const delta = choice.delta || {};
+                  const msg = choice.message || {};
+                  const contentField = delta.content ?? msg.content ?? obj.content;
+                  const outputField = delta.output ?? msg.output ?? obj.output;
+                  const tryExtract = (text) => {
+                    if (!text) return null;
+                    const htmlMatch = text.match(/<video[^>]+src=['"]([^'"]+)['"]/i);
+                    if (htmlMatch) return htmlMatch[1];
+                    const anyMatch = text.match(/https?:[^\s)"'<>]+/i);
+                    return anyMatch ? anyMatch[0] : null;
+                  };
+                  let extracted = tryExtract(contentField) || tryExtract(lastChunk);
+                  if (!extracted && outputField && outputField[0]) {
+                    extracted = outputField[0].url || outputField[0].video_url || outputField[0].image_url || null;
                   }
-                  if (mediaUrl) {
+                  if (extracted) {
+                    mediaUrl = extracted;
                     const u = mediaUrl.toString();
                     const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
                     const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
-                    mediaType = typeHintFromFields || extHint || modelHint;
-                    const reso =
-                      obj.resolution ||
-                      (obj.meta && obj.meta.resolution) ||
-                      (obj.width && obj.height ? `${obj.width}x${obj.height}` : null);
-                    const dur = obj.duration || (obj.meta && obj.meta.duration) || (obj.length && `${obj.length}s`);
-                    mediaMeta = [reso, dur].filter(Boolean).join(' · ');
-                    updateTask(taskId, {
-                      url: mediaUrl,
-                      type: mediaType,
-                      meta: { resolution: reso || '', duration: dur || '' },
-                      logTail: lastChunk,
-                      logFull: logBufferAttempt,
-                      progress: 100
-                    });
-                  } else {
-                    updateTask(taskId, { logTail: lastChunk, logFull: logBufferAttempt });
+                    mediaType = extHint || modelHint;
+                    updateTask(taskId, { url: mediaUrl, type: mediaType, logTail: lastChunk, logFull: logBufferAttempt, progress: 100 });
                   }
-
-                  // Fallback: extract http(s) link from choices.delta/content
-                  if (!mediaUrl) {
-                    const choice = (obj.choices && obj.choices[0]) || {};
-                    const delta = choice.delta || {};
-                    const msg = choice.message || {};
-                    const contentField = delta.content ?? msg.content ?? obj.content;
-                    const outputField = delta.output ?? msg.output ?? obj.output;
-                    const tryExtract = (text) => {
-                      if (!text) return null;
-                      const htmlMatch = text.match(/<video[^>]+src=['"]([^'"]+)['"]/i);
-                      if (htmlMatch) return htmlMatch[1];
-                      const anyMatch = text.match(/https?:[^\s)"'<>]+/i);
-                      return anyMatch ? anyMatch[0] : null;
-                    };
-                    let extracted = tryExtract(contentField) || tryExtract(lastChunk);
-                    if (!extracted && outputField && outputField[0]) {
-                      extracted = outputField[0].url || outputField[0].video_url || outputField[0].image_url || null;
-                    }
-                    if (extracted) {
-                      mediaUrl = extracted;
-                      const u = mediaUrl.toString();
-                      const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
-                      const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
-                      mediaType = extHint || modelHint;
-                      updateTask(taskId, { url: mediaUrl, type: mediaType, logTail: lastChunk, logFull: logBufferAttempt, progress: 100 });
-                    }
-                  }
-                } catch (e) {
-                  if (e && e.__submitRetryable) throw e;
-                  updateTask(taskId, { logTail: lastChunk, logFull: logBufferAttempt });
                 }
-              });
-              if (hadError || finished) break;
-            }
-
-            clearTimers();
-            // Final Fallback: Any link from lastChunk
-            if (!mediaUrl) {
-              const tailMatch = lastChunk.match(/https?:[^\s)"'<>]+/i);
-              if (tailMatch) {
-                mediaUrl = tailMatch[0];
-                const u = String(mediaUrl || '');
-                const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
-                const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
-                mediaType = extHint || modelHint;
+              } catch (e) {
+                if (e && e.__submitRetryable) throw e;
+                updateTask(taskId, { logTail: lastChunk, logFull: logBufferAttempt });
               }
-            }
+            });
+            if (hadError || finished) break;
+          }
 
-            if (hadError) {
-              return;
+          clearTimers();
+          // 结束后兜底：从 lastChunk 任意链接
+          if (!mediaUrl) {
+            const tailMatch = lastChunk.match(/https?:[^\s)"'<>]+/i);
+            if (tailMatch) {
+              mediaUrl = tailMatch[0];
+              const u = String(mediaUrl || '');
+              const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
+              const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
+              mediaType = extHint || modelHint;
             }
+          }
 
-            // Whitelist Filter
-            if (mediaUrl && !isValidMediaUrl(mediaUrl)) {
-              mediaUrl = null;
-            }
+          if (hadError) {
+            return;
+          }
 
-            if (mediaUrl) {
+          // 白名单过滤
+          if (mediaUrl && !isValidMediaUrl(mediaUrl)) {
+            mediaUrl = null;
+          }
+
+          if (mediaUrl) {
+            updateTask(taskId, {
+              status: 'done',
+              url: mediaUrl,
+              type: mediaType,
+              meta: mediaMeta ? { info: mediaMeta } : null,
+              logTail: lastChunk,
+              logFull: logBufferAttempt || lastChunk,
+              progress: 100
+            });
+          } else {
+            // 检查是否是角色卡创建任务
+            const isCharacterTask = job.isCharacterCreation === true;
+            const hasCharacterSuccessMsg = /角色创建成功|角色卡创建成功|角色名@/.test(contentAccumulated || lastChunk || '');
+
+            if (characterCreated || characterCardInfo || (isCharacterTask && hasCharacterSuccessMsg)) {
+              // 从消息中提取角色名
+              let username = characterCardInfo?.username || '';
+              if (!username && hasCharacterSuccessMsg) {
+                const match = (contentAccumulated || lastChunk || '').match(/角色名@(\w+)/);
+                if (match) username = match[1];
+              }
+
               updateTask(taskId, {
                 status: 'done',
-                url: mediaUrl,
-                type: mediaType,
-                meta: mediaMeta ? { info: mediaMeta } : null,
+                type: 'character',
+                message: username ? `角色卡创建成功：@${username}` : '角色卡创建成功',
+                meta: { display: characterCardInfo?.display_name || username || '' },
                 logTail: lastChunk,
                 logFull: logBufferAttempt || lastChunk,
                 progress: 100
               });
+
+              // 保存角色卡到localStorage
+              try {
+                const stored = localStorage.getItem('character_cards');
+                const cards = stored ? JSON.parse(stored) : [];
+
+                // 创建新的角色卡对象
+                const newCard = {
+                  id: Date.now(), // 使用时间戳作为ID
+                  username: username || 'unknown',
+                  display_name: characterCardInfo?.display_name || username || '',
+                  description: characterCardInfo?.description || '',
+                  avatar_path: characterCardInfo?.avatar_path || '',
+                  created_at: new Date().toISOString()
+                };
+
+                // 添加到列表开头（最新的在前面）
+                cards.unshift(newCard);
+
+                // 保存回localStorage
+                localStorage.setItem('character_cards', JSON.stringify(cards));
+              } catch (e) {
+                console.error('保存角色卡失败:', e);
+              }
+
+              // 刷新角色卡列表
+              if (typeof loadRoles === 'function') {
+                loadRoles();
+              }
             } else {
-              // Check if Character Creation Task
-              const isCharacterTask = job.isCharacterCreation === true;
-              const hasCharacterSuccessMsg = /Role created|Character created|Character name@/.test(contentAccumulated || lastChunk || '');
-
-              if (characterCreated || characterCardInfo || (isCharacterTask && hasCharacterSuccessMsg)) {
-                // 从消息中提取角色名
-                let username = characterCardInfo?.username || '';
-                if (!username && hasCharacterSuccessMsg) {
-                  const match = (contentAccumulated || lastChunk || '').match(/Character name@(\w+)/);
-                  if (match) username = match[1];
-                }
-
-                updateTask(taskId, {
-                  status: 'done',
-                  type: 'character',
-                  message: username ? `Character Created: @${username}` : 'Character Created',
-                  meta: { display: characterCardInfo?.display_name || username || '' },
-                  logTail: lastChunk,
-                  logFull: logBufferAttempt || lastChunk,
-                  progress: 100
-                });
-
-                // Save Character Card to localStorage
-                try {
-                  const stored = localStorage.getItem('character_cards');
-                  const cards = stored ? JSON.parse(stored) : [];
-
-                  // Create new card object
-                  const newCard = {
-                    id: Date.now(), // Timestamp as ID
-                    username: username || 'unknown',
-                    display_name: characterCardInfo?.display_name || username || '',
-                    description: characterCardInfo?.description || '',
-                    avatar_path: characterCardInfo?.avatar_path || '',
-                    created_at: new Date().toISOString()
-                  };
-
-                  // Prepend to list (Newest first)
-                  cards.unshift(newCard);
-
-                  // Save back to localStorage
-                  localStorage.setItem('character_cards', JSON.stringify(cards));
-                } catch (e) {
-                  console.error('Save Character Card Failed:', e);
-                }
-
-                // Refresh Role List
-                if (typeof loadRoles === 'function') {
-                  loadRoles();
-                }
-              } else {
-                const maybePolicy = isContentPolicyViolation(`${logBufferAttempt || ''}\n${lastChunk || ''}`);
-                const isSb = !!(job.storyboard && job.storyboard.label);
-                const msg = maybePolicy
-                  ? isSb
-                    ? 'Content Policy Check Failed (Modify shot prompt and retry)'
-                    : 'Content Policy Check Failed (Adjust prompt and retry)'
-                  : 'No media link returned. Likely policy block or invalid prompt';
-                updateTask(taskId, {
-                  status: 'error',
-                  errorKind: maybePolicy ? 'policy' : '',
-                  message: msg,
-                  logTail: lastChunk,
-                  logFull: logBufferAttempt || lastChunk,
-                  progress: 0
-                });
-              }
-            }
-            return; // success
-          } catch (e) {
-            clearTimers();
-            const msg = e?.message || String(e);
-            if (retryCtl.cancelled) {
-              updateTask(taskId, { status: 'error', message: 'Auto-retry aborted (Click Retry to restart)' });
-              return;
-            }
-
-            // Auto-retry only for "Submission Fail/Net Glitch (No Progress)"; Avoid double-order
-            const retryableSubmit = isRetryable(msg) && !progressMarkerSeen && !watermarkWaitSeen && attempt <= MAX_RETRY;
-            if (retryableSubmit) {
-              const retryCount = attempt; // 1st fail -> Retry 1; 2nd fail -> Retry 2 ...
-              const delay = Math.min(1500 * Math.pow(2, Math.min(retryCount - 1, 5)), 15000);
-              const brief = String(msg || 'Unknown Error').replace(/\s+/g, ' ').slice(0, 120);
+              const maybePolicy = isContentPolicyViolation(`${logBufferAttempt || ''}\n${lastChunk || ''}`);
+              const isSb = !!(job.storyboard && job.storyboard.label);
+              const msg = maybePolicy
+                ? isSb
+                  ? '内容审查未通过（可修改分镜提示词后重试）'
+                  : '内容审查未通过（请调整提示词后重试）'
+                : '未返回媒体链接，可能被内容安全拦截或提示无效';
               updateTask(taskId, {
-                status: 'retrying',
-                retryMode: 'submit',
-                retryCount,
-                timedOut: false,
-                message: `Upload failed, retrying (${retryCount}): ${brief}`,
+                status: 'error',
+                errorKind: maybePolicy ? 'policy' : '',
+                message: msg,
+                logTail: lastChunk,
+                logFull: logBufferAttempt || lastChunk,
                 progress: 0
-              });
-              logTask(taskId, `Upload failed: ${brief}; Retrying in ${delay}ms (${retryCount})`);
-              const ok = await sleepCancellable(delay, () => retryCtl.cancelled);
-              if (!ok) {
-                updateTask(taskId, { status: 'error', message: 'Auto-retry aborted (Click Retry to restart)' });
-                return;
-              }
-              continue;
-            }
-            const timeout =
-              /Failed to connect|timed out|Timeout|ETIMEDOUT|ENETUNREACH|ECONNABORTED|AbortError|aborted/i.test(msg);
-            const message = timeout ? 'Request timed out, upstream may still be processing. Retry later.' : msg;
-            log('Error: ' + message);
-            updateTask(taskId, {
-              status: 'error',
-              timedOut: timeout,
-              message,
-              logTail: '',
-              logFull: logBufferAttempt || msg,
-              progress: 0
             });
-            showToast(message, timeout ? 'warn' : 'error', {
-              title: timeout ? 'Timeout' : 'Request Failed',
-              duration: 4200
-            });
+          }
+          }
+          return; // success
+        } catch (e) {
+          clearTimers();
+          const msg = e?.message || String(e);
+          if (retryCtl.cancelled) {
+            updateTask(taskId, { status: 'error', message: '已中断自动重试（可点击“重试”再次发起）' });
             return;
           }
+
+          // 仅“提交上游失败/网络瞬断（未进入进度阶段）”自动重试；避免已提交后重复下单
+          const retryableSubmit = isRetryable(msg) && !progressMarkerSeen && !watermarkWaitSeen && attempt <= MAX_RETRY;
+          if (retryableSubmit) {
+            const retryCount = attempt; // 第 1 次失败 -> 重试 1；第 2 次失败 -> 重试 2 ...
+            const delay = Math.min(1500 * Math.pow(2, Math.min(retryCount - 1, 5)), 15000);
+            const brief = String(msg || '未知错误').replace(/\s+/g, ' ').slice(0, 120);
+            updateTask(taskId, {
+              status: 'retrying',
+              retryMode: 'submit',
+              retryCount,
+              timedOut: false,
+              message: `上传失败，正在自动重试（${retryCount}）：${brief}`,
+              progress: 0
+            });
+            logTask(taskId, `上传失败：${brief}；${delay}ms 后自动重试（${retryCount}）`);
+            const ok = await sleepCancellable(delay, () => retryCtl.cancelled);
+            if (!ok) {
+              updateTask(taskId, { status: 'error', message: '已中断自动重试（可点击“重试”再次发起）' });
+              return;
+            }
+            continue;
+          }
+          const timeout =
+            /Failed to connect|timed out|Timeout|ETIMEDOUT|ENETUNREACH|ECONNABORTED|AbortError|aborted/i.test(msg);
+          const message = timeout ? '请求等待超时，可能上游仍在处理，请稍后重试' : msg;
+          log('错误: ' + message);
+          updateTask(taskId, {
+            status: 'error',
+            timedOut: timeout,
+            message,
+            logTail: '',
+            logFull: logBufferAttempt || msg,
+            progress: 0
+          });
+          showToast(message, timeout ? 'warn' : 'error', {
+            title: timeout ? '超时' : '请求失败',
+            duration: 4200
+          });
+          return;
         }
+      }
       } finally {
         retryCtl.abortFetch = null;
         taskRetryControls.delete(taskId);
       }
     };
 
-    // No artificial concurrency limit: If poolSize covers all jobs, run all concurrently.
+    // 不做人为并发限制：当 poolSize 覆盖全部任务时，直接并发启动全部 job
     if (poolSize >= jobs.length) {
       await Promise.all(jobs.map((j) => runJob(j)));
       return;
@@ -3105,7 +3108,7 @@
     if (resMatch) hints.push(`分辨率 ${resMatch[1]}x${resMatch[2]}`);
     const fpsMatch = txt.match(/(\d+)\s?fps/i);
     if (fpsMatch) hints.push(`帧率 ${fpsMatch[1]}fps`);
-    if (!hints.length) hints.push('Tip: Describe shot, lighting, subject, action. Be specific.');
+    if (!hints.length) hints.push('提示：描述镜头、光线、主体、动作，越具体越好');
     $('promptHints').innerHTML = hints.map((h) => `<span class="chip">${h}</span>`).join('');
   };
 
@@ -3117,8 +3120,8 @@
     if (dropzone) dropzone.classList.remove('dragover');
     if (filePreviewBox) filePreviewBox.style.display = 'none';
     if (filePreviewMedia) filePreviewMedia.innerHTML = '';
-    if (filePreviewName) filePreviewName.textContent = 'No file selected';
-    if (filePreviewKind) filePreviewKind.textContent = 'Asset';
+    if (filePreviewName) filePreviewName.textContent = '未选择文件';
+    if (filePreviewKind) filePreviewKind.textContent = '素材';
     if (filePreviewMeta) filePreviewMeta.textContent = '';
     renderChips(filePreviewHints, []);
     if (filePreviewList) {
@@ -3139,7 +3142,7 @@
     saveForm();
   };
 
-  // Generation Mode Bar: Sliding Highlight (Smoother transition)
+  // 生成模式切换条：滑动高亮（减少 4 个选项“割裂感”）
   let modeBarSyncTimer = null;
   const syncBatchModeIndicator = () => {
     if (!batchModeBar) return;
@@ -3148,7 +3151,7 @@
     const label = checked.nextElementSibling;
     if (!label || !label.getBoundingClientRect) return;
 
-    // offset* is stable: unaffected by scroll/zoom, relative to offsetParent
+    // 用 offset* 更稳：不受滚动/缩放影响，且天然相对 offsetParent
     const x = label.offsetLeft || 0;
     const y = label.offsetTop || 0;
     const w = label.offsetWidth || 0;
@@ -3193,7 +3196,7 @@
   };
 
   const setBatchType = (val) => {
-    // Remember "Current Mode" default copies before switching (Separate defaults)
+    // 先把“当前模式”的默认份数记住，再切换（避免污染其它模式默认值）
     const prevType = getBatchType();
     try {
       if (batchConcurrencyInput) rememberBatchConcurrencyForType(prevType, batchConcurrencyInput.value);
@@ -3203,7 +3206,7 @@
     batchModeBar.querySelectorAll('input[name="batchType"]').forEach((r) => {
       r.checked = r.value === val;
     });
-    // Switch mode: Restore default copies (Storyboard=1, Multi=2, Others=2)
+    // 切换到新模式时，恢复该模式自己的默认份数：分镜默认=1，多提示默认=2，其它默认=2
     try {
       const next = getBatchConcurrencyForType(val);
       if (batchConcurrencyInput) batchConcurrencyInput.value = String(next);
@@ -3213,7 +3216,7 @@
     }
     toggleBatchTextarea();
 
-    // Character Mode: Hide prompt input
+    // 角色卡模式：隐藏提示词输入框
     const promptBlock = document.getElementById('promptBlock');
     if (promptBlock) {
       if (val === 'character') {
@@ -3232,7 +3235,7 @@
     return checked ? checked.value : 'single';
   };
 
-  // ===== Single/Same-Prompt Batch: Main Upload Area Management =====
+  // ===== 单次 / 同提示批量：主上传区状态管理 =====
   const getMainFiles = () => Array.from((fileInput && fileInput.files ? fileInput.files : []) || []);
 
   const setMainFiles = (files) => {
@@ -3244,7 +3247,7 @@
       applyingMainFiles = true;
       fileInput.files = dt.files;
     } catch (_) {
-      // Some environments block programmatic 'files' set; at least support 'clear'
+      // 某些环境不允许程序化设置 files；至少支持“清空”场景
       if (!list.length) fileInput.value = '';
     } finally {
       applyingMainFiles = false;
@@ -3255,7 +3258,7 @@
     const t = bt || getBatchType();
     if (t === 'multi_prompt') return attachedRolesMulti;
     if (t === 'storyboard') return attachedRolesStoryboard;
-    // Single/Same: Global mount below main prompt box
+    // 单次/同提示：主提示框下方的全局挂载
     return attachedRoles;
   };
 
@@ -3279,7 +3282,7 @@
 
   const ensureMainFilePickerMode = (t, opts = { quiet: false }) => {
     if (!fileInput) return;
-    // Main Upload: Only for Single/Same-Prompt; Others have own inputs
+    // 主上传区仅服务于「单次 / 同提示批量」；其它模式有自己的文件输入，不在这里做“裁剪/提示”
     if (t !== 'single' && t !== 'same_prompt_files') return;
     const wantMulti = t === 'same_prompt_files';
     try {
@@ -3287,12 +3290,12 @@
     } catch (_) {
       /* ignore */
     }
-    // Single Mode: Force keep 1 file (Avoid 'selected multiple but used first' confusion)
+    // 单次模式：强制只保留 1 个文件（避免“选了多个但只用第一个”的幽灵误解）
     const files = getMainFiles();
     if (!wantMulti && files.length > 1) {
       setMainFiles([files[0]]);
       if (!opts.quiet) {
-        showToast('Single Mode uses 1st file only. Switched to 1 file. Use "Same Prompt Batch" for multiple.', 'warn', {
+        showToast('单次模式只会使用第 1 个文件，已自动保留第 1 个。需要多文件请切到“同提示批量”。', 'warn', {
           duration: 3600
         });
       }
@@ -3306,16 +3309,16 @@
     if (!files.length) {
       dropzone.textContent =
         t === 'single'
-          ? 'Drag files here, or click to select (Single file only)'
-          : 'Drag files here, or click to select (Multiple files)';
+          ? '拖拽文件到这里，或点击选择（单次仅 1 个文件）'
+          : '拖拽文件到这里，或点击选择（支持多文件）';
       return;
     }
     const first = files[0];
     if (files.length === 1) {
-      dropzone.textContent = `Selected: ${first.name}`;
+      dropzone.textContent = `已选择：${first.name}`;
       return;
     }
-    dropzone.textContent = `Selected: ${files.length} files (1st: ${first.name})`;
+    dropzone.textContent = `已选择：${files.length} 个文件（第 1 个：${first.name}）`;
   };
 
   const renderMainFileList = () => {
@@ -3325,7 +3328,7 @@
 
     if (btnClearFiles) btnClearFiles.style.display = files.length ? 'inline-flex' : 'none';
 
-    // Show full file list only in "Same Prompt Batch" (Single forced to 1)
+    // 仅在“同提示批量”下展示完整文件清单（单次会被强制为 1 个文件）
     if (t !== 'same_prompt_files' || !files.length) {
       filePreviewList.style.display = 'none';
       filePreviewList.innerHTML = '';
@@ -3334,9 +3337,9 @@
 
     const kindShort = (f) => {
       const tp = String((f && f.type) || '');
-      if (tp.startsWith('image')) return 'Img';
-      if (tp.startsWith('video')) return 'Vid';
-      return 'File';
+      if (tp.startsWith('image')) return '图';
+      if (tp.startsWith('video')) return '视频';
+      return '文件';
     };
 
     filePreviewList.style.display = 'flex';
@@ -3346,7 +3349,7 @@
         <span class="file-chip" title="${escapeAttr(f.name)}">
           <span class="kind">${kindShort(f)}</span>
           <span class="name">${escapeHtml(f.name)}</span>
-          <button type="button" class="close" data-remove-main-file="${idx}" aria-label="Remove File">×</button>
+          <button type="button" class="close" data-remove-main-file="${idx}" aria-label="移除该文件">×</button>
         </span>`
       )
       .join('');
@@ -3371,68 +3374,68 @@
     const generationCountFallback = t === 'storyboard' ? 1 : 2;
     const perFileCount = t === 'single' ? 1 : normalizeTimes(batchConcurrencyInput?.value || String(generationCountFallback), generationCountFallback);
 
-    // Quick Copies: Show only in "Same Prompt Batch"
+    // 快捷份数：仅同提示批量展示
     if (quickCountWrap) quickCountWrap.style.display = t === 'same_prompt_files' ? 'inline-flex' : 'none';
     if (quickCountInput && t === 'same_prompt_files' && document.activeElement !== quickCountInput) {
       quickCountInput.value = String(perFileCount);
     }
 
-    // Planned Tasks (Single/Same only; Multi/Storyboard have own logic)
+    // 预计任务数（仅单次/同提示批量展示；多提示/分镜有自己的编辑器逻辑）
     let planned = 0;
     let reason = '';
     if (t === 'single') {
       planned = promptForSend || files.length ? 1 : 0;
-      if (!planned) reason = 'Please enter prompt or select a file';
+      if (!planned) reason = '请填写提示词或选择一个文件';
     } else if (t === 'same_prompt_files') {
       if (!promptForSend && !files.length) {
         planned = 0;
-        reason = 'Need prompt or at least 1 file';
+        reason = '需要提示词或至少 1 个文件';
       } else {
         planned = files.length ? files.length * perFileCount : perFileCount;
       }
     } else {
-      // Other modes: uploadCard hidden; keep minimal side effect
+      // 其他模式：uploadCard 会被隐藏；这里保持最小副作用
       planned = 0;
     }
 
-    // quickPlan: Output "Formula" via chips
+    // quickPlan：用 chip 输出“公式”，让用户一眼知道将发生什么
     if (quickPlan) {
       const chips = [];
-      if (t === 'single') chips.push({ text: 'Single', kind: 'info' });
-      if (t === 'same_prompt_files') chips.push({ text: 'Same Prompt Batch', kind: 'info' });
-      if (files.length) chips.push({ text: `${files.length} Files`, kind: 'info' });
-      if (t === 'same_prompt_files') chips.push({ text: `${perFileCount} per file`, kind: 'info' });
+      if (t === 'single') chips.push({ text: '单次', kind: 'info' });
+      if (t === 'same_prompt_files') chips.push({ text: '同提示批量', kind: 'info' });
+      if (files.length) chips.push({ text: `${files.length} 文件`, kind: 'info' });
+      if (t === 'same_prompt_files') chips.push({ text: `每文件 ${perFileCount} 份`, kind: 'info' });
 
       if (!apiKey) {
-        chips.push({ text: 'Missing API Key', kind: 'warn' });
+        chips.push({ text: '未填写 API Key', kind: 'warn' });
       } else if (!planned) {
-        chips.push({ text: reason || 'Not Ready', kind: 'warn' });
+        chips.push({ text: reason || '未就绪', kind: 'warn' });
       } else {
         const kind = planned >= 30 ? 'warn' : 'ok';
-        chips.push({ text: `Plan: ${planned} Tasks`, kind });
+        chips.push({ text: `预计 ${planned} 任务`, kind });
       }
 
       quickPlan.innerHTML = chips.map((c) => `<span class="chip ${c.kind}">${escapeHtml(c.text)}</span>`).join('');
     }
 
-    // Main Button: Include plan count in text
+    // 主按钮：把“预计任务数”带到按钮文案里，减少误点
     if (btnSendPrimary) {
-      const base = planned && t === 'same_prompt_files' ? `Generate (${planned})` : 'Generate';
+      const base = planned && t === 'same_prompt_files' ? `开始生成（${planned}）` : '开始生成';
       btnSendPrimary.textContent = base;
       const prevDisabled = !!btnSendPrimary.disabled;
       const nextDisabled = !apiKey || (t === 'single' || t === 'same_prompt_files' ? planned === 0 : false);
       btnSendPrimary.disabled = nextDisabled;
-      btnSendPrimary.title = !apiKey ? 'Please enter API Key first' : planned === 0 ? reason : '';
+      btnSendPrimary.title = !apiKey ? '请先填写 API Key' : planned === 0 ? reason : '';
       if (prevDisabled && !nextDisabled) flashReadyButton(btnSendPrimary);
     }
   };
 
-  // Multi/Storyboard: Explicit task count on button
+  // 多提示 / 分镜：把“将创建多少任务”显式体现在按钮上，避免用户以为会生成 12 条但实际只跑了 1 条
   const syncBatchEditorPlanUI = () => {
     if (!btnSend) return;
     const t = getBatchType();
     if (t !== 'multi_prompt' && t !== 'storyboard') {
-      btnSend.textContent = 'Generate';
+      btnSend.textContent = '开始生成';
       btnSend.disabled = false;
       btnSend.title = '';
       return;
@@ -3459,11 +3462,11 @@
         .filter((s) => s.text || s.fileDataUrl);
       planned = rows.reduce((sum, s) => sum + normalizeTimes(s.count, 1), 0);
     }
-    btnSend.textContent = planned ? `Generate (${planned})` : 'Generate';
+    btnSend.textContent = planned ? `开始生成（${planned}）` : '开始生成';
     const prevDisabled = !!btnSend.disabled;
     const nextDisabled = !apiKey || planned === 0;
     btnSend.disabled = nextDisabled;
-    btnSend.title = !apiKey ? 'Please enter API Key first' : planned === 0 ? 'Please enter at least one prompt (or select file)' : `Will create ${planned} tasks`;
+    btnSend.title = !apiKey ? '请先填写 API Key' : planned === 0 ? '请至少填写一条提示（或选择文件）' : `将创建 ${planned} 条任务`;
     if (prevDisabled && !nextDisabled) flashReadyButton(btnSend);
   };
   let batchPlanSyncQueued = false;
@@ -3487,29 +3490,29 @@
       if (reduce) return;
       const now = Date.now();
       const last = parseInt(btn.getAttribute('data-ready-ts') || '0', 10) || 0;
-      // Light debounce: Avoid rapid flicker
+      // 轻防抖：避免短时间重复闪烁
       if (last && now - last < 700) return;
       btn.setAttribute('data-ready-ts', String(now));
 
       btn.classList.remove('btn-ready');
-      // Force reflow, ensure animation replay
+      // 强制 reflow，确保动画可重播
       void btn.offsetWidth;
       btn.classList.add('btn-ready');
 
       const prev = readyBtnTimer.get(btn);
       if (prev) clearTimeout(prev);
-      readyBtnTimer.set(
-        btn,
-        setTimeout(() => {
-          try {
-            btn.classList.remove('btn-ready');
-          } catch (_) { }
-        }, 2950)
-      );
-    } catch (_) {
-      /* ignore */
-    }
-  };
+        readyBtnTimer.set(
+          btn,
+          setTimeout(() => {
+            try {
+              btn.classList.remove('btn-ready');
+            } catch (_) {}
+          }, 2950)
+        );
+      } catch (_) {
+        /* ignore */
+      }
+    };
 
   const syncMainUploadUI = (opts = { quiet: true }) => {
     ensureMainFilePickerMode(getBatchType(), { quiet: !!(opts && opts.quiet) });
@@ -3519,7 +3522,7 @@
     syncSingleSamePlanUI();
   };
 
-  // Refresh "Role Chips" under Multi-Prompt rows only (No textarea rebuild)
+  // 只刷新“多提示每行下方的角色 chips”，不重建 textarea（避免用户编辑时丢光标）
   const renderMultiPromptRoleChipsOnly = () => {
     if (!multiPromptList) return;
     const globals = Array.isArray(attachedRolesMulti) ? attachedRolesMulti : [];
@@ -3531,7 +3534,7 @@
         .map((r) => {
           const name = String(r?.display || r?.username || '').trim();
           if (!name) return '';
-          return `<span class="chip info" title="Global Role (Multi Mode): Applies to every row">@${escapeHtml(name)}</span>`;
+          return `<span class="chip info" title="全局角色（多提示模式）：会应用到每一行">@${escapeHtml(name)}</span>`;
         })
         .join('');
       const roles = multiPromptRoles[idx] || [];
@@ -3542,8 +3545,8 @@
             if (uname && globalUserSet.has(uname)) return '';
             return `<span class="chip" data-row-role="${idx}:${i}" style="display:inline-flex;align-items:center;gap:6px;">
               ${r.avatar ? `<img src="${r.avatar}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;">` : ''}
-              @${escapeHtml(r.display || r.username || 'Role')}
-              <button class="chip-close" type="button" aria-label="Remove Role" title="Remove" style="border:none;background:transparent;cursor:pointer;">×</button>
+              @${escapeHtml(r.display || r.username || '角色')}
+              <button class="chip-close" type="button" aria-label="移除角色" title="移除" style="border:none;background:transparent;cursor:pointer;">×</button>
             </span>`;
           })
           .join('');
@@ -3580,26 +3583,26 @@
           return `
       <div class="multi-row" data-idx="${idx}">
         <div class="multi-row-top">
-          <span class="sb-index-pill">Prompt ${idx + 1}</span>
-          <span class="muted">Copies</span>
-          <input class="input multi-prompt-count" data-idx="${idx}" type="number" min="1" max="9999" step="1" value="${p.count}" title="Copies for this prompt">
+          <span class="sb-index-pill">提示 ${idx + 1}</span>
+          <span class="muted">份数</span>
+          <input class="input multi-prompt-count" data-idx="${idx}" type="number" min="1" max="9999" step="1" value="${p.count}" title="该提示生成份数">
            <label class="pill-btn multi-file-label">
-             Select File
+             选择文件
              <input type="file" class="multi-prompt-file" data-idx="${idx}">
            </label>
            <span class="multi-file-name" data-file-label="${idx}">
-             ${p.fileName ? escapeHtml(p.fileName) : 'None'}
+             ${p.fileName ? escapeHtml(p.fileName) : '未选择'}
            </span>
-           <button type="button" class="pill-btn multi-file-clear" data-idx="${idx}" ${p.fileName ? '' : 'disabled'} title="Clear file for this prompt">Clear File</button>
-           <button type="button" class="pill-btn multi-remove multi-prompt-remove" data-idx="${idx}">Delete</button>
+           <button type="button" class="pill-btn multi-file-clear" data-idx="${idx}" ${p.fileName ? '' : 'disabled'} title="清除该提示的参考文件">清文件</button>
+           <button type="button" class="pill-btn multi-remove multi-prompt-remove" data-idx="${idx}">删除</button>
          </div>
-         <textarea class="input multi-prompt-input multi-prompt-textarea" data-idx="${idx}" placeholder="Prompt ${idx + 1} (Multi-line, describe shot/subject/action/style)">${escapeHtml(
-            p.text ?? ''
-          )}</textarea>
+         <textarea class="input multi-prompt-input multi-prompt-textarea" data-idx="${idx}" placeholder="提示词 ${idx + 1}（可多行，建议描述镜头/主体/动作/风格）">${escapeHtml(
+           p.text ?? ''
+         )}</textarea>
         <div class="multi-row-roles" data-row-roles="${idx}"></div>
       </div>`;
         })
-        .join('') || '<div class="muted">No prompts. Click "Add Prompt" to add.</div>';
+        .join('') || '<div class="muted">暂无提示，点击“新增提示”添加</div>';
 
     multiPromptList.querySelectorAll('.multi-prompt-input').forEach((inp) =>
       inp.addEventListener('input', (e) => {
@@ -3611,7 +3614,7 @@
         }
       })
     );
-    // Support dragging Role Card to Multi-Prompt Input
+    // 支持把角色卡拖拽到多提示输入框，挂载到该行
     multiPromptList.querySelectorAll('.multi-prompt-input').forEach((inp) => {
       inp.addEventListener('dragover', (e) => e.preventDefault());
       inp.addEventListener('drop', (e) => {
@@ -3627,7 +3630,7 @@
               username: obj.username || '',
               avatar: obj.avatar || obj.avatar_path || ''
             });
-            showToast('Attached to this prompt');
+            showToast('已挂载到该提示');
             return;
           }
         } catch (_) {
@@ -3653,7 +3656,7 @@
       btn.addEventListener('click', (e) => {
         const idx = parseInt(e.target.getAttribute('data-idx'), 10);
         multiPrompts.splice(idx, 1);
-        // Re-index roles after deletion to avoid mismatch
+        // 删除后需要重排行角色索引，否则会“角色挂到别行”
         const nextMap = {};
         Object.keys(multiPromptRoles || {}).forEach((k) => {
           const i = parseInt(k, 10);
@@ -3677,16 +3680,16 @@
           const dataUrl = await fileToDataUrl(file);
           multiPrompts[idx].fileDataUrl = dataUrl;
           multiPrompts[idx].fileName = file.name;
-          // Allow re-selecting same file to trigger change
+          // 允许再次选择同一个文件也触发 change
           try {
             inputEl.value = '';
           } catch (_) {
             /* ignore */
           }
-          renderMultiPrompts(); // Sync "Clear File" button state
+          renderMultiPrompts(); // 同步“清文件”按钮状态
           saveForm();
         } catch (err) {
-          showToast('Read File Failed');
+          showToast('读取文件失败');
         }
       })
     );
@@ -3698,11 +3701,11 @@
         multiPrompts[idx].fileName = '';
         renderMultiPrompts();
         saveForm();
-        showToast('File cleared for this prompt', 'success');
+        showToast('已清除该提示的文件', 'success');
       })
     );
 
-    // Render Role Chips (Global + Row)
+    // 渲染每行挂载的角色 chips（全局 + 单行）
     renderMultiPromptRoleChipsOnly();
 
     syncBatchEditorPlanUI();
@@ -3716,7 +3719,7 @@
   };
 
   // =========================
-  // Storyboard Mode
+  // 分镜（Storyboard）模式
   // =========================
   const clampInt = (val, { min = 1, max = 99, fallback = 1 } = {}) => {
     const n = parseInt(val, 10);
@@ -3724,21 +3727,21 @@
     return Math.max(min, Math.min(max, n));
   };
 
-  // Copies/Repeats: No artificial limit, just min guard; high max to prevent typo crashes.
+  // 生成份数/重复次数：不做人为档位限制，仅做最小值保护；上限设为很大避免误输入炸掉页面。
   const normalizeTimes = (val, fallback = 1) => clampInt(val, { min: 1, max: 9999, fallback });
 
-  // Storyboard: Non-blocking "Undo" (Replaces confirm dialog)
-  // Keep 1 step undo only: Sufficient, avoids complex stack issues
+  // 分镜：非阻塞“撤销”机制（替代 confirm 弹窗）
+  // 只保留 1 步撤销：够用且不复杂，避免堆栈带来的内存与一致性问题
   let storyboardUndo = null; // { shots, shotCountValue, shotCountDirty, batchType, ts, reason }
   const cloneStoryboardRoles = (rolesArr) =>
     Array.isArray(rolesArr)
       ? rolesArr
-        .map((r) => ({
-          display: r?.display || r?.display_name || r?.username || '',
-          username: r?.username || '',
-          avatar: r?.avatar || r?.avatar_path || ''
-        }))
-        .filter((r) => r.display || r.username || r.avatar)
+          .map((r) => ({
+            display: r?.display || r?.display_name || r?.username || '',
+            username: r?.username || '',
+            avatar: r?.avatar || r?.avatar_path || ''
+          }))
+          .filter((r) => r.display || r.username || r.avatar)
       : [];
   const cloneStoryboardShots = (arr) =>
     (Array.isArray(arr) ? arr : []).map((s) => ({
@@ -3761,7 +3764,7 @@
   };
   const undoStoryboardOnce = () => {
     if (!storyboardUndo) {
-      showToast('Nothing to undo', 'warn', { title: 'Undo' });
+      showToast('没有可撤销的分镜操作', 'warn', { title: '撤销' });
       return;
     }
     const snap = storyboardUndo;
@@ -3784,16 +3787,16 @@
     renderStoryboardShots();
     syncStoryboardCountSelect();
     saveForm();
-    showToast('Undo successful', 'success', { title: 'Undone', duration: 2400 });
+    showToast('已撤销上一步分镜操作', 'success', { title: '已撤销', duration: 2400 });
   };
 
   const getStoryboardShotLabel = (_runNo, idx1, total = null) =>
-    total ? `Shot ${idx1}/${total}` : `Shot ${idx1}`;
+    total ? `分镜${idx1}/${total}` : `分镜${idx1}`;
 
   const syncStoryboardCountSelect = () => {
     if (!storyboardShotCount) return;
-    if (document.activeElement === storyboardShotCount) return; // Don't steal focus from user
-    if (storyboardShotCount.getAttribute('data-dirty') === '1') return; // User hasn't clicked "Apply"
+    if (document.activeElement === storyboardShotCount) return; // 不与用户输入抢焦点
+    if (storyboardShotCount.getAttribute('data-dirty') === '1') return; // 用户还没点“应用”
     const n = storyboardShots.length || 0;
     if (n > 0) storyboardShotCount.value = String(n);
   };
@@ -3811,16 +3814,16 @@
     const total = storyboardShots.length || 0;
     const excluded = storyboardShots.filter((s) => s && s.useGlobalRoles === false).length;
     btnStoryboardScopeRoles.disabled = total === 0;
-    btnStoryboardScopeRoles.textContent = excluded > 0 ? `Excluded Shots · ${excluded}` : 'Exclude Shots';
+    btnStoryboardScopeRoles.textContent = excluded > 0 ? `排除分镜 · ${excluded}` : '排除分镜';
     btnStoryboardScopeRoles.title =
       total === 0
-        ? 'No shots: Set shot count and apply first'
+        ? '暂无分镜：请先设置镜头数并“应用”'
         : excluded > 0
-          ? `Excluded ${excluded}/${total} shots (Not affected by Global Mounts)`
-          : 'Exclude "Global Roles" from specific shots (Won\'t affect them)';
+          ? `已排除 ${excluded}/${total} 镜（这些分镜不再受全局自动挂载控制）`
+          : '将“全局角色”从某些分镜中排除（这些分镜后续不再受全局自动挂载控制）';
   };
 
-  // Refresh "Role Chips" under Storyboard rows only (No textarea rebuild)
+  // 只刷新“分镜行下方的角色 chips”，不重建 textarea（避免用户编辑时丢光标）
   const renderStoryboardRoleChipsOnly = () => {
     if (!storyboardList) return;
 
@@ -3833,26 +3836,26 @@
 
       const shot = storyboardShots[idx] || {};
       const useGlobal = shot.useGlobalRoles !== false;
-      const globalUserSet = useGlobal ? globalUserSetAll : new Set(); // If global off, show local duplicates
+      const globalUserSet = useGlobal ? globalUserSetAll : new Set(); // 取消全局后：不要隐藏“与全局重复”的本地角色
 
-      // Global Chips: Shown by default; offer "Restore Global" if manually excluded
+      // 全局角色 chips：默认每镜都显示；若该镜被手动排除，则提供“恢复全局”
       let globalHtml = '';
       if (globals.length) {
         if (!useGlobal) {
           globalHtml = `
-            <span class="chip warn" title="Manually excluded: Global Roles not mounted">Global Roles Cancelled</span>
-            <button type="button" class="chip info" data-sb-global-on="${idx}" title="Restore Global Roles for this shot" style="cursor:pointer;">Restore Global</button>
+            <span class="chip warn" title="该分镜已手动排除：不再自动挂载全局角色">已取消全局角色</span>
+            <button type="button" class="chip info" data-sb-global-on="${idx}" title="恢复该分镜使用全局角色" style="cursor:pointer;">恢复全局</button>
           `;
         } else {
           const chips = globals
             .map((r) => {
               const name = String(r?.display || r?.username || '').trim();
               if (!name) return '';
-              return `<span class="chip info" title="Global Role (Storyboard): Applies to every shot">@${escapeHtml(name)}</span>`;
+              return `<span class="chip info" title="全局角色（分镜模式）：会自动应用到每一镜">@${escapeHtml(name)}</span>`;
             })
             .join('');
-          // "Exclude this shot from global mount"
-          const offBtn = `<button type="button" class="chip warn" data-sb-global-off="${idx}" title="Exclude Global Roles for this shot" style="cursor:pointer;">× Exclude Global</button>`;
+          // “一键把该分镜从全局自动挂载里排除”
+          const offBtn = `<button type="button" class="chip warn" data-sb-global-off="${idx}" title="取消该分镜使用全局角色（后续不再受全局自动挂载控制）" style="cursor:pointer;">× 取消全局</button>`;
           globalHtml = chips + offBtn;
         }
       }
@@ -3866,8 +3869,8 @@
             if (uname && globalUserSet.has(uname)) return '';
             return `<span class="chip" data-sb-role="${idx}:${i}" style="display:inline-flex;align-items:center;gap:6px;">
               ${r.avatar ? `<img src="${r.avatar}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;">` : ''}
-              @${escapeHtml(r.display || r.username || 'Role')}
-              <button class="chip-close" type="button" aria-label="Remove Role" title="Remove" style="border:none;background:transparent;cursor:pointer;">×</button>
+              @${escapeHtml(r.display || r.username || '角色')}
+              <button class="chip-close" type="button" aria-label="移除角色" title="移除" style="border:none;background:transparent;cursor:pointer;">×</button>
             </span>`;
           })
           .join('');
@@ -3899,7 +3902,7 @@
         setStoryboardShotUseGlobalRoles(idx, false);
         renderStoryboardRoleChipsOnly();
         saveForm();
-        showToast(`Shot ${idx + 1} excluded from Global Roles`, 'success', { duration: 2200 });
+        showToast(`已将 分镜 ${idx + 1} 从全局角色中排除`, 'success', { duration: 2200 });
       });
     });
 
@@ -3911,13 +3914,13 @@
         setStoryboardShotUseGlobalRoles(idx, true);
         renderStoryboardRoleChipsOnly();
         saveForm();
-        showToast(`Shot ${idx + 1} restored to Global Roles`, 'success', { duration: 2200 });
+        showToast(`已恢复 分镜 ${idx + 1} 使用全局角色`, 'success', { duration: 2200 });
       });
     });
 
     syncStoryboardScopeButton();
-    // Fallback: Role switch/scope change triggers this, ensure button state recalculated
-    // Recalculate once to avoid "Shot content filled but button gray" issue.
+    // 兜底：角色切换/排除范围等操作会触发该函数，但可能没触发到“按钮状态计算”
+    // 这里统一补一次，避免出现“分镜写了内容但提交按钮灰了”的交互断裂。
     scheduleBatchEditorPlanUI();
   };
 
@@ -3925,7 +3928,7 @@
     if (!anchorEl) return;
     const total = storyboardShots.length || 0;
     if (!total) {
-      showToast('No shots: Set shot count and apply first', 'warn');
+      showToast('暂无分镜：请先设置镜头数并“应用”', 'warn');
       return;
     }
 
@@ -3945,13 +3948,13 @@
     menu.style.top = `${Math.min(window.innerHeight - 20, rect.bottom + 8)}px`;
 
     const title = document.createElement('div');
-    title.textContent = 'Global Roles Scope';
+    title.textContent = '全局角色 · 作用范围';
     title.style.fontWeight = '900';
     title.style.padding = '2px 6px 8px';
     menu.appendChild(title);
 
     const tip = document.createElement('div');
-    tip.textContent = 'Excluded Shots: No longer auto-mount Global Roles (Future global changes ignored).';
+    tip.textContent = '被排除的分镜：不再自动挂载全局角色（后续全局变更也不会影响它）。';
     tip.style.fontSize = '12px';
     tip.style.opacity = '0.85';
     tip.style.padding = '0 6px 10px';
@@ -3994,14 +3997,14 @@
       return b;
     };
     bar.appendChild(
-      mkMini('Use All', () => {
+      mkMini('全部使用', () => {
         storyboardShots = storyboardShots.map((s) => ({ ...s, useGlobalRoles: true }));
         renderStoryboardRoleChipsOnly();
         saveForm();
       })
     );
     bar.appendChild(
-      mkMini('Exclude All', () => {
+      mkMini('全部排除', () => {
         storyboardShots = storyboardShots.map((s) => ({ ...s, useGlobalRoles: false }));
         renderStoryboardRoleChipsOnly();
         saveForm();
@@ -4018,13 +4021,13 @@
       listWrap.innerHTML = '';
       storyboardShots.forEach((s, idx) => {
         const on = s && s.useGlobalRoles !== false;
-        const label = on ? `✓ Shot ${idx + 1}: Global Roles On` : `Shot ${idx + 1}: Excluded (No Auto-mount)`;
+        const label = on ? `✓ 分镜 ${idx + 1}：使用全局角色` : `分镜 ${idx + 1}：已排除（不自动挂载）`;
         listWrap.appendChild(
           makeBtn(label, () => {
             setStoryboardShotUseGlobalRoles(idx, !on);
             renderStoryboardRoleChipsOnly();
             saveForm();
-            renderList(); // Keep menu open for multiple selections
+            renderList(); // 保持菜单打开，允许连续点多个
           })
         );
       });
@@ -4035,10 +4038,10 @@
     const foot = document.createElement('div');
     foot.style.padding = '10px 6px 2px';
     foot.appendChild(
-      makeBtn('Close', () => {
+      makeBtn('关闭', () => {
         try {
           document.body.removeChild(menu);
-        } catch (_) { }
+        } catch (_) {}
       }, { dim: true })
     );
     menu.appendChild(foot);
@@ -4062,7 +4065,7 @@
       if (!menu.contains(e.target) && e.target !== anchorEl) {
         try {
           document.body.removeChild(menu);
-        } catch (_) { }
+        } catch (_) {}
         document.removeEventListener('mousedown', dismiss);
       }
     };
@@ -4081,7 +4084,7 @@
             fileDataUrl: raw.fileDataUrl || null,
             fileName: raw.fileName || '',
             roles: Array.isArray(raw.roles) ? raw.roles : [],
-            // Default true; Compat imported 'use_global_roles'
+            // 缺省为 true；兼容导入模板字段 use_global_roles
             useGlobalRoles: raw.useGlobalRoles === false || raw.use_global_roles === false ? false : true
           };
           storyboardShots[idx] = s;
@@ -4089,31 +4092,31 @@
           return `
         <div class="multi-row sb-row" data-sb-idx="${idx}">
           <div class="multi-row-top">
-            <span class="sb-index-pill">Shot ${idx + 1}</span>
-            <input class="input sb-shot-count" data-idx="${idx}" type="number" min="1" max="9999" step="1" value="${s.count}" title="Copies for this Shot (Create multiple to cherry-pick)" style="width:78px;">
-            <label class="pill-btn multi-file-label" title="Optional: Attach ref file for this shot">
-              Select File
+            <span class="sb-index-pill">分镜 ${idx + 1}</span>
+            <input class="input sb-shot-count" data-idx="${idx}" type="number" min="1" max="9999" step="1" value="${s.count}" title="该分镜生成份数（多生成几份方便挑）" style="width:78px;">
+            <label class="pill-btn multi-file-label" title="可选：给该分镜附带一个参考文件（图片/视频）">
+              选择文件
               <input type="file" class="sb-shot-file" data-idx="${idx}">
             </label>
             <span class="multi-file-name" data-sb-file-label="${idx}">
-              ${s.fileName ? escapeHtml(s.fileName) : 'None'}
+              ${s.fileName ? escapeHtml(s.fileName) : '未选择'}
             </span>
-            <button type="button" class="pill-btn sb-file-clear" data-idx="${idx}" ${s.fileName ? '' : 'disabled'} title="Clear file for this shot">Clear File</button>
-            <button type="button" class="pill-btn sb-move-up" data-idx="${idx}" title="Move Up">↑</button>
-            <button type="button" class="pill-btn sb-move-down" data-idx="${idx}" title="Move Down">↓</button>
-            <button type="button" class="pill-btn sb-copy-prev" data-idx="${idx}" title="Copy previous shot content">Copy Prev</button>
-            <button type="button" class="pill-btn multi-remove sb-remove" data-idx="${idx}">Delete</button>
+            <button type="button" class="pill-btn sb-file-clear" data-idx="${idx}" ${s.fileName ? '' : 'disabled'} title="清除该分镜的参考文件">清文件</button>
+            <button type="button" class="pill-btn sb-move-up" data-idx="${idx}" title="上移">↑</button>
+            <button type="button" class="pill-btn sb-move-down" data-idx="${idx}" title="下移">↓</button>
+            <button type="button" class="pill-btn sb-copy-prev" data-idx="${idx}" title="把上一镜内容复制到这一镜（便于连续修改）">复制上一镜</button>
+            <button type="button" class="pill-btn multi-remove sb-remove" data-idx="${idx}">删除</button>
           </div>
-          <textarea class="input sb-prompt-textarea" data-idx="${idx}" placeholder="Shot ${idx + 1}: Describe Shot/Action/Dialog/Camera...">${escapeHtml(
+          <textarea class="input sb-prompt-textarea" data-idx="${idx}" placeholder="分镜 ${idx + 1}：写镜头/动作/台词/镜头语言...">${escapeHtml(
             s.text
           )}</textarea>
           <div class="multi-row-roles" data-sb-roles="${idx}"></div>
         </div>
         `;
         })
-        .join('') || '<div class="muted">No shots. Set "Shot Count" and apply, or "Add Shot".</div>';
+        .join('') || '<div class="muted">暂无分镜。可先选择“镜头数”并点击“应用”，或点击“新增分镜”。</div>';
 
-    // Input: Text
+    // 输入：文本
     storyboardList.querySelectorAll('.sb-prompt-textarea').forEach((ta) => {
       ta.addEventListener('input', (e) => {
         const idx = parseInt(e.target.getAttribute('data-idx'), 10);
@@ -4123,7 +4126,7 @@
           scheduleBatchEditorPlanUI();
         }
       });
-      // Drag Role Card to Shot Textarea: Append Role
+      // 支持把角色卡拖拽到分镜文本框：给该镜追加角色
       ta.addEventListener('dragover', (e) => e.preventDefault());
       ta.addEventListener('drop', (e) => {
         e.preventDefault();
@@ -4138,7 +4141,7 @@
               username: obj.username || '',
               avatar: obj.avatar || obj.avatar_path || ''
             });
-            showToast('Attached to this shot');
+            showToast('已挂载到该分镜');
             return;
           }
         } catch (_) {
@@ -4147,7 +4150,7 @@
       });
     });
 
-    // Input: Copies
+    // 输入：份数
     storyboardList.querySelectorAll('.sb-shot-count').forEach((sel) =>
       sel.addEventListener('change', (e) => {
         const idx = parseInt(e.target.getAttribute('data-idx'), 10);
@@ -4163,7 +4166,7 @@
       })
     );
 
-    // File: Per shot optional
+    // 文件：每镜可选
     storyboardList.querySelectorAll('.sb-shot-file').forEach((inp) =>
       inp.addEventListener('change', async (e) => {
         const idx = parseInt(e.target.getAttribute('data-idx'), 10);
@@ -4174,16 +4177,16 @@
           const dataUrl = await fileToDataUrl(file);
           storyboardShots[idx].fileDataUrl = dataUrl;
           storyboardShots[idx].fileName = file.name;
-          // Allow re-selecting same file to trigger change
+          // 允许再次选择同一个文件也触发 change
           try {
             inputEl.value = '';
           } catch (_) {
             /* ignore */
           }
-          renderStoryboardShots(); // Sync "Clear File" button state
+          renderStoryboardShots(); // 同步“清文件”按钮状态
           saveForm();
         } catch (_) {
-          showToast('Read File Failed', 'error');
+          showToast('读取文件失败', 'error');
         }
       })
     );
@@ -4195,11 +4198,11 @@
         storyboardShots[idx].fileName = '';
         renderStoryboardShots();
         saveForm();
-        showToast('File cleared for this shot', 'success');
+        showToast('已清除该分镜的文件', 'success');
       })
     );
 
-    // Delete/Move/Copy
+    // 删除/移动/复制
     storyboardList.querySelectorAll('.sb-remove').forEach((btn) =>
       btn.addEventListener('click', (e) => {
         const idx = parseInt(e.target.getAttribute('data-idx'), 10);
@@ -4239,12 +4242,12 @@
         const prev = storyboardShots[idx - 1];
         const cur = storyboardShots[idx];
         if ((cur.text || '').trim() && !(prev.text || '').trim()) {
-          showToast('Previous shot empty, cannot copy', 'warn');
+          showToast('上一镜为空，无法复制', 'warn');
           return;
         }
         const curHasAny =
           !!(cur.text || '').trim() || (Array.isArray(cur.roles) && cur.roles.length) || !!cur.fileDataUrl;
-        captureStoryboardUndo(curHasAny ? 'Overwritten by Prev' : 'Copied from Prev');
+        captureStoryboardUndo(curHasAny ? '上一镜覆盖' : '上一镜复制');
         storyboardShots[idx] = {
           ...cur,
           text: prev.text || '',
@@ -4252,15 +4255,15 @@
         };
         renderStoryboardShots();
         saveForm();
-        showToast(curHasAny ? 'Overwritten by Previous Shot (Undoable)' : 'Copied Previous Shot (Undoable)', 'success', {
-          title: 'Shot Updated',
+        showToast(curHasAny ? '已用“上一镜”覆盖当前分镜（可撤销）' : '已复制上一镜内容（可撤销）', 'success', {
+          title: '分镜已更新',
           duration: 5200,
-          action: { text: 'Undo', onClick: () => undoStoryboardOnce() }
+          action: { text: '撤销', onClick: () => undoStoryboardOnce() }
         });
       })
     );
 
-    // Render Role Chips (Global + Shot; Support "Shot-level Exclude Global")
+    // 渲染每镜挂载角色 chips（全局角色+单镜角色；支持“分镜级排除全局角色”）
     renderStoryboardRoleChipsOnly();
 
     syncStoryboardCountSelect();
@@ -4298,7 +4301,7 @@
     if (n === cur) return;
     const willDelete = n < cur;
     if (willDelete && opts.confirmShrink) {
-      captureStoryboardUndo(`Shot Count ${cur}→${n}`);
+      captureStoryboardUndo(`镜头数 ${cur}→${n}`);
     }
     if (storyboardShotCount) storyboardShotCount.removeAttribute('data-dirty');
     if (n > cur) {
@@ -4311,10 +4314,10 @@
     if (storyboardShotCount) storyboardShotCount.removeAttribute('data-dirty');
     saveForm();
     if (willDelete && opts.confirmShrink) {
-      showToast(`Shot count changed ${cur}→${n} (Removed last ${cur - n}, Undoable)`, 'warn', {
-        title: 'Shots Adjusted',
+      showToast(`镜头数已从 ${cur} 调整为 ${n}（已移除后面 ${cur - n} 镜，可撤销）`, 'warn', {
+        title: '镜头数已调整',
         duration: 5200,
-        action: { text: 'Undo', onClick: () => undoStoryboardOnce() }
+        action: { text: '撤销', onClick: () => undoStoryboardOnce() }
       });
     }
   };
@@ -4325,7 +4328,7 @@
     saveForm();
   };
 
-  // Advanced Settings Collapsing: Ensure editor visible for Multi/Storyboard
+  // 高级设置折叠：保证“多提示/分镜”时编辑器一定可见
   const setAdvancedOpen = (nextOpen, opts = { scroll: false }) => {
     advancedOpen = !!nextOpen;
     try {
@@ -4334,7 +4337,7 @@
       /* ignore */
     }
     if (advancedBox) advancedBox.style.display = advancedOpen ? 'block' : 'none';
-    if (btnToggleAdvanced) btnToggleAdvanced.textContent = advancedOpen ? 'Hide Advanced Settings' : 'Show Advanced Settings';
+    if (btnToggleAdvanced) btnToggleAdvanced.textContent = advancedOpen ? '收起高级设置' : '展开高级设置';
     if (opts && opts.scroll && advancedBox && advancedOpen) {
       try {
         advancedBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4355,7 +4358,7 @@
     if (multiPromptList) multiPromptList.style.display = isMulti ? 'flex' : 'none';
     if (storyboardBox) storyboardBox.style.display = isStoryboard ? 'block' : 'none';
     if (multiPromptActions) multiPromptActions.style.display = isBatchEditor ? 'block' : 'none';
-    if (btnAddPrompt) btnAddPrompt.textContent = isStoryboard ? 'Add Shot' : 'Add Prompt';
+    if (btnAddPrompt) btnAddPrompt.textContent = isStoryboard ? '新增分镜' : '新增提示';
     if (uploadCard) uploadCard.style.display = isBatchEditor ? 'none' : 'flex';
     if (dropzoneWrap) dropzoneWrap.style.display = isBatchEditor ? 'none' : 'block';
     const promptBlock = document.getElementById('promptBlock');
@@ -4374,7 +4377,7 @@
       btnApplyGlobalCountToAll.style.display = isBatchEditor ? 'inline-flex' : 'none';
     }
     if (globalCountLabel) {
-      globalCountLabel.textContent = isBatchEditor ? 'Default Copies' : 'Generations';
+      globalCountLabel.textContent = isBatchEditor ? '默认份数' : '生成份数';
     }
     if (batchMetaActions) {
       batchMetaActions.style.display = showConcurrency ? 'flex' : 'none';
@@ -4387,14 +4390,14 @@
     }
     if (isStoryboard && storyboardShots.length === 0) {
       const n = clampInt(storyboardShotCount?.value || '8', { min: 1, max: 200, fallback: 8 });
-      // Enter Storyboard: Pre-fill N inputs
+      // 进入分镜：默认先铺好 N 个输入框，便于一次性写完
       appendStoryboardShots(Math.max(1, n), { text: '', count: normalizeTimes(batchConcurrencyInput?.value || '1', 1) });
     }
-    // Important: Do NOT auto-write back to Main Prompt on exit Multi/Storyboard (Avoid user confusion)
+    // 重要：不再在“退出多提示/分镜”时自动回写主提示（避免用户感觉输入被偷偷改动）
     syncGlobalCountHighlight();
     syncMainUploadUI({ quiet: false });
     renderFilePreview();
-    // Mode Switched: Sync Role badges/filters/global area
+    // 模式切换后，角色“已挂载”徽标/过滤与全局角色区需要同步到当前模式
     renderRoles();
     renderAttachedRoles();
     renderMultiAttachedRoles();
@@ -4423,7 +4426,7 @@
   };
 
   const saveForm = () => {
-    // Always save default copies for current mode, avoid pollution on switch
+    // 始终把当前模式的默认份数写入“按模式映射”，避免切换后默认被污染
     try {
       if (batchConcurrencyInput) rememberBatchConcurrencyForType(getBatchType(), batchConcurrencyInput.value);
     } catch (_) {
@@ -4459,7 +4462,7 @@
       }
     };
     localStorage.setItem(formStorageKey, JSON.stringify(data));
-    // Fallback: Ensure button state refreshed if data saved but UI lag
+    // 兜底：避免某些路径只保存了数据但没刷新按钮状态，导致“需要刷新页面按钮才可点”
     try {
       const bt = getBatchType();
       if (bt === 'multi_prompt' || bt === 'storyboard') scheduleBatchEditorPlanUI();
@@ -4472,11 +4475,11 @@
     try {
       const data = JSON.parse(localStorage.getItem(formStorageKey) || '{}');
 
-      // Restore "Copies by Mode" map first, needed by setBatchType()
+      // 先还原“按模式默认份数映射”，因为 setBatchType() 会用它来决定进入分镜时的默认份数
       const hasByType = data.batchConcurrencyByType && typeof data.batchConcurrencyByType === 'object';
       batchConcurrencyByType = hasByType ? data.batchConcurrencyByType : {};
-      // Compat Legacy: Storyboard default copies might be 2, revert to 1
-      // - Keep if user explicitly changed to non-2
+      // 兼容旧映射：历史版本可能把分镜默认份数存成 2（旧默认），这里统一回归为 1
+      // - 若用户后来明确改成非 2（例如 3/5），则保留
       try {
         if (hasByType && batchConcurrencyByType && batchConcurrencyByType.storyboard !== undefined) {
           const sb = parseInt(String(batchConcurrencyByType.storyboard ?? ''), 10);
@@ -4486,12 +4489,12 @@
         /* ignore */
       }
       const wantType = normalizeBatchType(data.batchType || getBatchType() || 'single');
-      // Compat Legacy: Old store had single batchConcurrency (SB=2); Migrating SB=1
+      // 兼容旧存储：旧版只有 batchConcurrency 一个值，会导致分镜默认=2；现在迁移成：分镜默认=1
       if (!hasByType) {
         const legacy = data.batchConcurrency;
         if (wantType === 'storyboard') {
           const legacyN = parseInt(String(legacy ?? ''), 10);
-          // Legacy default 2 -> 1; Unless explicitly changed
+          // 旧默认一般是 2：迁移时改为 1；若用户当时明确改成非 2，则尊重
           batchConcurrencyByType.storyboard = !isNaN(legacyN) && legacyN !== 2 ? legacyN : 1;
         } else if (legacy !== undefined && legacy !== null && legacy !== '') {
           batchConcurrencyByType[wantType] = legacy;
@@ -4508,7 +4511,7 @@
       }
       if (batchPromptList && data.batchPrompts) batchPromptList.value = data.batchPrompts;
       if (data.batchType) setBatchType(data.batchType);
-      // Sync current mode copies once (Avoid legacy mismatch)
+      // 同步一次当前模式的份数（避免旧字段/手动改输入导致不一致）
       try {
         const t = normalizeBatchType(data.batchType || getBatchType() || 'single');
         const next = rememberBatchConcurrencyForType(t, batchConcurrencyByType[t] ?? batchConcurrencyInput?.value);
@@ -4521,14 +4524,14 @@
         const fallback = normalizeTimes(batchConcurrencyInput?.value || '2', 2);
         multiPrompts = data.multiPrompts.map((p) => ({ text: p.text || '', count: normalizeTimes(p.count, fallback) }));
       } else if (batchPromptList && data.batchPrompts) {
-        // Compat Legacy: Line-based import
+        // 兼容旧存储：按行导入
         multiPrompts = data.batchPrompts
           .split('\n')
           .map((l) => l.trim())
           .filter(Boolean)
           .map((t) => ({ text: t, count: 2 }));
       }
-      // Restore Multi-Prompt "Row Roles"
+      // 复原多提示的“行角色”
       try {
         if (Array.isArray(data.multiPromptRoles) && data.multiPromptRoles.length) {
           Object.keys(multiPromptRoles).forEach((k) => delete multiPromptRoles[k]);
@@ -4548,7 +4551,7 @@
         /* ignore */
       }
 
-      // Restore Storyboard
+      // 复原分镜（Storyboard）
       try {
         const sb = data.storyboard || {};
         if (storyboardTitle && typeof sb.title === 'string') storyboardTitle.value = sb.title;
@@ -4564,12 +4567,12 @@
             useGlobalRoles: s.useGlobalRoles === false || s.use_global_roles === false ? false : true,
             roles: Array.isArray(s.roles)
               ? s.roles
-                .map((r) => ({
-                  display: r.display || r.display_name || r.username || '',
-                  username: r.username || '',
-                  avatar: r.avatar || r.avatar_path || ''
-                }))
-                .filter((r) => r.display || r.username)
+                  .map((r) => ({
+                    display: r.display || r.display_name || r.username || '',
+                    username: r.username || '',
+                    avatar: r.avatar || r.avatar_path || ''
+                  }))
+                  .filter((r) => r.display || r.username)
               : []
           }));
         }
@@ -4609,51 +4612,51 @@
     const finalCount = batchType === 'single' ? 1 : generationCount;
 
     if (!apiKey) {
-      showToast('Please enter API Key', 'error', { title: 'Missing API Key', duration: 3200 });
+      showToast('请先填写 API Key', 'error', { title: '缺少 API Key', duration: 3200 });
       smoothFocus($('apiKey'));
       return;
     }
     if (!baseUrl) {
-      showToast('Please enter Server URL (Base URL)', 'error', { title: 'Missing Server URL', duration: 3200 });
+      showToast('请先填写服务器地址（Base URL）', 'error', { title: '缺少服务器地址', duration: 3200 });
       smoothFocus($('baseUrl'));
       return;
     }
 
-    // Append Role Description on Send (Hidden in UI)
+    // 仅在发送时拼接角色描述，界面不展示
     const roleContext = buildRoleContextText();
     const promptForSend = [roleContext, prompt].filter(Boolean).join('\n\n');
 
-    // ===== Pre-send UX Check (Reduce "Asset ignored" confusion) =====
+    // ===== 发送前 UX 预检（自用优先：减少“选了素材但没生效”的误解） =====
     const modelInfo = parseModelId(model);
     const hasVideoFile = files.some((f) => (f.type || '').startsWith('video'));
     const hasImageFile = files.some((f) => (f.type || '').startsWith('image'));
     const mixedFiles = hasVideoFile && hasImageFile;
 
-    // Mixed Files: Can cause "Drift/Ignored Asset/Unpredictable Batch"
+    // 混合文件：最容易导致“跑偏/忽略素材/批量难以预期”
     if ((batchType === 'single' || batchType === 'same_prompt_files') && files.length && mixedFiles) {
-      showToast('Mixed Image+Video detected: Proceeding, but separate runs recommended.', 'warn', {
-        title: 'Mixed Assets',
+      showToast('检测到图片+视频混合选择：已继续生成，但更建议分开跑（更稳定）', 'warn', {
+        title: '混合素材',
         duration: 4200
       });
     }
 
-    // Image Model + Video File: Video won't be used for Image Gen (Common confusion)
+    // 图片模型 + 视频文件：视频不会被后端用于图片生成（容易误会）
     if ((batchType === 'single' || batchType === 'same_prompt_files') && files.length && modelInfo.isImage && hasVideoFile) {
-      showToast('Image Model with Video File: Video ignored for Image Gen (Proceeding)', 'warn', {
-        title: 'Model/Asset Mismatch',
+      showToast('当前是图片模型，但你上传了视频：视频不会参与图片生成（已继续）', 'warn', {
+        title: '模型/素材不匹配',
         duration: 4200
       });
     }
 
-    // Video Model + Image Frame + Empty Prompt: Common "Irrelevant to Image" trigger
+    // 视频模型 + 图片首帧 + 空提示：最典型“与图无关”触发条件
     if ((batchType === 'single' || batchType === 'same_prompt_files') && files.length && modelInfo.isVideo && hasImageFile && !promptForSend) {
-      showToast('Image Frame with Empty Prompt: Result may drift (Proceeding)', 'warn', { title: 'Empty Prompt', duration: 4200 });
+      showToast('图片首帧但提示词为空：结果可能跑偏（已继续）', 'warn', { title: '空提示词', duration: 4200 });
     }
 
     const jobs = [];
     if (batchType === 'same_prompt_files') {
       if (!promptForSend && !files.length) {
-        showToast('Same Prompt Batch: Enter prompt or select a file', 'warn', { title: 'Cannot Generate', duration: 3600 });
+        showToast('同提示批量：请填写提示词或至少选择一个文件', 'warn', { title: '无法生成', duration: 3600 });
         smoothFocus(promptBox);
         return;
       }
@@ -4678,7 +4681,7 @@
         }))
         .filter((p) => p.text || p.fileDataUrl);
       if (!validPrompts.length) {
-        showToast('Multi-Prompt: Add at least one prompt (or file)', 'warn', { title: 'Cannot Generate', duration: 3600 });
+        showToast('多提示：请至少添加一条提示（或给某行选择文件）', 'warn', { title: '无法生成', duration: 3600 });
         return;
       }
       validPrompts.forEach((p) => {
@@ -4698,7 +4701,7 @@
       const sbContext = (storyboardContext && storyboardContext.value ? storyboardContext.value.trim() : '') || '';
       const totalShots = storyboardShots.length || 0;
       if (!totalShots) {
-        showToast('Storyboard Empty: Set shot count and apply, or add shot', 'warn', { title: 'Cannot Generate', duration: 3600 });
+        showToast('分镜为空：请先选择镜头数并“应用”，或点击“新增分镜”', 'warn', { title: '无法生成', duration: 3600 });
         return;
       }
 
@@ -4720,22 +4723,22 @@
         });
 
       if (!list.length) {
-        showToast('Storyboard: Enter at least one shot prompt (or file)', 'warn', { title: 'Cannot Generate', duration: 3600 });
+        showToast('分镜：请至少填写一条分镜提示（或给某一镜选择文件）', 'warn', { title: '无法生成', duration: 3600 });
         return;
       }
       if (emptyIdx.length) {
         const plannedTasks = list.reduce((sum, x) => sum + normalizeTimes(x.count, 1), 0);
         showToast(
-          `Skipping ${emptyIdx.length} empty shots (${emptyIdx.slice(0, 12).join(', ')}${emptyIdx.length > 12 ? '...' : ''}), creating ${plannedTasks} tasks`,
+          `将跳过 ${emptyIdx.length} 个空分镜（${emptyIdx.slice(0, 12).join(', ')}${emptyIdx.length > 12 ? '...' : ''}），创建 ${plannedTasks} 条任务`,
           'info',
-          { title: 'Skipping Empty Shots', duration: 5200 }
+          { title: '分镜将跳过空镜', duration: 5200 }
         );
       }
 
       storyboardRunCounter += 1;
       localStorage.setItem(STORYBOARD_RUN_KEY, String(storyboardRunCounter));
-      // Auto-title if empty, avoids unsearchable task pile
-      const sbTitle = sbTitleRaw || `Storyboard${storyboardRunCounter}`;
+      // 若用户未填标题，自动给一个可检索的分镜组名，避免后续任务堆积难找
+      const sbTitle = sbTitleRaw || `分镜组${storyboardRunCounter}`;
       if (storyboardTitle && !sbTitleRaw) storyboardTitle.value = sbTitle;
 
       list.forEach((shot) => {
@@ -4768,27 +4771,27 @@
         }
       });
     } else if (batchType === 'character') {
-      // Character Mode: Needs video file, logic handled by backend
+      // 角色卡模式：只需要视频文件，不需要提示词
       if (!files.length) {
-        showToast('Character Mode: Please upload a video file', 'warn', { title: 'Missing Video', duration: 3600 });
+        showToast('角色卡模式：请上传视频文件', 'warn', { title: '缺少视频', duration: 3600 });
         return;
       }
       const videoFile = files.find((f) => (f.type || '').startsWith('video'));
       if (!videoFile) {
-        showToast('Character Mode: Video file required (Image not supported)', 'warn', { title: 'Invalid File Type', duration: 3600 });
+        showToast('角色卡模式：请上传视频文件（不支持图片）', 'warn', { title: '文件类型错误', duration: 3600 });
         return;
       }
-      // Character Mode: Empty prompt, send video, mark as character task
+      // 角色卡模式：prompt为空，只传视频，标记为角色卡任务
       jobs.push({
         promptSend: '',
-        promptUser: '(Character Creation)',
+        promptUser: '(创建角色卡)',
         file: videoFile,
         model,
-        isCharacterCreation: true  // Mark as character creation task
+        isCharacterCreation: true  // 标记为角色卡创建任务
       });
     } else {
       if (!promptForSend && !files.length) {
-        showToast('Please enter prompt or upload file', 'warn', { title: 'Cannot Generate', duration: 3600 });
+        showToast('请至少填写提示词或上传文件', 'warn', { title: '无法生成', duration: 3600 });
         smoothFocus(promptBox);
         return;
       }
@@ -4797,39 +4800,39 @@
       }
     }
 
-    // Same Prompt Batch: Confirm "Large Batch" to prevent accidental massive run
+    // 同提示批量：二次确认“大批量”，防止误触瞬间起飞
     if (batchType === 'same_prompt_files' && jobs.length >= 30) {
       const fileCount = files.length;
       const explain = fileCount
-        ? `${fileCount} Files × ${finalCount} Copies = ${jobs.length} Tasks`
-        : `Text Only × ${finalCount} Copies = ${jobs.length} Tasks`;
-      showToast(`Large Batch: ${explain} (Proceeding)`, 'warn', { title: 'Large Batch Warning', duration: 5200 });
+        ? `${fileCount} 个文件 × ${finalCount} 份 = ${jobs.length} 条任务`
+        : `纯文字 × ${finalCount} 份 = ${jobs.length} 条任务`;
+      showToast(`同提示批量较大：${explain}（已继续生成）`, 'warn', { title: '大批量提示', duration: 5200 });
     }
 
-    // Light Notification: Don't auto-switch tab, but offer "View Tasks" button (Non-intrusive)
+    // 轻提醒：不自动切 Tab，但给一个“查看任务”按钮（避免打断写提示的节奏）
     if (jobs.length && currentRightTab !== 'tasks') {
-      showToast(`Created ${jobs.length} tasks, generating...`, 'info', {
-        title: 'Tasks Queued',
+      showToast(`已创建 ${jobs.length} 条任务，正在生成…`, 'info', {
+        title: '任务已入队',
         duration: 3600,
-        action: { text: 'View Tasks', onClick: () => setRightTab('tasks') }
+        action: { text: '查看任务', onClick: () => setRightTab('tasks') }
       });
     }
 
-    // Unlock button immediately after queuing, allow appending tasks
+    // 入队后立即解锁按钮，允许追加任务
     const setSendBusy = (busy) => {
       [btnSend, btnSendPrimary].filter(Boolean).forEach((b) => {
         b.disabled = !!busy;
-        if (busy) b.textContent = `Generating (${jobs.length})...`;
+        if (busy) b.textContent = `生成中(${jobs.length}条)...`;
       });
     };
     setSendBusy(true);
     const pool =
-      // Storyboard: No sequencing/throttling; start all concurrent
+      // 分镜不做“顺序生成/限流”：默认全部并发启动（任务会一次性出现）
       jobs.length;
-    const running = runJobs(jobs, apiKey, baseUrl, pool).catch((e) => log('Error: ' + e.message));
+    const running = runJobs(jobs, apiKey, baseUrl, pool).catch((e) => log('错误: ' + e.message));
     setSendBusy(false);
-    syncSingleSamePlanUI(); // Restore "Predicted Tasks" text on main button
-    syncBatchEditorPlanUI(); // Restore "Predicted Tasks" text on batch editor button
+    syncSingleSamePlanUI(); // 恢复主按钮上的“预计任务数”文案
+    syncBatchEditorPlanUI(); // 恢复批量编辑器按钮上的“预计任务数”文案
     await running;
   };
 
@@ -4841,7 +4844,7 @@
       reader.readAsDataURL(file);
     });
 
-  // Drag/Select File
+  // 拖拽/选择文件
   dropzone.addEventListener('click', () => fileInput.click());
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -4854,21 +4857,21 @@
     if (e.dataTransfer.files && e.dataTransfer.files.length) {
       const list = Array.from(e.dataTransfer.files || []);
       setMainFiles(list);
-      // Single Mode Drag Multiple: Auto-trim and warn
+      // 单次模式下拖进来多个：自动裁剪并提示（避免误以为“会批量”）
       ensureMainFilePickerMode(getBatchType(), { quiet: false });
       syncMainUploadUI({ quiet: true });
-      renderFilePreview(); // Update preview/hint (Non-blocking)
+      renderFilePreview(); // 更新预览/提示（不阻塞）
     }
   });
   fileInput.addEventListener('change', () => {
     if (applyingMainFiles) return;
-    // User selected via file picker
+    // 用户通过文件选择器选中文件
     ensureMainFilePickerMode(getBatchType(), { quiet: false });
     syncMainUploadUI({ quiet: true });
     renderFilePreview();
   });
 
-  // File List: Remove individually in Same Prompt Batch
+  // 文件清单：同提示批量下可逐个移除
   if (filePreviewList) {
     filePreviewList.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest ? e.target.closest('[data-remove-main-file]') : null;
@@ -4881,7 +4884,7 @@
       setMainFiles(files);
       syncMainUploadUI({ quiet: true });
       renderFilePreview();
-      showToast(`Removed: ${removed?.name || 'File'}`, 'success');
+      showToast(`已移除：${removed?.name || '文件'}`, 'success');
     });
   }
   if (btnClearFiles) {
@@ -4889,11 +4892,11 @@
       setMainFiles([]);
       syncMainUploadUI({ quiet: true });
       renderFilePreview();
-      showToast('Files cleared', 'success');
+      showToast('已清空文件', 'success');
     });
   }
 
-  // Quick Mode Switch: "Single/Same Batch" moved from Advanced to Main Upload
+  // 快捷模式切换：把“单次/同提示批量”从高级设置里挪到主上传区
   if (quickModeBar) {
     quickModeBar.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest ? e.target.closest('[data-quick-mode]') : null;
@@ -4915,7 +4918,7 @@
     });
   }
 
-  // Quick Copies (Same Batch): Sync with Advanced batchConcurrencyInput
+  // 快捷份数（同提示批量）：与高级设置里的 batchConcurrencyInput 同步
   const applyQuickCount = (next) => {
     if (!batchConcurrencyInput) return;
     const bt = getBatchType();
@@ -4926,7 +4929,7 @@
     saveForm();
     syncGlobalCountHighlight();
     syncSingleSamePlanUI();
-    // Quick copies also affect Multi/Storyboard predicted task count and button availability
+    // 快捷份数同样会影响多提示/分镜的“预计任务数”与按钮可用性
     scheduleBatchEditorPlanUI();
   };
   if (quickCountDec) {
@@ -4946,7 +4949,7 @@
     quickCountInput.addEventListener('input', () => syncSingleSamePlanUI());
   }
 
-  // Quick Tags
+  // 快捷标签
   tagBar.querySelectorAll('[data-snippet]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const snippet = btn.getAttribute('data-snippet');
@@ -4960,11 +4963,11 @@
     });
   });
 
-  // Prompt Change
+  // Prompt 变更
   promptBox.addEventListener('input', () => {
     analyzePromptHints();
     syncSingleSamePlanUI();
-    // Only update "Empty Prompt" hints, don't rebuild objectURL every input
+    // 仅更新“提示词为空”等提示，不要每次输入都重建 objectURL
     if (previewHintTimer) clearTimeout(previewHintTimer);
     previewHintTimer = setTimeout(() => renderFilePreview(), 180);
   });
@@ -4984,12 +4987,12 @@
           return;
         }
       } catch (_) {
-        // Ignore non-JSON text
+        // 非 JSON 文本则忽略
       }
     }
   });
 
-  // Role Card Mount Area
+  // 角色卡挂载区
   const renderAttachedRoles = () => {
     attachedRolesBox.innerHTML =
       attachedRoles
@@ -4997,13 +5000,13 @@
           (r, idx) =>
             `<span class="chip" data-attached="${idx}" draggable="true" style="display:inline-flex;align-items:center;gap:6px;">
                 ${r.avatar ? `<img src="${r.avatar}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;">` : ''}
-                @${escapeHtml(r.display || r.username || 'Role')}
-                <button class="chip-close" type="button" aria-label="Remove Role" title="Remove" style="margin-left:6px;cursor:pointer;border:none;background:transparent;font-weight:600;color:#64748b;line-height:1;">×</button>
+                @${escapeHtml(r.display || r.username || '角色')}
+                <button class="chip-close" type="button" aria-label="移除角色" title="移除" style="margin-left:6px;cursor:pointer;border:none;background:transparent;font-weight:600;color:#64748b;line-height:1;">×</button>
              </span>`
         )
         .join('') || '';
 
-    // Clear All: Disable if empty to avoid confusion
+    // 一键清空：没有角色时禁用，避免“点了没反应”的困惑
     if (btnClearMainRoles) {
       const has = Array.isArray(attachedRoles) && attachedRoles.length > 0;
       btnClearMainRoles.disabled = !has;
@@ -5038,11 +5041,11 @@
         renderRoles();
       });
     });
-    // Role mount changes promptForSend, affecting "Ready / Predicted Tasks"
+    // 角色挂载会改变 promptForSend，可影响“是否就绪 / 预计任务数”
     syncSingleSamePlanUI();
   };
 
-  // Multi-Prompt Mode: Global Roles (Won't affect Single/Same)
+  // 多提示模式：本模式全局角色（不会影响单次/同提示）
   const renderMultiAttachedRoles = () => {
     if (!multiAttachedRolesBox) return;
     multiAttachedRolesBox.innerHTML =
@@ -5051,8 +5054,8 @@
           (r, idx) =>
             `<span class="chip" data-multi-attached="${idx}" style="display:inline-flex;align-items:center;gap:6px;">
                 ${r.avatar ? `<img src="${r.avatar}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;">` : ''}
-                @${escapeHtml(r.display || r.username || 'Role')}
-                <button class="chip-close" type="button" aria-label="Remove Role" title="Remove" style="margin-left:6px;cursor:pointer;border:none;background:transparent;font-weight:600;color:#64748b;line-height:1;">×</button>
+                @${escapeHtml(r.display || r.username || '角色')}
+                <button class="chip-close" type="button" aria-label="移除角色" title="移除" style="margin-left:6px;cursor:pointer;border:none;background:transparent;font-weight:600;color:#64748b;line-height:1;">×</button>
              </span>`
         )
         .join('') || '';
@@ -5071,11 +5074,11 @@
       });
     });
 
-    // Sync role display under each row (Avoid "Global mounted but invisible in row" illusion)
+    // 同步刷新每一行下方的角色展示（否则会出现“挂载全局但行下看不到”的错觉）
     renderMultiPromptRoleChipsOnly();
-    // Fallback: Ensure button state recalculated
+    // 兜底：避免某些边界情况下按钮状态没被重新计算
     scheduleBatchEditorPlanUI();
-    // Fallback again: rAF might be throttled, sync once to prevent "Gray button stuck"
+    // 再兜底：某些环境/iframe 下 rAF 可能被节流，直接同步一次避免“按钮灰了只能刷新”
     try {
       syncBatchEditorPlanUI();
     } catch (_) {
@@ -5083,7 +5086,7 @@
     }
   };
 
-  // Storyboard Mode: Global Roles (Won't affect Single/Same)
+  // 分镜模式：本模式全局角色（不会影响单次/同提示）
   const renderStoryboardAttachedRoles = () => {
     if (!storyboardAttachedRolesBox) return;
     storyboardAttachedRolesBox.innerHTML =
@@ -5092,8 +5095,8 @@
           (r, idx) =>
             `<span class="chip" data-sb-attached="${idx}" style="display:inline-flex;align-items:center;gap:6px;">
                 ${r.avatar ? `<img src="${r.avatar}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;">` : ''}
-                @${escapeHtml(r.display || r.username || 'Role')}
-                <button class="chip-close" type="button" aria-label="Remove Role" title="Remove" style="margin-left:6px;cursor:pointer;border:none;background:transparent;font-weight:600;color:#64748b;line-height:1;">×</button>
+                @${escapeHtml(r.display || r.username || '角色')}
+                <button class="chip-close" type="button" aria-label="移除角色" title="移除" style="margin-left:6px;cursor:pointer;border:none;background:transparent;font-weight:600;color:#64748b;line-height:1;">×</button>
              </span>`
         )
         .join('') || '';
@@ -5112,11 +5115,11 @@
       });
     });
 
-    // Critical: Sync role display under each shot after global change
+    // 关键：全局角色变更后，同步刷新每一镜下方的角色展示（否则会出现“挂载全部但分镜下看不到”的错觉）
     renderStoryboardRoleChipsOnly();
-    // Fallback: Global role switch shouldn't block "Generate", but force refresh button state
+    // 兜底：全局角色切换不应影响“开始生成”可用性，但需要强制刷新按钮状态（避免卡死需要刷新页面）
     scheduleBatchEditorPlanUI();
-    // Fallback again: rAF throttled, sync once
+    // 再兜底：某些环境/iframe 下 rAF 可能被节流，直接同步一次避免“按钮灰了只能刷新”
     try {
       syncBatchEditorPlanUI();
     } catch (_) {
@@ -5133,7 +5136,7 @@
     markRoleUsed(u);
     renderAttachedRoles();
     persistRoles();
-    renderRoles(); // Sync "Mounted" badge / filter stats
+    renderRoles(); // 同步“已挂载”徽标/过滤统计
   };
 
   const addAttachedRoleMulti = (roleObj) => {
@@ -5351,36 +5354,36 @@
     const bt = getBatchType();
     const uname = String(roleObj?.username || '').trim();
 
-    // "Global (This Mode)": For consistency, avoiding pollution of Single/Same
+    // “全局（本模式）”：用于人物一致性，但不污染单次/同提示
     if (bt === 'multi_prompt') {
       const inGlobal = uname ? attachedRolesMulti.some((r) => String(r?.username || '').trim() === uname) : false;
       menu.appendChild(
         makeBtn(inGlobal ? '全局（本模式）：已挂载（点此取消）' : '全局（本模式）：挂载到所有提示', () => toggleAttachedRoleMulti(roleObj))
       );
-      menu.appendChild(makeBtn('—— Mount to Row ——', () => { })).disabled = true;
+      menu.appendChild(makeBtn('—— 挂载到单行 ——', () => {})).disabled = true;
       multiPrompts.forEach((p, idx) => {
         const row = multiPromptRoles[idx] || [];
         const inRow = uname ? row.some((r) => String(r?.username || '').trim() === uname) : false;
-        menu.appendChild(makeBtn(inRow ? `Prompt ${idx + 1}: Mounted (Click to Remove)` : `Prompt ${idx + 1}`, () => toggleRoleOnRow(idx, roleObj)));
+        menu.appendChild(makeBtn(inRow ? `提示 ${idx + 1}：已挂载（点此取消）` : `提示 ${idx + 1}`, () => toggleRoleOnRow(idx, roleObj)));
       });
     } else if (bt === 'storyboard') {
       const inGlobal = uname ? attachedRolesStoryboard.some((r) => String(r?.username || '').trim() === uname) : false;
       menu.appendChild(
-        makeBtn(inGlobal ? 'Global (Mode): Mounted (Click to Remove)' : 'Global (Mode): Mount to All Shots', () =>
+        makeBtn(inGlobal ? '全局（本模式）：已挂载（点此取消）' : '全局（本模式）：挂载到所有分镜', () =>
           toggleAttachedRoleStoryboard(roleObj)
         )
       );
-      menu.appendChild(makeBtn('—— Mount to Shot ——', () => { })).disabled = true;
+      menu.appendChild(makeBtn('—— 挂载到单镜 ——', () => {})).disabled = true;
       storyboardShots.forEach((s, idx) => {
         const roles = (s && Array.isArray(s.roles) ? s.roles : []) || [];
         const inShot = uname ? roles.some((r) => String(r?.username || '').trim() === uname) : false;
         menu.appendChild(
-          makeBtn(inShot ? `Shot ${idx + 1}: Mounted (Click to Remove)` : `Shot ${idx + 1}`, () => toggleRoleOnStoryboardShot(idx, roleObj))
+          makeBtn(inShot ? `分镜 ${idx + 1}：已挂载（点此取消）` : `分镜 ${idx + 1}`, () => toggleRoleOnStoryboardShot(idx, roleObj))
         );
       });
     } else {
-      // Fallback: Non-batch mode shouldn't reach here; mount to main prompt
-      menu.appendChild(makeBtn('Mount to Prompt Below', () => addAttachedRole(roleObj)));
+      // 兜底：非批量模式不应该走到这里；按主提示挂载
+      menu.appendChild(makeBtn('挂载到提示词下方', () => addAttachedRole(roleObj)));
     }
     document.body.appendChild(menu);
     const dismiss = (e) => {
@@ -5507,7 +5510,7 @@
     const bt = getBatchType();
     if (bt === 'multi_prompt') return isRoleAttachedMultiGlobal(username) || isRoleAttachedInAnyMultiRow(username);
     if (bt === 'storyboard') return isRoleAttachedStoryboardGlobal(username) || isRoleAttachedInAnyStoryboardShot(username);
-    // Single/Same Prompt
+    // 单次/同提示
     return isRoleAttachedMain(username);
   };
 
@@ -5525,7 +5528,7 @@
   const syncRoleDenseButton = () => {
     if (!btnRoleDense || !roleList) return;
     btnRoleDense.classList.toggle('active', !!roleUi.dense);
-    btnRoleDense.textContent = roleUi.dense ? 'Compact ✓' : 'Compact';
+    btnRoleDense.textContent = roleUi.dense ? '密集 ✓' : '密集';
     roleList.classList.toggle('dense', !!roleUi.dense);
   };
 
@@ -5538,8 +5541,8 @@
     if (!roleCountEl) return;
     if (!total) roleCountEl.textContent = '0';
     else if (visible === total && !roleUi.query && (roleUi.filter === 'all' || !roleUi.filter))
-      roleCountEl.textContent = `Total ${total}`;
-    else roleCountEl.textContent = `Shown ${visible}/${total}`;
+      roleCountEl.textContent = `共 ${total}`;
+    else roleCountEl.textContent = `显示 ${visible}/${total}`;
   };
 
   const renderRoleSkeleton = (n = 6) => {
@@ -5559,14 +5562,14 @@
           </div>`
       )
       .join('');
-    if (roleCountEl) roleCountEl.textContent = 'Loading...';
+    if (roleCountEl) roleCountEl.textContent = '加载中…';
     notifyHeight();
   };
 
   const getRoleDisplayName = (r) => {
     const a = String(r?.display_name || '').trim();
     const b = String(r?.username || '').trim();
-    return a || b || 'Role';
+    return a || b || '角色';
   };
 
   const normalizeKeyword = (raw) => {
@@ -5578,7 +5581,7 @@
     if (!roleList) return;
     roleList.setAttribute('aria-busy', 'false');
 
-    // UI Sync (Avoid external state mismatch)
+    // UI 同步（避免外部状态与 DOM 脱节）
     syncRoleFilterButtons();
     syncRoleDenseButton();
     syncRoleClearButton();
@@ -5588,7 +5591,7 @@
     const total = all.length;
     const keyword = normalizeKeyword(roleSearch?.value || roleUi.query || '');
 
-    // Filter: Keyword + Filter
+    // 过滤：关键词 + 筛选器
     let list = all.filter((r) => {
       if (!keyword) return true;
       const hay = [
@@ -5611,9 +5614,9 @@
       list = list.filter((r) => roleFavs.has(String(r?.username || '').trim()));
     }
 
-    // Sort
+    // 排序
     const byName = (a, b) =>
-      getRoleDisplayName(a).localeCompare(getRoleDisplayName(b), 'en', { numeric: true, sensitivity: 'base' });
+      getRoleDisplayName(a).localeCompare(getRoleDisplayName(b), 'zh-CN', { numeric: true, sensitivity: 'base' });
     const byCreatedDesc = (a, b) => (Date.parse(b?.created_at || '') || 0) - (Date.parse(a?.created_at || '') || 0);
     const byCreatedAsc = (a, b) => -byCreatedDesc(a, b);
 
@@ -5622,7 +5625,7 @@
     else if (roleUi.sort === 'name_asc') list.sort(byName);
     else if (roleUi.sort === 'name_desc') list.sort((a, b) => -byName(a, b));
     else {
-      // smart: Fav > Recent > Created > Name
+      // smart：收藏 > 最近使用 > 创建时间 > 名称
       list.sort((a, b) => {
         const ua = String(a?.username || '').trim();
         const ub = String(b?.username || '').trim();
@@ -5644,10 +5647,10 @@
     if (!total) {
       roleList.innerHTML = `
         <div class="role-empty">
-          <div class="title">No Role Cards</div>
-          <div class="desc">Create role cards in Admin/Creation Flow, then click "Reload" here.</div>
+          <div class="title">暂无角色卡</div>
+          <div class="desc">可以先在管理台/生成流程创建角色卡，然后回到这里点击“刷新”。</div>
           <div class="actions">
-            <button class="pill-btn" type="button" data-role-action="reload">Reload</button>
+            <button class="pill-btn" type="button" data-role-action="reload">刷新</button>
           </div>
         </div>
       `;
@@ -5657,18 +5660,18 @@
 
     if (!list.length) {
       const parts = [];
-      if (keyword) parts.push('No search results');
-      if (roleUi.filter === 'attached') parts.push('No "Mounted" roles');
-      if (roleUi.filter === 'fav') parts.push('No "Favorites" roles');
-      const tip = parts.length ? parts.join(', ') : 'No matching roles';
+      if (keyword) parts.push('搜索无结果');
+      if (roleUi.filter === 'attached') parts.push('当前没有“已挂载”的角色');
+      if (roleUi.filter === 'fav') parts.push('当前没有“收藏”的角色');
+      const tip = parts.length ? parts.join('，') : '没有匹配的角色';
       roleList.innerHTML = `
         <div class="role-empty">
           <div class="title">${escapeHtml(tip)}</div>
-          <div class="desc">Clear search / Switch to "All", or Reload.</div>
+          <div class="desc">可以清空搜索/切回“全部”，或直接刷新重新加载角色卡。</div>
           <div class="actions">
-            ${keyword ? '<button class="pill-btn" type="button" data-role-action="clear-search">Clear Search</button>' : ''}
-            ${roleUi.filter !== 'all' ? '<button class="pill-btn" type="button" data-role-action="show-all">Show All</button>' : ''}
-            <button class="pill-btn" type="button" data-role-action="reload">Reload</button>
+            ${keyword ? '<button class="pill-btn" type="button" data-role-action="clear-search">清空搜索</button>' : ''}
+            ${roleUi.filter !== 'all' ? '<button class="pill-btn" type="button" data-role-action="show-all">显示全部</button>' : ''}
+            <button class="pill-btn" type="button" data-role-action="reload">刷新</button>
           </div>
         </div>
       `;
@@ -5684,7 +5687,7 @@
         const username = String(r?.username || '').trim();
         const display = getRoleDisplayName(r);
         const full = String(r?.description || r?.bio || '').trim();
-        const text = full ? full.replace(/\s+/g, ' ') : 'No description';
+        const text = full ? full.replace(/\s+/g, ' ') : '暂无描述';
         const short = text.length > 88 ? text.slice(0, 88) + '…' : text;
         const avatar = String(r?.avatar_path || '').trim();
         const avatarSrc = avatar || DEFAULT_ROLE_AVATAR;
@@ -5711,16 +5714,16 @@
 
         const chips = [
           cameo
-            ? `<button class="role-chip" type="button" data-role-action="copy" data-copy="${escapeAttr(cameo)}" title="Copy cameo_id: ${escapeAttr(cameo)}">cameo: ${escapeHtml(cameoShort)}</button>`
+            ? `<button class="role-chip" type="button" data-role-action="copy" data-copy="${escapeAttr(cameo)}" title="复制 cameo_id: ${escapeAttr(cameo)}">cameo: ${escapeHtml(cameoShort)}</button>`
             : '',
           charId
-            ? `<button class="role-chip" type="button" data-role-action="copy" data-copy="${escapeAttr(charId)}" title="Copy character_id: ${escapeAttr(charId)}">char: ${escapeHtml(charShort)}</button>`
+            ? `<button class="role-chip" type="button" data-role-action="copy" data-copy="${escapeAttr(charId)}" title="复制 character_id: ${escapeAttr(charId)}">char: ${escapeHtml(charShort)}</button>`
             : ''
         ].join('');
 
         return `
           <div class="role-card ${attached ? 'attached' : ''} ${fav ? 'fav' : ''}" draggable="true" data-role="${roleJson}" title="${escapeAttr(full || short || display)}">
-            <button class="role-star ${fav ? 'fav' : ''}" type="button" data-role-action="fav" aria-label="${fav ? 'Unfavorite' : 'Favorite'}" title="${fav ? 'Unfavorite' : 'Favorite'}">
+            <button class="role-star ${fav ? 'fav' : ''}" type="button" data-role-action="fav" aria-label="${fav ? '取消收藏' : '收藏'}" title="${fav ? '取消收藏' : '收藏'}">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
               </svg>
@@ -5729,15 +5732,15 @@
             <div class="role-meta">
               <div class="role-top">
                 <div class="role-name">${escapeHtml(display)}</div>
-                ${attached ? '<span class="role-badge attached" title="Mounted in current mode">Mounted</span>' : ''}
+                ${attached ? '<span class="role-badge attached" title="当前模式已挂载">已挂载</span>' : ''}
               </div>
               <div class="role-username">${username ? '@' + escapeHtml(username) : ''}</div>
               <div class="role-desc">${escapeHtml(short)}</div>
               ${chips ? `<div class="role-chips">${chips}</div>` : ''}
               <div class="role-actions">
-                <button class="pill-btn role-attach ${attached ? 'active' : ''}" type="button" data-role-action="attach" title="${isBatch ? 'Mount to Mode (Global/Row/Shot)' : attached ? 'Unmount' : 'Mount to Prompt'}">${isBatch ? 'Mount' : attached ? 'Unmount' : 'Mount'}</button>
-                <button class="pill-btn role-copy" type="button" data-role-action="copy-username">Copy @username</button>
-                <button class="pill-btn role-delete" type="button" data-role-action="delete" style="color:#ef4444;" title="Delete Role">Delete</button>
+                <button class="pill-btn role-attach ${attached ? 'active' : ''}" type="button" data-role-action="attach" title="${isBatch ? '挂载到本模式（可选全局/单行/单镜）' : attached ? '取消挂载' : '挂载到提示词下方'}">${isBatch ? '挂载' : attached ? '取消挂载' : '挂载'}</button>
+                <button class="pill-btn role-copy" type="button" data-role-action="copy-username">复制 @username</button>
+                <button class="pill-btn role-delete" type="button" data-role-action="delete" style="color:#ef4444;" title="删除角色卡">删除</button>
               </div>
             </div>
           </div>
@@ -5760,20 +5763,20 @@
   const loadRoles = async () => {
     renderRoleSkeleton(6);
     try {
-      // Load roles from localStorage
+      // 从localStorage读取角色卡列表
       const stored = localStorage.getItem('character_cards');
       const data = stored ? JSON.parse(stored) : [];
       roles = Array.isArray(data) ? data : [];
     } catch (e) {
       roles = [];
-      log('Failed to load role cards');
+      log('角色卡加载失败');
     }
     renderRoles();
   };
 
-  // Auto-reload roles on baseUrl input: Avoid interaction gap
-  // - input: Debounce
-  // - change: Immediate trigger (Paste/Enter)
+  // baseUrl 输入时自动刷新角色卡：避免必须“失焦(change)”才生效的交互割裂
+  // - input：防抖（避免每个字符都打一次请求）
+  // - change：更快触发（粘贴/回车后立刻生效）
   let rolesAutoReloadTimer = null;
   let rolesAutoReloadLastBaseUrl = '';
   const scheduleLoadRoles = (opts = { force: false }) => {
@@ -5783,7 +5786,7 @@
       () => {
         rolesAutoReloadTimer = null;
         const baseUrl = getBaseUrl();
-        // Don't nag when baseUrl incomplete (Avoid frequent toasts during typing)
+        // baseUrl 还没填完整时不要吵（避免输入过程中频繁 toast）
         if (!baseUrl || baseUrl.length < 8 || !/^https?:\/\//i.test(baseUrl)) return;
         if (!force && baseUrl === rolesAutoReloadLastBaseUrl) return;
         rolesAutoReloadLastBaseUrl = baseUrl;
@@ -5804,7 +5807,7 @@
     syncRoleSortSelect();
   };
 
-  // Event Binding
+  // 事件绑定
   rightTabButtons.forEach((btn) =>
     btn.addEventListener('click', () => setRightTab(btn.getAttribute('data-tab')))
   );
@@ -5815,16 +5818,16 @@
       setPreviewFilter(btn.getAttribute('data-preview-filter') || 'all', { toast: false });
     });
   }
-  // Preview: Batch Download (Current Filter)
+  // 预览：批量下载（当前过滤）
   let previewBatchDownloading = false;
   if (btnPreviewBatchDownload) {
     btnPreviewBatchDownload.addEventListener('click', async (e) => {
       if (previewBatchDownloading) return;
 
-      // Download "Visible Filtered" results only: User can switch filter first
+      // 只下载“当前过滤”可见结果：用户可先切换到“分镜/视频/图片”后再点
       const fullList = (Array.isArray(tasks) ? tasks : []).filter((t) => t && t.url && isValidMediaUrl(t.url));
       const filtered = fullList.filter((t) => taskMatchesPreviewFilter(t, previewFilter));
-      // URL Dedup: Avoid duplicate download
+      // URL 去重：避免同一结果在 tasks 里出现多次导致重复下载
       const seen = new Set();
       const list = [];
       filtered.forEach((t) => {
@@ -5835,11 +5838,11 @@
       });
 
       if (!list.length) {
-        showToast('No downloadable results under current filter', 'warn', { title: 'Batch Download' });
+        showToast('当前过滤条件下暂无可下载的结果', 'warn', { title: '批量下载' });
         return;
       }
 
-      // Sort: Storyboard shot/take first, others by task ID
+      // 排序：分镜优先按镜号/份数排序，其它按任务 id 递增（下载后更整齐）
       const sorted = list.slice().sort((a, b) => {
         const sa = a && a.storyboard ? a.storyboard : null;
         const sb = b && b.storyboard ? b.storyboard : null;
@@ -5863,22 +5866,22 @@
       const wantDirectMulti = !!(e && e.shiftKey); // Shift+Click => multi-files
       showToast(
         wantDirectMulti
-          ? `Triggering ${n} downloads (Allow "Multiple file downloads" if prompted).`
-          : `Packing ${n} results into 1 ZIP (Better for IDM/Interceptors, friendly filenames).`,
+          ? `将触发 ${n} 个下载（若浏览器提示“是否允许多文件下载”，请选择“允许”）。`
+          : `将把 ${n} 个结果打包成 1 个 ZIP 并下载（更适配 IDM/拦截器，且文件名更友好）。`,
         'info',
-        { title: wantDirectMulti ? 'Multi-File DL' : 'ZIP Pack', duration: n >= 12 ? 5200 : 4200 }
+        { title: wantDirectMulti ? '多文件下载' : '打包 ZIP', duration: n >= 12 ? 5200 : 4200 }
       );
 
       previewBatchDownloading = true;
-      const oldText = btnPreviewBatchDownload.textContent || 'Batch DL';
+      const oldText = btnPreviewBatchDownload.textContent || '批量下载';
       btnPreviewBatchDownload.setAttribute('data-loading', '1');
-      btnPreviewBatchDownload.textContent = wantDirectMulti ? `Downloading(${n})...` : `Packing(${n})...`;
+      btnPreviewBatchDownload.textContent = wantDirectMulti ? `下载中(${n})…` : `打包中(${n})…`;
 
       let okCount = 0;
       try {
         if (wantDirectMulti) {
-          // Note: Don't use await/timer, or browser may block as "non-user gesture".
-          // Trigger sync at once.
+          // 注意：不要 await/定时器拆分，否则容易被浏览器当作“非用户手势”拦截。
+          // 这里一次性同步触发，首次会询问“允许多文件下载”。
           sorted.forEach((t, idx) => {
             const u = String(t.url || '');
             if (!u) return;
@@ -5887,7 +5890,7 @@
             if (ok) okCount += 1;
           });
         } else {
-          // ZIP Pack: Backend packs /tmp files, frontend triggers download
+          // ZIP 打包：后端把 /tmp 文件打包成 zip，然后前端触发一次下载
           const items = sorted
             .map((t, idx) => {
               const u = String(t.url || '');
@@ -5900,7 +5903,7 @@
 
           const skipped = n - items.length;
           if (!items.length) {
-            throw new Error('No local /tmp files to pack (Ensure output links are /tmp/...)');
+            throw new Error('当前结果没有可打包的 /tmp 本地缓存文件（请确认输出链接为 /tmp/...）');
           }
 
           const titleFromShot =
@@ -5922,7 +5925,7 @@
           try {
             data = text ? JSON.parse(text) : null;
           } catch (err) {
-            throw new Error(`Response Parse Failed (Check plugins/interceptors): ${(err && err.message) || String(err)}`);
+            throw new Error(`响应解析失败（可能被浏览器插件/拦截器改写）：${(err && err.message) || String(err)}`);
           }
           if (!resp.ok || !data || data.success !== true) {
             const detail = (data && (data.detail || data.message)) || text || `HTTP ${resp.status}`;
@@ -5931,24 +5934,24 @@
 
           const zipUrl = data.url ? String(data.url) : '';
           const zipName = data.filename ? String(data.filename) : '';
-          if (!zipUrl) throw new Error('Pack success but missing download URL');
+          if (!zipUrl) throw new Error('打包成功但缺少下载链接');
 
           const okDl = triggerBrowserDownload(zipUrl, zipName);
           okCount = okDl ? 1 : 0;
 
           showToast(
-            `Packed ${data.count || items.length} files${skipped ? ` (Skipped ${skipped} non-local links)` : ''}.\nIf download didn't start: Click "Download ZIP" here.`,
+            `已打包 ${data.count || items.length} 个文件${skipped ? `（跳过 ${skipped} 个非本地链接）` : ''}。\n若未自动开始下载：点击此提示里的“下载ZIP”。`,
             'success',
             {
-              title: 'Pack Complete',
+              title: '打包完成',
               duration: 7200,
-              action: { text: 'Download ZIP', onClick: () => triggerBrowserDownload(zipUrl, zipName) }
+              action: { text: '下载ZIP', onClick: () => triggerBrowserDownload(zipUrl, zipName) }
             }
           );
         }
       } catch (err) {
-        showToast(`Batch Download Failed: ${(err && err.message) || String(err)}`, 'error', {
-          title: 'Batch DL Failed',
+        showToast(`批量下载失败：${(err && err.message) || String(err)}`, 'error', {
+          title: '批量下载失败',
           duration: 5200
         });
       } finally {
@@ -5957,7 +5960,7 @@
         setTimeout(() => {
           try {
             btnPreviewBatchDownload.removeAttribute('data-done');
-          } catch (_) { }
+          } catch (_) {}
         }, 1200);
         btnPreviewBatchDownload.textContent = oldText;
         previewBatchDownloading = false;
@@ -5965,9 +5968,9 @@
 
       if (wantDirectMulti) {
         showToast(
-          `Triggered ${okCount}/${n} downloads.\nIf blocked: Allow "Multi-file DL".\nIDM users: Use "Batch DL" (ZIP) mode.`,
+          `已触发 ${okCount}/${n} 个下载。\n若被拦截：请在浏览器提示中允许“多文件下载”。\n若使用 IDM 且无反应：建议直接点“批量下载”（打包ZIP）。`,
           okCount ? 'success' : 'warn',
-          { title: 'Multi-File DL', duration: n >= 10 ? 5200 : 4200 }
+          { title: '多文件下载', duration: n >= 10 ? 5200 : 4200 }
         );
       }
     });
@@ -5976,7 +5979,7 @@
     btnOnlyRunning.addEventListener('click', () => {
       onlyRunning = !onlyRunning;
       btnOnlyRunning.classList.toggle('active', onlyRunning);
-      btnOnlyRunning.textContent = onlyRunning ? 'Running Only ?' : 'Running Only';
+      btnOnlyRunning.textContent = onlyRunning ? '仅运行中 ?' : '仅运行中';
       renderTasks();
     });
   }
@@ -5990,12 +5993,12 @@
       }
       if (previewGrid) previewGrid.classList.toggle('dense', densePreview);
       btnPreviewDense.classList.toggle('active', densePreview);
-      btnPreviewDense.textContent = densePreview ? 'Compact ✓' : 'Compact';
+      btnPreviewDense.textContent = densePreview ? '预览密集 ✓' : '预览密集';
     });
     // 初始化同步（持久化）
     if (previewGrid) previewGrid.classList.toggle('dense', densePreview);
     btnPreviewDense.classList.toggle('active', densePreview);
-    btnPreviewDense.textContent = densePreview ? 'Compact ✓' : 'Compact';
+    btnPreviewDense.textContent = densePreview ? '预览密集 ✓' : '预览密集';
   }
   if (btnLogBottom) {
     btnLogBottom.addEventListener('click', () => {
@@ -6019,7 +6022,7 @@
     batchConcurrencyInput.addEventListener('change', syncConcurrency);
   }
 
-  // Preview Modal (Large View)
+  // 预览弹窗（大图/大屏查看）
   if (previewModal) {
     previewModal.addEventListener('click', (e) => {
       const target = e.target;
@@ -6042,7 +6045,7 @@
     btnPreviewCopyLink.addEventListener('click', async (e) => {
       const u = previewModalState && previewModalState.url ? String(previewModalState.url) : '';
       const ok = await copyTextSafe(u);
-      showBubble(ok ? 'Link Copied' : 'Copy Failed', e.currentTarget);
+      showBubble(ok ? '已复制链接' : '复制失败', e.currentTarget);
     });
   }
   if (btnPreviewCopyHtml) {
@@ -6051,7 +6054,7 @@
       const t = previewModalState && previewModalState.type ? String(previewModalState.type) : 'video';
       const html = buildEmbedHtml(u, t === 'image' ? 'image' : 'video');
       const ok = await copyTextSafe(html);
-      showBubble(ok ? 'HTML Copied' : 'Copy Failed', e.currentTarget);
+      showBubble(ok ? '已复制HTML' : '复制失败', e.currentTarget);
     });
   }
   if (btnPreviewLocateTask) {
@@ -6070,7 +6073,7 @@
     });
   }
 
-  // Storyboard Edit Fallback: Toggle Edit Modal
+  // 分镜审查兜底：修改分镜提示词弹窗
   if (editStoryboardModal) {
     editStoryboardModal.addEventListener('click', (e) => {
       const target = e.target;
@@ -6086,7 +6089,7 @@
     btnEditStoryboardRetry.addEventListener('click', submitEditStoryboardModal);
   }
 
-  // Control from Admin Page: Locate task, open preview
+  // 来自管理页（任务球/抽屉）的控制：定位任务、打开预览
   window.addEventListener('message', (event) => {
     try {
       if (event && event.origin && event.origin !== window.location.origin) return;
@@ -6125,7 +6128,7 @@
       /* ignore */
     }
   });
-  // Shortcuts
+  // 快捷键
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       if (editStoryboardModal && editStoryboardModal.classList.contains('open')) {
@@ -6154,26 +6157,26 @@
     }
   });
 
-  // Clear "Output/Tasks" Unified: Avoid UI mismatch
+  // 清空“输出/任务”统一入口：避免只清 DOM 导致 tasks 与 UI 脱钩（红点/预览会反复异常）
   const clearAllOutputs = (opts = { toast: true }) => {
-    // If previewing, close first
+    // 如果正在预览，先关闭，避免“清空后仍显示旧视频”的错觉
     try {
       if (previewModal && previewModal.classList.contains('open')) closePreviewModal();
       if (editStoryboardModal && editStoryboardModal.classList.contains('open')) closeEditStoryboardModal();
     } catch (_) {
       /* ignore */
     }
-    // 1) Clear task array
+    // 1) 清理任务数组
     tasks = [];
     unread.tasks = false;
-    // 2) Clear unread set
+    // 2) 清理预览未读集合
     previewSeenTaskIds = new Set();
     try {
       localStorage.removeItem(PREVIEW_SEEN_KEY);
     } catch (_) {
       /* ignore */
     }
-    // 3) Clear dedup set / log buffer, free memory
+    // 3) 清理预览去重集合/日志缓存，释放内存
     try {
       previewKnown.clear();
     } catch (_) {
@@ -6185,7 +6188,7 @@
     logSeenVersion = 0;
     out.textContent = '';
 
-    // 4) Clear "Auto-collapse" timers
+    // 4) 清理“完成后自动折叠”的定时器，避免清空后还在后台改 tasks
     try {
       collapseTimers.forEach((timer) => clearTimeout(timer));
       collapseTimers.clear();
@@ -6195,7 +6198,7 @@
 
     scheduleRender({ tasks: true, previews: true });
     schedulePersistTasks({ immediate: true });
-    if (opts && opts.toast) showToast('Outputs Cleared (Tasks/Previews/Logs)', 'success');
+    if (opts && opts.toast) showToast('已清空输出（任务/预览/日志）', 'success');
   };
 
   btnSend.addEventListener('click', handleSend);
@@ -6208,7 +6211,7 @@
     persistPreviewSeenTaskIds();
     scheduleRender({ tasks: true, previews: true });
     schedulePersistTasks({ immediate: true });
-    showToast('Failed Tasks Cleared', 'success');
+    showToast('已清理失败任务', 'success');
   });
   btnClearAll.addEventListener('click', () => {
     clearAllOutputs({ toast: false });
@@ -6216,7 +6219,7 @@
   if (btnCopyLog) {
     btnCopyLog.addEventListener('click', async (e) => {
       const ok = await copyTextSafe(out.textContent || '');
-      showBubble(ok ? 'Log Copied' : 'Copy Failed', e.currentTarget);
+      showBubble(ok ? '已复制日志' : '复制失败', e.currentTarget);
       if (ok) {
         logSeenVersion = logVersion;
         updateUnreadDots();
@@ -6229,11 +6232,11 @@
         currentLogTaskId !== null ? tasks.find((x) => x.id === currentLogTaskId) : tasks.length ? tasks[0] : null;
       const content = t ? getTaskLogText(t) : '';
       const ok = await copyTextSafe(content);
-      showBubble(ok ? 'Task Log Copied' : 'Copy Failed', e.currentTarget);
+      showBubble(ok ? '已复制该任务日志' : '复制失败', e.currentTarget);
     });
   }
 
-  // Role Card UI (Search/Filter/Sort/Compact)
+  // 角色卡 UI（搜索/过滤/排序/密集）
   if (roleSearch) {
     roleSearch.addEventListener('input', () => {
       roleUi.query = roleSearch.value || '';
@@ -6290,7 +6293,7 @@
   }
   if (btnReloadRoles) btnReloadRoles.addEventListener('click', loadRoles);
 
-  // Role List: Event Delegation
+  // 角色卡列表：事件委托（避免每次 renderRoles 都重新绑监听）
   if (roleList) {
     roleList.addEventListener(
       'error',
@@ -6347,7 +6350,7 @@
         markRoleUsed(data.username || '');
         const roleObj = { display: data.display || data.username || '', username: data.username || '', avatar: data.avatar || '' };
         const bt = getBatchType();
-        // Single/Same: Button can "Unmount" directly
+        // 单次/同提示：按钮可直接“取消挂载”，避免只能逐个点 chip 关闭
         if (bt !== 'multi_prompt' && bt !== 'storyboard') {
           const u = String(roleObj.username || '').trim();
           if (u && isRoleAttachedMain(u)) {
@@ -6355,38 +6358,38 @@
             renderAttachedRoles();
             persistRoles();
             renderRoles();
-            showBubble('Unmounted', actionBtn);
+            showBubble('已取消挂载', actionBtn);
             return;
           }
         }
         handleRoleAttach(roleObj, e);
-        // Single adds immediately; Batch uses menu callback
+        // 单次模式会立刻 addAttachedRole()，那边会 renderRoles；批量模式由菜单回调触发 renderRoles
         return;
       }
       if (action === 'copy-username') {
         const ok = await copyTextSafe(`@${data.username || data.display}`);
-        showBubble(ok ? 'Copied @username' : 'Copy Failed', actionBtn);
+        showBubble(ok ? '已复制 @username' : '复制失败', actionBtn);
         return;
       }
       if (action === 'copy') {
         const v = actionBtn.getAttribute('data-copy') || '';
         if (!v) return;
         const ok = await copyTextSafe(v);
-        showBubble(ok ? 'Copied' : 'Copy Failed', actionBtn);
+        showBubble(ok ? '已复制' : '复制失败', actionBtn);
         return;
       }
       if (action === 'fav') {
         const u = String(data.username || '').trim();
         if (!u) {
-          showBubble('No username, cannot fav', actionBtn);
+          showBubble('缺少 username，无法收藏', actionBtn);
           return;
         }
         if (roleFavs.has(u)) {
           roleFavs.delete(u);
-          showBubble('Unfavorited', actionBtn);
+          showBubble('已取消收藏', actionBtn);
         } else {
           roleFavs.add(u);
-          showBubble('Favorited', actionBtn);
+          showBubble('已收藏', actionBtn);
         }
         saveRoleFavsToStorage();
         renderRoles();
@@ -6394,26 +6397,26 @@
       }
       if (action === 'delete') {
         const u = String(data.username || '').trim();
-        const displayName = data.display || u || 'this role';
+        const displayName = data.display || u || '此角色';
 
         // 二次确认
-        if (!confirm(`Delete role card "${displayName}"?\n\nCannot be undone.`)) {
+        if (!confirm(`确定要删除角色卡 "${displayName}" 吗？\n\n删除后将无法恢复。`)) {
           return;
         }
 
         try {
-          // Delete from localStorage
+          // 从localStorage删除
           const stored = localStorage.getItem('character_cards');
           const cards = stored ? JSON.parse(stored) : [];
           const filtered = cards.filter(c => c.username !== u);
           localStorage.setItem('character_cards', JSON.stringify(filtered));
 
-          // Refresh Display
+          // 刷新显示
           loadRoles();
-          showToast('Role card deleted', 'success');
+          showToast('角色卡已删除', 'success');
         } catch (e) {
-          console.error('Failed to delete role card:', e);
-          showToast('Delete failed', 'error');
+          console.error('删除角色卡失败:', e);
+          showToast('删除失败', 'error');
         }
         return;
       }
@@ -6423,7 +6426,7 @@
   $('apiKey').addEventListener('input', () => {
     saveForm();
     syncSingleSamePlanUI();
-    // Storyboard/Multi-prompt use btnSend: Sync state to avoid "Key filled but button gray" illusion
+    // 分镜/多提示使用的是 btnSend：这里也要同步按钮状态，避免“填了 key 但按钮仍灰”的错觉
     scheduleBatchEditorPlanUI();
   });
   $('baseUrl').addEventListener('input', () => {
@@ -6437,13 +6440,13 @@
   if (btnUseRecommendedModel) {
     btnUseRecommendedModel.addEventListener('click', () => {
       if (!currentRecommendedModel) {
-        showToast('No recommended models available', 'warn');
+        showToast('暂无可用的推荐模型', 'warn');
         return;
       }
       $('model').value = currentRecommendedModel;
       saveForm();
       renderFilePreview();
-      showToast('Switched to recommended model', 'success');
+      showToast('已切换到推荐模型', 'success');
     });
   }
   promptBox.addEventListener('input', saveForm);
@@ -6462,7 +6465,7 @@
       saveForm();
       syncGlobalCountHighlight();
       syncSingleSamePlanUI();
-      // Multi/Storyboard "Generate (N)" depends on default copies: Sync to prevent lag
+      // 多提示/分镜的“开始生成（N）”依赖默认份数：这里也要同步，避免按钮文案/禁用状态滞后
       scheduleBatchEditorPlanUI();
     });
   if (btnApplyGlobalCountToAll)
@@ -6482,12 +6485,12 @@
       saveForm();
       syncGlobalCountHighlight();
       scheduleBatchEditorPlanUI();
-      showToast('Applied to all', 'success');
+      showToast('已套用到全部', 'success');
     });
   batchModeBar.querySelectorAll('input[name="batchType"]').forEach((r) =>
     r.addEventListener('change', () => setBatchType(r.value))
   );
-  // Mode Bar: Window resize/re-layout changes "Slide Highlight"
+  // 模式条：窗口缩放/折叠展开会导致布局变化，需要重算“滑动高亮”位置
   window.addEventListener('resize', scheduleBatchModeIndicator);
   if (btnAddPrompt)
     btnAddPrompt.addEventListener('click', () => {
@@ -6507,7 +6510,7 @@
       renderMultiAttachedRoles();
       persistRolesMulti();
       renderRoles();
-      showToast('Multi-Prompt Global Roles cleared', 'success');
+      showToast('已清空多提示全局角色', 'success');
     });
   if (btnClearMainRoles)
     btnClearMainRoles.addEventListener('click', () => {
@@ -6515,7 +6518,7 @@
       renderAttachedRoles();
       persistRoles();
       renderRoles();
-      showToast('Prompt Role Mounts cleared', 'success');
+      showToast('已清空提示词下方的角色挂载', 'success');
     });
   if (btnStoryboardClearRoles)
     btnStoryboardClearRoles.addEventListener('click', () => {
@@ -6523,7 +6526,7 @@
       renderStoryboardAttachedRoles();
       persistRolesStoryboard();
       renderRoles();
-      showToast('Storyboard Global Roles cleared', 'success');
+      showToast('已清空分镜全局角色', 'success');
     });
   if (btnStoryboardScopeRoles)
     btnStoryboardScopeRoles.addEventListener('click', (e) => {
@@ -6551,13 +6554,13 @@
     btnStoryboardFromPrompt.addEventListener('click', () => {
       const raw = (promptBox.value || '').split('\n').map((l) => l.trim()).filter(Boolean);
       if (!raw.length) {
-        showToast('Main Prompt Empty: Cannot import shots', 'warn');
+        showToast('主提示为空：无法导入分镜', 'warn');
         return;
       }
       const hasContent = storyboardShots.some(
         (s) => (s.text || '').trim() || (Array.isArray(s.roles) && s.roles.length) || s.fileDataUrl
       );
-      if (hasContent) captureStoryboardUndo('Main Prompt Overwrite');
+      if (hasContent) captureStoryboardUndo('主提示按行导入覆盖');
       setBatchType('storyboard');
       const defaultCount = normalizeTimes(batchConcurrencyInput?.value || '1', 1);
       storyboardShots = raw.map((t) => ({
@@ -6574,10 +6577,10 @@
       }
       renderStoryboardShots();
       saveForm();
-      showToast(`Imported ${storyboardShots.length} shots${hasContent ? ' (Overwritten, can undo)' : ''}`, 'success', {
-        title: 'Storyboard Imported',
+      showToast(`已导入 ${storyboardShots.length} 条分镜${hasContent ? '（已覆盖原内容，可撤销）' : ''}`, 'success', {
+        title: '分镜已导入',
         duration: hasContent ? 5200 : 2400,
-        action: hasContent ? { text: 'Undo', onClick: () => undoStoryboardOnce() } : null
+        action: hasContent ? { text: '撤销', onClick: () => undoStoryboardOnce() } : null
       });
     });
   if (btnStoryboardClear)
@@ -6585,13 +6588,13 @@
       const n = storyboardShots.length || parseInt(storyboardShotCount?.value || '8', 10) || 8;
       const hasContent = storyboardShots.some((s) => (s.text || '').trim() || (Array.isArray(s.roles) && s.roles.length) || s.fileDataUrl);
       if (!hasContent) {
-        // Even if empty, layout input boxes for immediate writing
+        // 没内容也照样铺好输入框，保持“可立即写”
         storyboardShots = [];
         appendStoryboardShots(Math.max(1, n), { text: '', count: normalizeTimes(batchConcurrencyInput?.value || '1', 1) });
-        showToast('Storyboard reset to blank', 'success');
+        showToast('已重置分镜为空白', 'success');
         return;
       }
-      captureStoryboardUndo('Clear Storyboard');
+      captureStoryboardUndo('清空分镜');
       const defaultCount = normalizeTimes(batchConcurrencyInput?.value || '1', 1);
       const prev = storyboardShots;
       storyboardShots = Array.from({ length: Math.max(1, n) }).map((_, i) => ({
@@ -6604,10 +6607,10 @@
       }));
       renderStoryboardShots();
       saveForm();
-      showToast('Storyboard cleared (Can Undo)', 'success', {
-        title: 'Storyboard Cleared',
+      showToast('分镜已清空（可撤销）', 'success', {
+        title: '分镜已清空',
         duration: 5200,
-        action: { text: 'Undo', onClick: () => undoStoryboardOnce() }
+        action: { text: '撤销', onClick: () => undoStoryboardOnce() }
       });
     });
   if (btnSendPrimary) btnSendPrimary.addEventListener('click', handleSend);
@@ -6641,7 +6644,7 @@
       };
       filename = 'storyboard.json';
     } else {
-      // Multi-Prompt Template (Object): Includes "Global Roles", compatible with old array
+      // 多提示模板（对象格式）：包含“全局角色”，同时兼容旧 array 导入
       const rows = (Array.isArray(multiPrompts) ? multiPrompts : [])
         .map((p, idx) => ({
           prompt: (p?.text || '').trim(),
@@ -6650,7 +6653,7 @@
         }))
         .filter((x) => x.prompt || (Array.isArray(x.roles) && x.roles.length));
       if (!rows.length) {
-        showToast('No exportable batch content', 'warn');
+        showToast('暂无可导出的批量内容', 'warn');
         return;
       }
       payload = {
@@ -6678,7 +6681,7 @@
     try {
       const data = JSON.parse(text);
 
-      // Storyboard Template (Object)
+      // 分镜模板（对象）
       if (data && typeof data === 'object' && data.kind === 'storyboard' && Array.isArray(data.shots)) {
         if (storyboardTitle) storyboardTitle.value = (data.title || '').trim();
         if (storyboardContext) storyboardContext.value = (data.context || '').trim();
@@ -6703,12 +6706,12 @@
             useGlobalRoles: x && (x.useGlobalRoles === false || x.use_global_roles === false) ? false : true,
             roles: Array.isArray(x.roles)
               ? x.roles
-                .map((r) => ({
-                  display: r.display || r.display_name || r.username || '',
-                  username: r.username || '',
-                  avatar: r.avatar || r.avatar_path || ''
-                }))
-                .filter((r) => r.display || r.username)
+                  .map((r) => ({
+                    display: r.display || r.display_name || r.username || '',
+                    username: r.username || '',
+                    avatar: r.avatar || r.avatar_path || ''
+                  }))
+                  .filter((r) => r.display || r.username)
               : []
           }));
         if (!storyboardShots.length) {
@@ -6720,11 +6723,11 @@
         setBatchType('storyboard');
         saveForm();
         importBatchFile.value = '';
-        showToast('Storyboard Template Imported', 'success');
+        showToast('已导入分镜模板', 'success');
         return;
       }
 
-      // Multi-Prompt Template (Object)
+      // 多提示模板（对象）
       if (data && typeof data === 'object' && data.kind === 'multi_prompt' && Array.isArray(data.rows)) {
         if (Array.isArray(data.global_roles)) {
           attachedRolesMulti = data.global_roles
@@ -6746,7 +6749,7 @@
           }))
           .filter((x) => x.text);
 
-        // Sync Row Roles (Optional)
+        // 同步行角色（可选）
         Object.keys(multiPromptRoles).forEach((k) => delete multiPromptRoles[k]);
         data.rows.forEach((x, idx) => {
           if (Array.isArray(x.roles) && x.roles.length) {
@@ -6764,11 +6767,11 @@
         setBatchType('multi_prompt');
         saveForm();
         importBatchFile.value = '';
-        showToast('Multi-Prompt Template Imported', 'success');
+        showToast('已导入多提示模板', 'success');
         return;
       }
 
-      // Multi-Prompt Template: Compatible with old array format
+      // 多提示模板：兼容 array 旧格式
       if (Array.isArray(data)) {
         multiPrompts = data
           .map((x) => ({
@@ -6777,7 +6780,7 @@
           }))
           .filter((x) => x.text);
 
-        // Sync Row Roles (Optional)
+        // 同步行角色（可选）
         Object.keys(multiPromptRoles).forEach((k) => delete multiPromptRoles[k]);
         data.forEach((x, idx) => {
           if (Array.isArray(x.roles) && x.roles.length) {
@@ -6795,18 +6798,18 @@
         setBatchType('multi_prompt');
         saveForm();
         importBatchFile.value = '';
-        showToast('Batch Template Imported', 'success');
+        showToast('已导入批量模板', 'success');
         return;
       }
 
-      showToast('Import Failed: Unsupported Format', 'error');
+      showToast('导入失败：不支持的模板格式', 'error');
     } catch (_) {
-      showToast('Import Failed: Format Error');
+      showToast('导入失败：格式错误');
     }
     importBatchFile.value = '';
   });
 
-  // Initialize
+  // 初始化
   setAdvancedOpen(advancedOpen);
   initRoleUi();
   loadForm();
@@ -6823,6 +6826,6 @@
   renderStoryboardAttachedRoles();
   renderTasks();
   renderPreviews();
-  setRightTab(currentRightTab); // Apply persisted tab
+  setRightTab(currentRightTab); // 应用持久化 tab
   loadRoles();
 })();

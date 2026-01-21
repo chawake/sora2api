@@ -13,8 +13,6 @@ class Token(BaseModel):
     rt: Optional[str] = None
     client_id: Optional[str] = None
     proxy_url: Optional[str] = None
-    client_id: Optional[str] = None
-    proxy_url: Optional[str] = None
     remark: Optional[str] = None
     expiry_time: Optional[datetime] = None
     is_active: bool = True
@@ -22,26 +20,26 @@ class Token(BaseModel):
     created_at: Optional[datetime] = None
     last_used_at: Optional[datetime] = None
     use_count: int = 0
-    # Subscription information
-    plan_type: Optional[str] = None  # Account type, e.g. chatgpt_team
-    plan_title: Optional[str] = None  # Plan name, e.g. ChatGPT Business
-    subscription_end: Optional[datetime] = None  # Plan expiration time
-    # Sora2 support information
-    sora2_supported: Optional[bool] = None  # Whether Sora2 is supported
-    sora2_invite_code: Optional[str] = None  # Sora2 invite code
-    sora2_redeemed_count: int = 0  # Sora2 used count
-    sora2_total_count: int = 0  # Sora2 total count
-    # Sora2 remaining quota
-    sora2_remaining_count: int = 0  # Sora2 remaining available count
-    sora2_cooldown_until: Optional[datetime] = None  # Sora2 cooldown until
-    # Feature toggles
-    image_enabled: bool = True  # Whether image generation is enabled
-    video_enabled: bool = True  # Whether video generation is enabled
-    # Concurrency limits
-    image_concurrency: int = -1  # Image concurrency limit; -1 means no limit
-    video_concurrency: int = -1  # Video concurrency limit; -1 means no limit
-    # Expiration flag
-    is_expired: bool = False  # Whether the token has expired (401 token_invalidated)
+    # 订阅信息
+    plan_type: Optional[str] = None  # 账户类型，如 chatgpt_team
+    plan_title: Optional[str] = None  # 套餐名称，如 ChatGPT Business
+    subscription_end: Optional[datetime] = None  # 套餐到期时间
+    # Sora2 支持信息
+    sora2_supported: Optional[bool] = None  # 是否支持Sora2
+    sora2_invite_code: Optional[str] = None  # Sora2邀请码
+    sora2_redeemed_count: int = 0  # Sora2已用次数
+    sora2_total_count: int = 0  # Sora2总次数
+    # Sora2 剩余次数
+    sora2_remaining_count: int = 0  # Sora2剩余可用次数
+    sora2_cooldown_until: Optional[datetime] = None  # Sora2冷却时间
+    # 功能开关
+    image_enabled: bool = True  # 是否启用图片生成
+    video_enabled: bool = True  # 是否启用视频生成
+    # 并发限制
+    image_concurrency: int = -1  # 图片并发数限制，-1表示不限制
+    video_concurrency: int = -1  # 视频并发数限制，-1表示不限制
+    # 过期标记
+    is_expired: bool = False  # Token是否已过期（401 token_invalidated）
 
 class TokenStats(BaseModel):
     """Token statistics"""
@@ -81,7 +79,6 @@ class RequestLog(BaseModel):
     response_body: Optional[str] = None
     status_code: int  # -1 for in-progress
     duration: float  # -1.0 for in-progress
-    watermark_method: Optional[str] = None    
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -92,7 +89,6 @@ class AdminConfig(BaseModel):
     admin_password: str  # Read from database, initialized from setting.toml on first startup
     api_key: str  # Read from database, initialized from setting.toml on first startup
     error_ban_threshold: int = 3
-    debug_enabled: bool = False
     updated_at: Optional[datetime] = None
 
 class ProxyConfig(BaseModel):

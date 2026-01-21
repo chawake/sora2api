@@ -119,7 +119,7 @@ After the service starts, visit the admin console to complete the initial config
 | Character Video Generation | `sora2-*` | Use a `content` array + `video_url` + text |
 | Remix | `sora2-*` | Include the Remix ID inside `content` |
 | Storyboard | `sora2-*` | Use the format ```[duration_s]prompt``` inside `content` |
-
+| Prompt Enhancement | `prompt-enhance-*` | Expand simple prompts into detailed cinematic prompts |
 ---
 
 ### API Usage
@@ -173,7 +173,29 @@ After the service starts, visit the admin console to complete the initial config
 | `sora2pro-hd-portrait-10s` | 10 s | Portrait | Pro HD text/image-to-video |
 | `sora2pro-hd-portrait-15s` | 15 s | Portrait | Pro HD text/image-to-video |
 
-> **Note:** Pro-series models require a ChatGPT Pro subscription (`plan_type: "chatgpt_pro"`). Requests without an eligible account will fail.
+> **Note:** Pro-series models require a ChatGPT Pro subscription (`plan_type: chatgpt_pro"`). Requests without an eligible account will fail.
+
+**Prompt Enhancement Models**
+
+Expand simple prompts into detailed cinematic prompts, including scene settings, camera movements, lighting effects, storyboard descriptions, etc.
+
+| Model | Extension Level | Duration | Description |
+|------|---------|------|------|
+| `prompt-enhance-short-10s` | Short | 10 s | Generate concise enhanced prompts |
+| `prompt-enhance-short-15s` | Short | 15 s | Generate concise enhanced prompts |
+| `prompt-enhance-short-20s` | Short | 20 s | Generate concise enhanced prompts |
+| `prompt-enhance-medium-10s` | Medium | 10 s | Generate medium-length enhanced prompts |
+| `prompt-enhance-medium-15s` | Medium | 15 s | Generate medium-length enhanced prompts |
+| `prompt-enhance-medium-20s` | Medium | 20 s | Generate medium-length enhanced prompts |
+| `prompt-enhance-long-10s` | Detailed | 10 s | Generate detailed enhanced prompts |
+| `prompt-enhance-long-15s` | Detailed | 15 s | Generate detailed enhanced prompts |
+| `prompt-enhance-long-20s` | Detailed | 20 s | Generate detailed enhanced prompts |
+
+**Features:**
+- Support for streaming and non-streaming responses
+- Automatically generate prompts containing professional cinematic terms like PRIMARY, SETTING, LOOK, CAMERA, LIGHT, etc.
+- Includes detailed storyboard descriptions (timeline, camera movement, focus, lighting)
+- Can be used directly for video generation models
 
 #### Request Examples
 
@@ -224,6 +246,41 @@ curl -X POST "http://localhost:8000/v1/chat/completions" \
   }'
 ```
 
+**Prompt Enhancement (Streaming)**
+
+```bash
+curl -X POST "http://localhost:8000/v1/chat/completions" \
+  -H "Authorization: Bearer han1234" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "prompt-enhance-medium-10s",
+    "messages": [
+      {
+        "role": "user",
+        "content": "kitten"
+      }
+    ],
+    "stream": true
+  }'
+```
+
+**Prompt Enhancement (Non-streaming)**
+
+```bash
+curl -X POST "http://localhost:8000/v1/chat/completions" \
+  -H "Authorization: Bearer han1234" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "prompt-enhance-long-15s",
+    "messages": [
+      {
+        "role": "user",
+        "content": "An orange cat playing on the windowsill"
+      }
+    ],
+    "stream": false
+  }'
+```
 **Text-to-Video**
 
 ```bash

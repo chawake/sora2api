@@ -19,8 +19,6 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# Patch
 patch_v1/
 
 # Virtual Environment
@@ -52,4 +50,3 @@ Thumbs.db
 # Environment
 .env
 .env.local
-manage-old.html

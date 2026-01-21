@@ -5,10 +5,10 @@ services:
     image: thesmallhancat/sora2api:latest
     container_name: sora2api
     ports:
-      - "8001:8000"
+      - "8000:8000"
     volumes:
-      - /data/coolify/applications/ows8gwsskoccks0cwcsg44g8/data:/app/data
-      - /data/coolify/applications/ows8gwsskoccks0cwcsg44g8/config/setting.toml:/app/config/setting.toml
+      - ./data:/app/data
+      - ./config/setting.toml:/app/config/setting.toml
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
