@@ -403,6 +403,7 @@ class GenerationHandler:
         is_video = model_config["type"] == "video"
         is_image = model_config["type"] == "image"
         is_prompt_enhance = model_config["type"] == "prompt_enhance"
+        watermark_info: Dict[str, Any] = {"method": None}
 
         # Handle prompt enhancement
         if is_prompt_enhance:
@@ -606,7 +607,7 @@ class GenerationHandler:
             await self.token_manager.record_usage(token_obj.id, is_video=is_video)
             
             # Poll for results with timeout
-            async for chunk in self._poll_task_result(task_id, token_obj.token, is_video, stream, prompt, token_obj.id, log_id, start_time):
+            async for chunk in self._poll_task_result(task_id, token_obj.token, is_video, stream, prompt, token_obj.id, log_id, start_time, watermark_info=watermark_info):
                 yield chunk
             
             # Record success
@@ -649,7 +650,8 @@ class GenerationHandler:
                     log_id,
                     response_body=json.dumps(response_data),
                     status_code=200,
-                    duration=duration
+                    duration=duration,
+                    watermark_method=watermark_info.get("method")
                 )
 
         except Exception as e:
@@ -710,7 +712,8 @@ class GenerationHandler:
     
     async def _poll_task_result(self, task_id: str, token: str, is_video: bool,
                                 stream: bool, prompt: str, token_id: int = None,
-                                log_id: int = None, start_time: float = None) -> AsyncGenerator[str, None]:
+                                log_id: int = None, start_time: float = None,
+                                watermark_info: Optional[Dict[str, Any]] = None) -> AsyncGenerator[str, None]:
         """Poll for task result with timeout"""
         # Get timeout from config
         timeout = config.video_timeout if is_video else config.image_timeout
@@ -895,7 +898,6 @@ class GenerationHandler:
                                             raise Exception("Failed to get post ID from publish API")
 
                                         # Get watermark-free video URL based on parse method
-                                        # Get watermark-free video URL based on parse method
                                         if parse_method == "custom":
                                             # Use custom parse server
                                             if stream:
@@ -960,6 +962,8 @@ class GenerationHandler:
                                             debug_logger.log_info(f"Using third-party parse server")
                                             if log_id:
                                                 await self.db.update_request_log(log_id, watermark_method="third_party")
+                                            if watermark_info is not None:
+                                                watermark_info["method"] = "third_party"
 
                                         debug_logger.log_info(f"Watermark-free URL: {watermark_free_url}")
 
