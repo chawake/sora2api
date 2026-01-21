@@ -1128,14 +1128,14 @@ async def update_at_auto_refresh_enabled(
         raise HTTPException(status_code=500, detail=f"Failed to update AT auto refresh enabled status: {str(e)}")
 
 # Android credentials endpoints
-@router.get("/api/android/credentials")
-async def get_android_credentials(token: str = Depends(verify_admin_token)):
+@router.get("/api/android-credentials", summary="Get Android credentials")
+async def get_android_credentials(token: str = Depends(verify_admin_token)) -> dict:
     """Get Android credentials"""
     try:
         creds = await db.get_android_credentials()
         return {
             "success": True,
-            "credentials": {
+            "data": {
                 "sora_auth_token": creds.get("sora_auth_token"),
                 "sora_refresh_token": creds.get("sora_refresh_token"),
                 "sora_client_id": creds.get("sora_client_id")
@@ -1144,7 +1144,7 @@ async def get_android_credentials(token: str = Depends(verify_admin_token)):
     except Exception as e:
          raise HTTPException(status_code=500, detail=f"Failed to get Android credentials: {str(e)}")
 
-@router.post("/api/android/credentials")
+@router.post("/api/android-credentials")
 async def update_android_credentials(
     request: UpdateAndroidCredentialsRequest,
     token: str = Depends(verify_admin_token)
