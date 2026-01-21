@@ -1687,7 +1687,7 @@
       color: #1d4ed8;
     }
 
-    /* 文件预览与提示（避免“选了图但不相关”的困惑） */
+    /* File preview and hint (avoid confusion of "selected file but irrelevant") */
     .file-preview-box {
       display: flex;
       gap: 12px;
@@ -1816,7 +1816,7 @@
       color: #0b0f19;
     }
 
-    /* 单次/同提示批量：快切 + 批量摘要（避免隐藏在高级设置里导致误操作） */
+    /* Single/Same Prompt Batch: Quick Switch + Batch Summary (Avoid misoperation by hiding in advanced settings) */
     .upload-head {
       display: flex;
       align-items: flex-start;
@@ -1874,7 +1874,7 @@
       -webkit-backdrop-filter: blur(8px);
     }
 
-    /* 四种生成模式：统一为“分段选择器”风格，减少 radio/pill 的割裂感 */
+    /* 4 Generation Modes: Unified as "Segmented Control" style, reducing the fragmentation of radio/pill */
     .segmented.radio {
       position: relative;
       flex-wrap: wrap;
@@ -1962,13 +1962,13 @@
 
     .segmented.radio input:checked+.seg-opt {
       background: linear-gradient(135deg, #2563eb, #4f46e5);
-      /* fallback：JS 未就绪时仍有选中态 */
+      /* fallback: Selected state even when JS is not ready */
       color: #fff;
       border-color: rgba(255, 255, 255, 0.6);
       box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
     }
 
-    /* JS 就绪后：用“滑动高亮”统一选中态背景，减少割裂感 */
+    /* After JS ready: Use "Sliding Highlight" for unified selected background, reducing fragmentation */
     .segmented.radio[data-ready="1"] input:checked+.seg-opt {
       background: transparent;
       border-color: transparent;
@@ -2032,7 +2032,7 @@
       margin: 0;
     }
 
-    /* 轻量 Toast（generate 页面不依赖 Tailwind，必须有自己的样式） */
+    /* Lightweight Toast (generate page does not rely on Tailwind, must have its own styles) */
     .toast-host {
       position: fixed;
       right: 18px;
@@ -2216,7 +2216,7 @@
       margin-top: 6px;
     }
 
-    /* 任务步骤条（3 段状态：进行中 / 成功 / 失败） */
+    /* Task Steps (3 states: In Progress / Success / Failed) */
     .task-steps {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -2250,7 +2250,7 @@
       opacity: 0.8;
     }
 
-    /* 桌面优先：保留双列，不做早退降级；移动端若需适配再单独覆盖 */
+    /* Desktop First: Keep double columns, no early degradation; Mobile needs separate override if adapting */
   </style>
   <style>
     .select-mismatch {
@@ -2326,7 +2326,7 @@
       padding: 6px 10px;
     }
 
-    /* 分镜（Storyboard）编辑器：复用 multi-row 视觉，补充更适合长提示的 textarea 与编号 */
+    /* Storyboard Editor: Reuse multi-row visuals, add textarea suitable for long prompts and numbering */
     .sb-meta-row {
       display: flex;
       gap: 8px;
@@ -2381,21 +2381,23 @@
 <body>
   <div class="page">
     <div class="header">
-      <h1>Sora2 生成面板</h1>
+      <h1>Sora2 Generation Panel</h1>
       <a href="https://linux.do/u/kongt/summary" target="_blank" class="badge"
         style="text-decoration: none; cursor: pointer;">@kongt</a>
     </div>
-    <p class="sub">左侧拖拽/挂载角色卡，中间编写提示词并上传素材，右侧查看任务进度与结果预览。</p>
+    <p class="sub">Drag/mount character cards on the left, write prompts/upload assets in the middle, view task
+      progress/results on the right.</p>
     <div class="content-scroll full-bleed">
       <div class="inner">
         <div class="layout">
           <aside class="card side-panel">
             <div class="section-title role-head">
-              <span>角色卡</span>
+              <span>Character Cards</span>
               <div class="role-head-actions">
                 <span id="roleCount" class="muted role-count">0</span>
-                <button id="btnRoleDense" class="pill-btn" type="button" title="切换密集模式（角色很多时更好用）">密集</button>
-                <button id="btnReloadRoles" class="pill-btn" type="button">刷新</button>
+                <button id="btnRoleDense" class="pill-btn" type="button"
+                  title="Toggle Dense Mode (Better for many roles)">Dense</button>
+                <button id="btnReloadRoles" class="pill-btn" type="button">Refresh</button>
               </div>
             </div>
 
@@ -2408,28 +2410,30 @@
                 </svg>
               </span>
               <input id="roleSearch" class="input input-with-icon"
-                placeholder="搜索 角色名 / @username / cameo_id / character_id" autocomplete="off">
-              <button id="roleSearchClear" class="input-clear" type="button" aria-label="清空搜索" title="清空">×</button>
+                placeholder="Search Name / @username / cameo_id / character_id" autocomplete="off">
+              <button id="roleSearchClear" class="input-clear" type="button" aria-label="Clear Search"
+                title="Clear">×</button>
             </div>
 
             <div class="role-bar">
-              <div id="roleFilterBar" class="role-filter" aria-label="角色过滤">
-                <button class="pill-btn active" type="button" data-role-filter="all">全部</button>
+              <div id="roleFilterBar" class="role-filter" aria-label="Role Filter">
+                <button class="pill-btn active" type="button" data-role-filter="all">All</button>
                 <button class="pill-btn" type="button" data-role-filter="attached"
-                  title="只看当前模式已挂载的角色（单次/同提示/多提示/分镜各自独立）">已挂载</button>
-                <button class="pill-btn" type="button" data-role-filter="fav">收藏</button>
+                  title="Show only attached roles in current mode">Attached</button>
+                <button class="pill-btn" type="button" data-role-filter="fav">Favorites</button>
               </div>
-              <select id="roleSort" class="select role-sort" aria-label="角色排序">
-                <option value="smart">智能排序</option>
-                <option value="newest">最新创建</option>
-                <option value="oldest">最早创建</option>
-                <option value="name_asc">名称 A→Z</option>
-                <option value="name_desc">名称 Z→A</option>
+              <select id="roleSort" class="select role-sort" aria-label="Role Sort">
+                <option value="smart">Smart Sort</option>
+                <option value="newest">Newest Created</option>
+                <option value="oldest">Oldest Created</option>
+                <option value="name_asc">Name A→Z</option>
+                <option value="name_desc">Name Z→A</option>
               </select>
             </div>
 
             <div id="roleList" class="roles" aria-live="polite"></div>
-            <p class="hint">拖拽到提示词输入框，或点“挂载”。收藏会置顶；密集模式更适合角色很多的库。</p>
+            <p class="hint">Drag to prompt input or click "Mount". Favorites appear at top; Dense mode is better for
+              large libraries.</p>
           </aside>
           <div class="main-column">
             <section class="card form-panel"
@@ -2437,44 +2441,46 @@
               <div class="form-grid">
                 <div>
                   <label class="section-title" for="apiKey" style="margin-bottom:4px;">API Key</label>
-                  <input id="apiKey" class="input" type="password" value="Kong000" placeholder="默认 Kong000，可改填自己的">
+                  <input id="apiKey" class="input" type="password" value="Kong000"
+                    placeholder="Default Kong000, can be changed">
                 </div>
                 <div>
-                  <label class="section-title" for="baseUrl" style="margin-bottom:4px;">服务器地址</label>
-                  <input id="baseUrl" class="input" type="text" value="http://127.0.0.1:8000" placeholder="后端地址，默认本机">
+                  <label class="section-title" for="baseUrl" style="margin-bottom:4px;">Server Address</label>
+                  <input id="baseUrl" class="input" type="text" value="http://127.0.0.1:8000"
+                    placeholder="Backend address, default localhost">
                 </div>
               </div>
 
               <div class="form-grid" style="margin-top:4px; grid-template-columns: 1fr;">
                 <div>
-                  <label class="section-title" for="model" style="margin-bottom:4px;">模型</label>
+                  <label class="section-title" for="model" style="margin-bottom:4px;">Model</label>
                   <select id="model" class="select">
-                    <optgroup label="标准版视频">
-                      <option value="sora2-landscape-25s">横屏视频 25 秒</option>
-                      <option value="sora2-landscape-15s">横屏视频 15 秒</option>
-                      <option value="sora2-landscape-10s">横屏视频 10 秒</option>
-                      <option value="sora2-portrait-25s">竖屏视频 25 秒</option>
-                      <option value="sora2-portrait-15s">竖屏视频 15 秒</option>
-                      <option value="sora2-portrait-10s">竖屏视频 10 秒</option>
+                    <optgroup label="Standard Video">
+                      <option value="sora2-landscape-25s">Landscape Video 25s</option>
+                      <option value="sora2-landscape-15s">Landscape Video 15s</option>
+                      <option value="sora2-landscape-10s">Landscape Video 10s</option>
+                      <option value="sora2-portrait-25s">Portrait Video 25s</option>
+                      <option value="sora2-portrait-15s">Portrait Video 15s</option>
+                      <option value="sora2-portrait-10s">Portrait Video 10s</option>
                     </optgroup>
-                    <optgroup label="Pro版视频">
-                      <option value="sora2pro-landscape-25s">横屏视频 25 秒 (Pro)</option>
-                      <option value="sora2pro-landscape-15s">横屏视频 15 秒 (Pro)</option>
-                      <option value="sora2pro-landscape-10s">横屏视频 10 秒 (Pro)</option>
-                      <option value="sora2pro-portrait-25s">竖屏视频 25 秒 (Pro)</option>
-                      <option value="sora2pro-portrait-15s">竖屏视频 15 秒 (Pro)</option>
-                      <option value="sora2pro-portrait-10s">竖屏视频 10 秒 (Pro)</option>
+                    <optgroup label="Pro Video">
+                      <option value="sora2pro-landscape-25s">Landscape Video 25s (Pro)</option>
+                      <option value="sora2pro-landscape-15s">Landscape Video 15s (Pro)</option>
+                      <option value="sora2pro-landscape-10s">Landscape Video 10s (Pro)</option>
+                      <option value="sora2pro-portrait-25s">Portrait Video 25s (Pro)</option>
+                      <option value="sora2pro-portrait-15s">Portrait Video 15s (Pro)</option>
+                      <option value="sora2pro-portrait-10s">Portrait Video 10s (Pro)</option>
                     </optgroup>
-                    <optgroup label="Pro HD版视频">
-                      <option value="sora2pro-hd-landscape-15s">横屏视频 15 秒 (Pro HD)</option>
-                      <option value="sora2pro-hd-landscape-10s">横屏视频 10 秒 (Pro HD)</option>
-                      <option value="sora2pro-hd-portrait-15s">竖屏视频 15 秒 (Pro HD)</option>
-                      <option value="sora2pro-hd-portrait-10s">竖屏视频 10 秒 (Pro HD)</option>
+                    <optgroup label="Pro HD Video">
+                      <option value="sora2pro-hd-landscape-15s">Landscape Video 15s (Pro HD)</option>
+                      <option value="sora2pro-hd-landscape-10s">Landscape Video 10s (Pro HD)</option>
+                      <option value="sora2pro-hd-portrait-15s">Portrait Video 15s (Pro HD)</option>
+                      <option value="sora2pro-hd-portrait-10s">Portrait Video 10s (Pro HD)</option>
                     </optgroup>
-                    <optgroup label="图片">
-                      <option value="gpt-image">方图 360×360</option>
-                      <option value="gpt-image-landscape">横图 540×360</option>
-                      <option value="gpt-image-portrait">竖图 360×540</option>
+                    <optgroup label="Image">
+                      <option value="gpt-image">Square 360×360</option>
+                      <option value="gpt-image-landscape">Landscape 540×360</option>
+                      <option value="gpt-image-portrait">Portrait 360×540</option>
                     </optgroup>
                   </select>
                 </div>
@@ -2482,36 +2488,41 @@
 
               <div class="upload-toolbar" id="modeToolbar" style="margin-top:4px;">
                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                  <span class="muted" style="font-weight:900;">模式</span>
-                  <div class="segmented radio" id="batchModeBar" role="radiogroup" aria-label="生成模式选择">
+                  <span class="muted" style="font-weight:900;">Mode</span>
+                  <div class="segmented radio" id="batchModeBar" role="radiogroup"
+                    aria-label="Generation Mode Selection">
                     <input type="radio" name="batchType" id="batchTypeSingle" value="single" checked>
-                    <label class="seg-opt" for="batchTypeSingle" title="单次：只创建 1 条任务（取第 1 个文件）">
-                      <span class="seg-title">单次</span>
-                      <span class="seg-sub">1 条</span>
+                    <label class="seg-opt" for="batchTypeSingle" title="Single: Create 1 task only (takes 1st file)">
+                      <span class="seg-title">Single</span>
+                      <span class="seg-sub">1 Task</span>
                     </label>
 
                     <input type="radio" name="batchType" id="batchTypeSamePrompt" value="same_prompt_files">
-                    <label class="seg-opt" for="batchTypeSamePrompt" title="同提示批量：多文件共享同一提示；可设置每文件生成份数">
-                      <span class="seg-title">同提示</span>
-                      <span class="seg-sub">多文件</span>
+                    <label class="seg-opt" for="batchTypeSamePrompt"
+                      title="Same Prompt Batch: Multi-files share same prompt; set copies per file">
+                      <span class="seg-title">Same Prompt</span>
+                      <span class="seg-sub">Multi-File</span>
                     </label>
 
                     <input type="radio" name="batchType" id="batchTypeMultiPrompt" value="multi_prompt">
-                    <label class="seg-opt" for="batchTypeMultiPrompt" title="多提示批量：每条提示各自生成，可给某行附带文件">
-                      <span class="seg-title">多提示</span>
-                      <span class="seg-sub">按行</span>
+                    <label class="seg-opt" for="batchTypeMultiPrompt"
+                      title="Multi Prompt Batch: Each prompt generates separately, can attach file per row">
+                      <span class="seg-title">Multi Prompt</span>
+                      <span class="seg-sub">By Line</span>
                     </label>
 
                     <input type="radio" name="batchType" id="batchTypeStoryboard" value="storyboard">
-                    <label class="seg-opt" for="batchTypeStoryboard" title="分镜连续：连续剧情更适合；任务区会打分镜编号，便于按顺序找">
-                      <span class="seg-title">分镜</span>
-                      <span class="seg-sub">连续</span>
+                    <label class="seg-opt" for="batchTypeStoryboard"
+                      title="Storyboard: Better for continuous plot; Tasks numbered sequentially">
+                      <span class="seg-title">Storyboard</span>
+                      <span class="seg-sub">Continuous</span>
                     </label>
 
                     <input type="radio" name="batchType" id="batchTypeCharacter" value="character">
-                    <label class="seg-opt" for="batchTypeCharacter" title="角色卡：上传视频创建角色卡，无需提示词">
-                      <span class="seg-title">角色卡</span>
-                      <span class="seg-sub">创建</span>
+                    <label class="seg-opt" for="batchTypeCharacter"
+                      title="Character Card: Upload video to create card, no prompt needed">
+                      <span class="seg-title">Character Card</span>
+                      <span class="seg-sub">Create</span>
                     </label>
                   </div>
                 </div>
@@ -2629,21 +2640,23 @@
               style="display:flex; flex-direction:column; gap:12px; padding:14px;">
               <div class="upload-head">
                 <div>
-                  <div class="upload-title">上传素材</div>
-                  <div class="upload-sub">单次：只使用 1 个文件；同提示批量：多文件共享同一提示词（每个文件可生成多份）</div>
+                  <div class="upload-title">Upload Assets</div>
+                  <div class="upload-sub">Single: Use 1 file only; Same Prompt Batch: Multi-files share same prompt
+                    (each file can generate multiple copies)</div>
                 </div>
                 <div class="upload-actions">
-                  <button class="btn" id="btnSendPrimary" title="快捷键：Ctrl + Enter">开始生成</button>
-                  <button class="btn btn-secondary" id="btnClearPrimary">清空输出</button>
+                  <button class="btn" id="btnSendPrimary" title="Shortcut: Ctrl + Enter">Generate</button>
+                  <button class="btn btn-secondary" id="btnClearPrimary">Clear Output</button>
                 </div>
               </div>
               <div class="upload-toolbar" id="uploadToolbar">
                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                   <div class="quick-count-wrap" id="quickCountWrap" style="display:none;">
-                    <span class="muted">每个文件份数</span>
+                    <span class="muted">Copies per file</span>
                     <div class="stepper">
                       <button type="button" class="pill-btn" id="quickCountDec">-</button>
-                      <input id="quickCount" type="number" min="1" max="9999" step="1" value="2" aria-label="每个文件生成份数">
+                      <input id="quickCount" type="number" min="1" max="9999" step="1" value="2"
+                        aria-label="Copies per file">
                       <button type="button" class="pill-btn" id="quickCountInc">+</button>
                     </div>
                   </div>
@@ -2652,7 +2665,7 @@
               </div>
               <div id="dropzoneWrap" class="dropzone-wrapper" style="margin-top:0;">
                 <div id="dropzone" class="dropzone" style="min-height:80px; border-radius:12px; font-weight:700;">
-                  拖拽文件到这里，或点击选择（支持多文件）
+                  Drag files here, or click to select (supports multiple files)
                 </div>
               </div>
               <input id="file" type="file" accept="image/*,video/*" multiple style="display:none;">
@@ -2660,22 +2673,24 @@
                 <div id="filePreviewMedia" class="file-preview-media"></div>
                 <div class="file-preview-info">
                   <div class="file-preview-title">
-                    <span id="filePreviewName" class="file-preview-name">未选择文件</span>
-                    <span id="filePreviewKind" class="chip info">素材</span>
+                    <span id="filePreviewName" class="file-preview-name">No file selected</span>
+                    <span id="filePreviewKind" class="chip info">Asset</span>
                   </div>
                   <div id="filePreviewMeta" class="file-preview-meta"></div>
                   <div id="filePreviewHints" class="file-preview-warnings"></div>
                   <div id="filePreviewList" class="file-preview-list" style="display:none;"></div>
                   <div class="file-preview-actions">
-                    <button id="btnClearFiles" class="pill-btn" type="button" style="display:none;">清空文件</button>
-                    <button id="btnUseRecommendedModel" class="pill-btn" style="display:none;">切换到推荐模型</button>
+                    <button id="btnClearFiles" class="pill-btn" type="button" style="display:none;">Clear Files</button>
+                    <button id="btnUseRecommendedModel" class="pill-btn" style="display:none;">Switch to Recommended
+                      Model</button>
                   </div>
                 </div>
               </div>
               <div id="uxBanner" class="banner" style="display:none;"></div>
               <div
                 style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:12px; color:#475569; padding:0 2px;">
-                <span>视频建议 3~10 秒；批量时可多选文件；同提示多文件：共享同一提示；多提示批量：文本每行一条。</span>
+                <span>Video suggested 3~10s; Multi-select allowed for batch; Same Prompt Multi-file: Share same prompt;
+                  Multi-Prompt Batch: One prompt per line.</span>
               </div>
             </section>
 
@@ -2683,22 +2698,24 @@
               <div class="section-title task-header">
                 <div class="task-header-left">
                   <div class="task-title-group">
-                    <span>任务进度 / 结果预览</span>
-                    <span class="muted" id="taskCount">0 个任务</span>
+                    <span>Task Progress / Result Preview</span>
+                    <span class="muted" id="taskCount">0 Tasks</span>
                   </div>
                 </div>
                 <div class="task-header-right">
                   <div class="task-tabs chips">
-                    <button class="tab-pill active" data-tab="tasks" title="快捷键：Alt + 1">任务<span
+                    <button class="tab-pill active" data-tab="tasks" title="Shortcut: Alt + 1">Tasks<span
                         class="dot"></span></button>
-                    <button class="tab-pill" data-tab="preview" title="快捷键：Alt + 2">预览<span class="dot"></span></button>
-                    <button class="tab-pill" data-tab="log" title="快捷键：Alt + 3">日志<span class="dot"></span></button>
+                    <button class="tab-pill" data-tab="preview" title="Shortcut: Alt + 2">Preview<span
+                        class="dot"></span></button>
+                    <button class="tab-pill" data-tab="log" title="Shortcut: Alt + 3">Logs<span
+                        class="dot"></span></button>
                   </div>
                   <div class="task-actions-bar">
-                    <button id="btnOnlyRunning" class="pill-btn">仅运行中</button>
-                    <button id="btnPreviewDense" class="pill-btn">预览密集</button>
-                    <button id="btnClearDone" class="pill-btn">清理失败任务</button>
-                    <button id="btnClearAll" class="pill-btn">全部清空</button>
+                    <button id="btnOnlyRunning" class="pill-btn">Running Only</button>
+                    <button id="btnPreviewDense" class="pill-btn">Dense Preview</button>
+                    <button id="btnClearDone" class="pill-btn">Clear Failed</button>
+                    <button id="btnClearAll" class="pill-btn">Clear All</button>
                   </div>
                 </div>
               </div>
@@ -2708,24 +2725,28 @@
               <div id="tabPanelPreview" class="tab-panel" style="margin-top:10px;">
                 <div class="chips" id="previewFilterBar"
                   style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-                  <span class="muted" style="font-weight:900;">过滤</span>
-                  <button class="pill-btn active" type="button" data-preview-filter="all" title="显示全部媒体">全部</button>
-                  <button class="pill-btn" type="button" data-preview-filter="video" title="只看视频结果">视频</button>
-                  <button class="pill-btn" type="button" data-preview-filter="image" title="只看图片结果">图片</button>
-                  <button class="pill-btn" type="button" data-preview-filter="storyboard" title="只看分镜任务的结果">分镜</button>
+                  <span class="muted" style="font-weight:900;">Filter</span>
+                  <button class="pill-btn active" type="button" data-preview-filter="all"
+                    title="Show all media">All</button>
+                  <button class="pill-btn" type="button" data-preview-filter="video"
+                    title="View video results only">Video</button>
+                  <button class="pill-btn" type="button" data-preview-filter="image"
+                    title="View image results only">Image</button>
+                  <button class="pill-btn" type="button" data-preview-filter="storyboard"
+                    title="View storyboard results only">Storyboard</button>
                   <span class="muted" id="previewCount" style="margin-left:auto;"></span>
                   <button id="btnPreviewBatchDownload" class="pill-btn" type="button"
-                    title="批量下载当前过滤的预览结果：点击=打包ZIP（推荐，适配 IDM/浏览器拦截）；Shift+点击=多文件下载"
-                    style="margin-left:8px;">批量下载</button>
+                    title="Batch download current filtered results: Click=ZIP (Recommended, IDM/Browser friendly); Shift+Click=Multi-file download"
+                    style="margin-left:8px;">Batch Download</button>
                 </div>
                 <div id="previewGrid" class="preview-grid"></div>
               </div>
               <div id="tabPanelLog" class="tab-panel" style="margin-top:10px;">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;"
                   id="logActions">
-                  <div style="font-weight:700;">任务日志</div>
+                  <div style="font-weight:700;">Task Logs</div>
                   <div style="margin-left:auto; display:flex; gap:6px; align-items:center;">
-                    <button id="btnCopyTaskLog" class="pill-btn">复制当前任务日志</button>
+                    <button id="btnCopyTaskLog" class="pill-btn">Copy Current Task Log</button>
                   </div>
                 </div>
                 <div class="log-layout" style="display:flex; gap:12px; align-items:stretch; min-height:320px;">
@@ -2739,7 +2760,7 @@
                       <span class="muted" id="logDetailMeta" style="margin-left:8px;"></span>
                     </div>
                     <div class="log-card-body">
-                      <pre class="log" id="logDetailContent">暂无日志</pre>
+                      <pre class="log" id="logDetailContent">No Logs</pre>
                     </div>
                   </div>
                 </div>
@@ -2751,19 +2772,19 @@
     </div>
     <div id="previewModal" class="preview-modal" aria-hidden="true">
       <div class="backdrop" data-close="1"></div>
-      <div class="modal-card" role="dialog" aria-label="预览">
+      <div class="modal-card" role="dialog" aria-label="Preview">
         <div class="modal-head">
           <span class="task-id-pill" id="previewModalTaskId" style="display:none;"></span>
           <span class="task-tag-chip storyboard" id="previewModalStoryboard" style="display:none;"></span>
           <span class="task-tag-chip watermark" id="previewModalWatermark" style="display:none;"></span>
           <span class="meta" id="previewModalMeta"></span>
           <div class="modal-actions">
-            <button id="btnPreviewOpenNew" class="pill-btn">新标签打开</button>
-            <button id="btnPreviewCopyLink" class="pill-btn">复制链接</button>
-            <button id="btnPreviewCopyHtml" class="pill-btn">复制HTML</button>
-            <a id="previewModalDownload" class="pill-btn" download target="_blank" rel="noreferrer">下载</a>
-            <button id="btnPreviewLocateTask" class="pill-btn">定位任务</button>
-            <button id="btnPreviewClose" class="pill-btn">关闭</button>
+            <button id="btnPreviewOpenNew" class="pill-btn">Open New Tab</button>
+            <button id="btnPreviewCopyLink" class="pill-btn">Copy Link</button>
+            <button id="btnPreviewCopyHtml" class="pill-btn">Copy HTML</button>
+            <a id="previewModalDownload" class="pill-btn" download target="_blank" rel="noreferrer">Download</a>
+            <button id="btnPreviewLocateTask" class="pill-btn">Locate Task</button>
+            <button id="btnPreviewClose" class="pill-btn">Close</button>
           </div>
         </div>
         <div class="modal-body">
@@ -2773,20 +2794,22 @@
     </div>
     <div id="editStoryboardModal" class="preview-modal" aria-hidden="true">
       <div class="backdrop" data-close="1"></div>
-      <div class="modal-card" role="dialog" aria-label="修改分镜提示词" style="width: min(860px, 96vw);">
+      <div class="modal-card" role="dialog" aria-label="Edit Storyboard Prompt" style="width: min(860px, 96vw);">
         <div class="modal-head">
           <span class="task-tag-chip storyboard" id="editStoryboardModalBadge" style="display:none;"></span>
-          <span class="meta" id="editStoryboardModalMeta">修改分镜提示词（仅影响当前分镜任务）</span>
+          <span class="meta" id="editStoryboardModalMeta">Edit Storyboard Prompt (Affects current storyboard task
+            only)</span>
           <div class="modal-actions">
-            <button id="btnEditStoryboardCancel" class="pill-btn">取消</button>
-            <button id="btnEditStoryboardRetry" class="pill-btn active">保存并重试</button>
+            <button id="btnEditStoryboardCancel" class="pill-btn">Cancel</button>
+            <button id="btnEditStoryboardRetry" class="pill-btn active">Save & Retry</button>
           </div>
         </div>
         <div class="modal-body">
           <div class="muted" style="font-size:12px; margin-bottom:8px;">
-            只会重试当前分镜，不会影响其它分镜。快捷键：Ctrl + Enter 保存并重试。
+            Only retries current storyboard shot, others unaffected. Shortcut: Ctrl + Enter to Save & Retry.
           </div>
-          <textarea id="editStoryboardTextarea" class="input" placeholder="请修改这条分镜提示词（建议用更安全的表达方式）"
+          <textarea id="editStoryboardTextarea" class="input"
+            placeholder="Please edit this storyboard prompt (safer expression recommended)"
             style="min-height:220px;"></textarea>
         </div>
       </div>
