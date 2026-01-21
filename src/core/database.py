@@ -172,6 +172,27 @@ class Database:
                 VALUES (1, ?)
             """, (at_auto_refresh_enabled,))
 
+        # Ensure android_credentials has a row
+        cursor = await db.execute("SELECT COUNT(*) FROM android_credentials")
+        count = await cursor.fetchone()
+        if count[0] == 0:
+             # Initialize Android credentials if they don't exist
+            if config_dict and "android_credentials" in config_dict:
+                android_creds = config_dict.get("android_credentials", {})
+                sora_auth_token = android_creds.get("SORA_AUTH_TOKEN", "")
+                sora_refresh_token = android_creds.get("SORA_REFRESH_TOKEN", "")
+                sora_client_id = android_creds.get("SORA_CLIENT_ID", "app_OHnYmJt5u1XEdhDUx0ig1ziv")
+            else:
+                # Default empty credentials
+                sora_auth_token = ""
+                sora_refresh_token = ""
+                sora_client_id = "app_OHnYmJt5u1XEdhDUx0ig1ziv"
+
+            await db.execute("""
+                INSERT INTO android_credentials (id, sora_auth_token, sora_refresh_token, sora_client_id)
+                VALUES (1, ?, ?, ?)
+            """, (sora_auth_token, sora_refresh_token, sora_client_id))
+
 
     async def check_and_migrate_db(self, config_dict: dict = None):
         """Check database integrity and perform migrations if needed
@@ -363,6 +384,7 @@ class Database:
                     response_body TEXT,
                     status_code INTEGER NOT NULL,
                     duration FLOAT NOT NULL,
+                    watermark_method TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP,
                     FOREIGN KEY (token_id) REFERENCES tokens(id)
@@ -438,6 +460,18 @@ class Database:
                 )
             """)
 
+            # Android credentials table
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS android_credentials (
+                    id INTEGER PRIMARY KEY DEFAULT 1,
+                    sora_auth_token TEXT,
+                    sora_refresh_token TEXT,
+                    sora_client_id TEXT DEFAULT 'app_OHnYmJt5u1XEdhDUx0ig1ziv',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             # Create indexes
             await db.execute("CREATE INDEX IF NOT EXISTS idx_task_id ON tasks(task_id)")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_task_status ON tasks(status)")
@@ -452,6 +486,10 @@ class Database:
                 await db.execute("ALTER TABLE token_stats ADD COLUMN today_error_count INTEGER DEFAULT 0")
             if not await self._column_exists(db, "token_stats", "today_date"):
                 await db.execute("ALTER TABLE token_stats ADD COLUMN today_date DATE")
+
+            # Migration: Add watermark_method to request_logs
+            if not await self._column_exists(db, "request_logs", "watermark_method"):
+                await db.execute("ALTER TABLE request_logs ADD COLUMN watermark_method TEXT")
 
             await db.commit()
 
@@ -887,15 +925,16 @@ class Database:
         """Log a request and return log ID"""
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute("""
-                INSERT INTO request_logs (token_id, task_id, operation, request_body, response_body, status_code, duration)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO request_logs (token_id, task_id, operation, request_body, response_body, status_code, duration, watermark_method)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (log.token_id, log.task_id, log.operation, log.request_body, log.response_body,
-                  log.status_code, log.duration))
+                  log.status_code, log.duration, log.watermark_method))
             await db.commit()
             return cursor.lastrowid
 
     async def update_request_log(self, log_id: int, response_body: Optional[str] = None,
-                                 status_code: Optional[int] = None, duration: Optional[float] = None):
+                                 status_code: Optional[int] = None, duration: Optional[float] = None,
+                                 watermark_method: Optional[str] = None):
         """Update request log with completion data"""
         async with aiosqlite.connect(self.db_path) as db:
             updates = []
@@ -910,6 +949,9 @@ class Database:
             if duration is not None:
                 updates.append("duration = ?")
                 params.append(duration)
+            if watermark_method is not None:
+                updates.append("watermark_method = ?")
+                params.append(watermark_method)
 
             if updates:
                 updates.append("updated_at = CURRENT_TIMESTAMP")
@@ -942,6 +984,7 @@ class Database:
                     rl.response_body,
                     rl.status_code,
                     rl.duration,
+                    rl.watermark_method,
                     rl.created_at,
                     t.email as token_email,
                     t.username as token_username
@@ -1139,5 +1182,39 @@ class Database:
                 SET at_auto_refresh_enabled = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = 1
             """, (at_auto_refresh_enabled,))
+            await db.commit()
+
+    async def get_android_credentials(self) -> dict:
+        """Get Android credentials from database"""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            cursor = await db.execute("SELECT * FROM android_credentials WHERE id = 1")
+            row = await cursor.fetchone()
+            if row:
+                return {
+                    'sora_auth_token': row['sora_auth_token'],
+                    'sora_refresh_token': row['sora_refresh_token'],
+                    'sora_client_id': row['sora_client_id']
+                }
+            # Return empty credentials if none exist
+            return {
+                'sora_auth_token': None,
+                'sora_refresh_token': None,
+                'sora_client_id': 'app_OHnYmJt5u1XEdhDUx0ig1ziv'
+            }
+
+    async def update_android_credentials(self, sora_auth_token: str, sora_refresh_token: str, sora_client_id: str = "app_OHnYmJt5u1XEdhDUx0ig1ziv"):
+        """Update Android credentials in database"""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("""
+                UPDATE android_credentials
+                SET sora_auth_token = ?, sora_refresh_token = ?, sora_client_id = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = 1
+            """, (sora_auth_token, sora_refresh_token, sora_client_id))
+            if cursor.rowcount == 0:
+                await db.execute("""
+                    INSERT INTO android_credentials (id, sora_auth_token, sora_refresh_token, sora_client_id)
+                    VALUES (1, ?, ?, ?)
+                """, (sora_auth_token, sora_refresh_token, sora_client_id))
             await db.commit()
 

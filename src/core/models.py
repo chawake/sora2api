@@ -79,6 +79,7 @@ class RequestLog(BaseModel):
     response_body: Optional[str] = None
     status_code: int  # -1 for in-progress
     duration: float  # -1.0 for in-progress
+    watermark_method: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -133,6 +134,14 @@ class TokenRefreshConfig(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
+class AndroidCredentials(BaseModel):
+    """Android credentials configuration"""
+    id: int = 1
+    sora_auth_token: Optional[str] = None
+    sora_refresh_token: Optional[str] = None
+    sora_client_id: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 # API Request/Response models
 class ChatMessage(BaseModel):
     role: str

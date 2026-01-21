@@ -895,26 +895,71 @@ class GenerationHandler:
                                             raise Exception("Failed to get post ID from publish API")
 
                                         # Get watermark-free video URL based on parse method
+                                        # Get watermark-free video URL based on parse method
                                         if parse_method == "custom":
                                             # Use custom parse server
-                                            if not watermark_config.custom_parse_url or not watermark_config.custom_parse_token:
-                                                raise Exception("Custom parse server URL or token not configured")
-
                                             if stream:
                                                 yield self._format_stream_chunk(
-                                                    reasoning_content=f"Video published successfully. Post ID: {post_id}\nUsing custom parse server to get watermark-free URL...\n"
+                                                    reasoning_content=f"Video published successfully. Post ID: {post_id}\nUsing Android API to get watermark-free URL...\n"
                                                 )
 
-                                            debug_logger.log_info(f"Using custom parse server: {watermark_config.custom_parse_url}")
-                                            watermark_free_url = await self.sora_client.get_watermark_free_url_custom(
-                                                parse_url=watermark_config.custom_parse_url,
-                                                parse_token=watermark_config.custom_parse_token,
-                                                post_id=post_id
-                                            )
+                                            try:
+                                                from .sora_custom_extractor import SoraCustomAPIExtractor
+                                                android_extractor = SoraCustomAPIExtractor(self.sora_client, self.proxy_manager)
+                                                watermark_free_url = await android_extractor.get_clean_video_url(post_id)
+
+                                                if watermark_free_url:
+                                                    debug_logger.log_info(f"Android API extraction succeeded: {watermark_free_url}")
+                                                    if log_id:
+                                                        await self.db.update_request_log(log_id, watermark_method="android_success")
+                                                    if watermark_info is not None:
+                                                        watermark_info["method"] = "android_success"
+                                                    if stream:
+                                                        yield self._format_stream_chunk(
+                                                            reasoning_content="✅ Android API extraction successful!\n"
+                                                        )
+                                                else:
+                                                    debug_logger.log_info("Android API failed, falling back to third-party")
+                                                    if log_id:
+                                                        await self.db.update_request_log(log_id, watermark_method="android_fallback_third_party")
+                                                    if watermark_info is not None:
+                                                        watermark_info["method"] = "android_fallback_third_party"
+                                                    if stream:
+                                                        yield self._format_stream_chunk(
+                                                            reasoning_content="Android API extraction failed, falling back to third-party...\n"
+                                                        )
+                                                    watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
+                                                    debug_logger.log_info("Fallback to third-party parse")
+
+                                            except ImportError:
+                                                debug_logger.log_info("Android API module not available, using third-party")
+                                                if log_id:
+                                                    await self.db.update_request_log(log_id, watermark_method="android_fallback_third_party")
+                                                if watermark_info is not None:
+                                                    watermark_info["method"] = "android_fallback_third_party"
+                                                if stream:
+                                                    yield self._format_stream_chunk(
+                                                        reasoning_content="Android API module not available, using third-party...\n"
+                                                    )
+                                                watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
+
+                                            except Exception as e:
+                                                debug_logger.log_info(f"Android API error: {e}, falling back to third-party")
+                                                if log_id:
+                                                    await self.db.update_request_log(log_id, watermark_method="android_fallback_third_party")
+                                                if watermark_info is not None:
+                                                    watermark_info["method"] = "android_fallback_third_party"
+                                                if stream:
+                                                    yield self._format_stream_chunk(
+                                                        reasoning_content=f"Android API extraction failed ({str(e)}), falling back to third-party...\n"
+                                                    )
+                                                watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
                                         else:
                                             # Use third-party parse (default)
                                             watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
                                             debug_logger.log_info(f"Using third-party parse server")
+                                            if log_id:
+                                                await self.db.update_request_log(log_id, watermark_method="third_party")
 
                                         debug_logger.log_info(f"Watermark-free URL: {watermark_free_url}")
 

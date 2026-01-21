@@ -149,6 +149,11 @@ class UpdateWatermarkFreeConfigRequest(BaseModel):
     custom_parse_url: Optional[str] = None
     custom_parse_token: Optional[str] = None
 
+class UpdateAndroidCredentialsRequest(BaseModel):
+    sora_auth_token: str
+    sora_refresh_token: str
+    sora_client_id: Optional[str] = "app_OHnYmJt5u1XEdhDUx0ig1ziv"
+
 class BatchDisableRequest(BaseModel):
     token_ids: List[int]
 
@@ -1120,6 +1125,39 @@ async def update_at_auto_refresh_enabled(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update AT auto refresh enabled status: {str(e)}")
+
+# Android credentials endpoints
+@router.get("/api/android/credentials")
+async def get_android_credentials(token: str = Depends(verify_admin_token)):
+    """Get Android credentials"""
+    try:
+        creds = await db.get_android_credentials()
+        return {
+            "success": True,
+            "credentials": {
+                "sora_auth_token": creds.get("sora_auth_token"),
+                "sora_refresh_token": creds.get("sora_refresh_token"),
+                "sora_client_id": creds.get("sora_client_id")
+            }
+        }
+    except Exception as e:
+         raise HTTPException(status_code=500, detail=f"Failed to get Android credentials: {str(e)}")
+
+@router.post("/api/android/credentials")
+async def update_android_credentials(
+    request: UpdateAndroidCredentialsRequest,
+    token: str = Depends(verify_admin_token)
+):
+    """Update Android credentials"""
+    try:
+        await db.update_android_credentials(
+            sora_auth_token=request.sora_auth_token,
+            sora_refresh_token=request.sora_refresh_token,
+            sora_client_id=request.sora_client_id
+        )
+        return {"success": True, "message": "Android credentials updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update Android credentials: {str(e)}")
 
 # Task management endpoints
 @router.post("/api/tasks/{task_id}/cancel")
