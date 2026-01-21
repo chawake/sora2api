@@ -3,8 +3,8 @@
 
   const btnSend = $('btnSend');
   const btnClear = $('btnClear');
-  const btnCopyLog = $('btnCopyLog'); // 可能不存在（已移除全局日志按钮）
-  // 旧版日志容器可能不存在，兜底创建隐藏节点以避免空引用
+  const btnCopyLog = $('btnCopyLog'); // May not exist (global log button removed)
+  // Legacy log container may not exist; create hidden node as fallback to avoid null reference
   const out =
     $('output') ||
     (() => {
@@ -80,7 +80,7 @@
   const btnClearDone = $('btnClearDone');
   const btnClearAll = $('btnClearAll');
   const taskStorageKey = 'gen_tasks_v1';
-  // 角色挂载：按模式隔离，避免“分镜挂载影响单次/同提示”的错觉
+  // Role attachment: isolate by mode to avoid the illusion that storyboard attachment affects single/same prompt
   const roleStorageKeyLegacy = 'gen_roles_v1';
   const roleStorageKeyMain = 'gen_roles_main_v1';
   const roleStorageKeyMulti = 'gen_roles_multi_v1';
@@ -143,10 +143,10 @@
   const DRAFT_KEY = 'gen_prompt_draft_v1';
   let draftTimer = null;
   let previewHintTimer = null;
-  let applyingMainFiles = false; // 防止 set files 触发 change 后递归
-  // 高级设置默认常驻显示：减少“展开/收起”这种额外操作（更符合自用高频工作流）
+  let applyingMainFiles = false; // Prevent recursion when set files triggers change
+  // Advanced settings always visible by default: reduce expand/collapse actions (fits frequent workflow)
   let advancedOpen = true;
-  // “生成份数/默认份数”按模式隔离：避免单次/同提示的份数污染分镜默认份数（分镜默认应为 1）
+  // Generation count/default count separated by mode: avoid single/same prompt counts polluting storyboard defaults (should be 1)
   let batchConcurrencyByType = {};
 
   let tasks = [];
@@ -161,13 +161,13 @@
   let multiPrompts = [];
   const multiPromptRoles = {};
   // storyboardShots: { text, count, fileDataUrl, fileName, roles: [], useGlobalRoles?: boolean }
-  // useGlobalRoles=false 表示该分镜被手动排除：不再自动挂载“全局角色”（后续全局变更也不会影响它）
+  // useGlobalRoles=false means this storyboard is manually excluded: no longer auto-attach global roles (future changes won't affect it)
   let storyboardShots = [];
   const STORYBOARD_RUN_KEY = 'gen_storyboard_run_v1';
   let storyboardRunCounter = parseInt(localStorage.getItem(STORYBOARD_RUN_KEY) || '0', 10) || 0;
   let tagFilter = '';
 
-  // 上传文件预览状态（用于“模型/横竖/提示词为空”即时提醒）
+  // Upload file preview status (for instant alerts of model/orientation/empty prompt)
   let previewObjectUrl = null;
   let lastPreviewSignature = '';
   let lastPreviewInfo = null; // { w, h, orientation, isImage, isVideo }
@@ -195,7 +195,7 @@
       .replace(/'/g, '&#39;');
   };
 
-  // 默认头像：纯本地 data URI（避免外链占位图被拦截/离线不可用）
+  // Default avatar: local data URI (avoid external placeholder blocked/offline)
   const DEFAULT_ROLE_AVATAR = (() => {
     const svg =
       '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">' +
@@ -209,7 +209,7 @@
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   })();
 
-  // URL 白名单：Sora/OpenAI 域名或常见媒体扩展名
+  // URL allowlist: Sora/OpenAI domains or common media extensions
   const isValidMediaUrl = (u) => {
     if (!u) return false;
     const s = u.toString();
@@ -218,7 +218,7 @@
     return domainOk || extOk;
   };
 
-  // ===== 下载友好命名 & 同源 /tmp 重写（解决“哈希英文名 + 手动改名”痛点） =====
+  // ===== Download-friendly naming & same-origin /tmp rewrite (fix "hashed name + manual rename" pain) =====
   const padNum = (n, width = 2) => {
     const v = Math.max(0, parseInt(String(n ?? '0'), 10) || 0);
     const s = String(v);
@@ -228,16 +228,16 @@
   const sanitizeFilename = (name, fallback = 'download') => {
     let s = String(name || '').trim();
     if (!s) return fallback;
-    // 去掉控制字符，避免 Windows/浏览器保存失败
+    // Remove control chars to avoid Windows/browser save failure
     s = s.replace(/[\u0000-\u001f\u007f]/g, '');
-    // Windows 禁用字符：\ / : * ? " < > |
+    // Windows disallowed characters: \ / : * ? " < > |
     s = s.replace(/[\\/:*?"<>|]/g, '-');
-    // 合并空白
+    // Collapse whitespace
     s = s.replace(/\s+/g, ' ').trim();
-    // 不允许以点或空格结尾（Windows）
+    // Disallow trailing dot/space (Windows)
     s = s.replace(/[. ]+$/g, '');
     if (!s) return fallback;
-    // 控制长度，避免过长导致系统截断/失败（保守）
+    // Limit length to avoid system truncation/failure (conservative)
     if (s.length > 120) s = s.slice(0, 120).trim();
     return s || fallback;
   };
@@ -252,8 +252,8 @@
   };
 
   const normalizeTmpDownloadUrl = (url) => {
-    // 目标：把 `http://127.0.0.1:8000/tmp/xxx.mp4` 统一重写成 `/tmp/xxx.mp4`
-    // 这样无论用户用 127.0.0.1 / 局域网 IP / 域名访问，都能同源下载并应用 download 文件名。
+    // Goal: rewrite `http://127.0.0.1:8000/tmp/xxx.mp4` to `/tmp/xxx.mp4`
+    // So whether using 127.0.0.1 / LAN IP / domain, downloads stay same-origin and apply the download filename.
     try {
       const u = new URL(String(url || ''), window.location.href);
       if (u && u.pathname && u.pathname.startsWith('/tmp/')) {
@@ -270,7 +270,7 @@
     const ext = mediaExtFromUrl(url, ty);
     const id = task && typeof task.id === 'number' ? task.id : null;
 
-    // 分镜任务：按“分镜组标题 + 镜号/总数 + 第几份 + 任务ID”命名，便于批量后按名称排序
+    // Storyboard task: name by "group title + shot no/total + take + task ID" for easier sorting after batch
     if (task && task.storyboard) {
       const sb = task.storyboard || {};
       const run = parseInt(String(sb.run || '0'), 10) || 0;
@@ -279,17 +279,17 @@
       const take = parseInt(String(sb.take || '1'), 10) || 1;
       const takes = parseInt(String(sb.takes || '1'), 10) || 1;
 
-      const titleRaw = String(sb.title || (run ? `分镜组${run}` : '分镜')).trim();
-      const title = sanitizeFilename(titleRaw, run ? `分镜组${run}` : '分镜');
-      const shotPart = idx ? `分镜${padNum(idx, 2)}${total ? `of${padNum(total, 2)}` : ''}` : `分镜${padNum(ordinal, 2)}`;
-      const takePart = takes > 1 ? `第${take}份` : '';
+      const titleRaw = String(sb.title || (run ? `StoryboardGroup${run}` : 'Storyboard')).trim();
+      const title = sanitizeFilename(titleRaw, run ? `StoryboardGroup${run}` : 'Storyboard');
+      const shotPart = idx ? `Shot${padNum(idx, 2)}${total ? `of${padNum(total, 2)}` : ''}` : `Shot${padNum(ordinal, 2)}`;
+      const takePart = takes > 1 ? `Take${take}` : '';
       const idPart = id ? `T${id}` : '';
       const parts = [title, shotPart, takePart, idPart].filter(Boolean);
-      return `${sanitizeFilename(parts.join('_'), '分镜')}.${ext}`;
+      return `${sanitizeFilename(parts.join('_'), 'Storyboard')}.${ext}`;
     }
 
-    // 普通任务：任务ID + 提示词片段（可选）
-    const prefix = id ? `任务${id}` : `${ty === 'image' ? '图片' : '视频'}${padNum(ordinal, 3)}`;
+    // Normal task: task ID + prompt snippet (optional)
+    const prefix = id ? `Task${id}` : `${ty === 'image' ? 'Image' : 'Video'}${padNum(ordinal, 3)}`;
     const hintRaw = task && task.promptSnippet ? String(task.promptSnippet).trim() : '';
     const hint = hintRaw ? sanitizeFilename(hintRaw.slice(0, 26), '') : '';
     return `${sanitizeFilename(hint ? `${prefix}_${hint}` : prefix, prefix)}.${ext}`;
@@ -303,7 +303,7 @@
       a.href = href;
       if (filename) a.download = String(filename);
       a.rel = 'noreferrer';
-      // 不强制新标签：避免被浏览器当作“弹窗”拦截
+      // Don't force new tab: avoid browser treating as popup
       a.target = '';
       document.body.appendChild(a);
       a.click();
@@ -325,7 +325,7 @@
     title.className = 'title';
     title.textContent =
       opts.title ||
-      (safeType === 'success' ? '成功' : safeType === 'error' ? '出错了' : safeType === 'warn' ? '注意' : '提示');
+      (safeType === 'success' ? 'Success' : safeType === 'error' ? 'Error' : safeType === 'warn' ? 'Warning' : 'Notice');
 
     const desc = document.createElement('div');
     desc.className = 'desc';
@@ -344,7 +344,7 @@
     };
     const timer = setTimeout(close, duration);
 
-    // 可选操作按钮：用于“轻提醒”，不打断输入流
+    // Optional action button: for a light reminder without interrupting input flow
     if (opts.action && typeof opts.action === 'object' && opts.action.text && typeof opts.action.onClick === 'function') {
       const actions = document.createElement('div');
       actions.className = 'actions';
@@ -385,7 +385,7 @@
     } catch (_) {
       /* fallback below */
     }
-    // 兼容 HTTP / 非安全环境：使用隐藏 textarea
+    // Compat for HTTP / non-secure environments: use hidden textarea
     const ta = document.createElement('textarea');
     ta.value = content;
     ta.setAttribute('readonly', 'readonly');
@@ -427,7 +427,7 @@
   const openPreviewModal = (url, type = 'video', taskId = null) => {
     if (!previewModal || !previewModalMedia) return;
     if (!url || !isValidMediaUrl(url)) {
-      showToast('无效的预览链接', 'warn');
+      showToast('Invalid preview link', 'warn');
       return;
     }
 
@@ -444,7 +444,7 @@
     if (previewModalTaskId) {
       if (tid) {
         previewModalTaskId.style.display = 'inline-flex';
-        previewModalTaskId.textContent = `任务 ${tid}`;
+        previewModalTaskId.textContent = `Task ${tid}`;
       } else {
         previewModalTaskId.style.display = 'none';
         previewModalTaskId.textContent = '';
@@ -465,10 +465,10 @@
         previewModalWatermark.style.display = 'inline-flex';
         previewModalWatermark.textContent =
           stage === 'cancelled'
-            ? '已取消去水印'
+            ? 'Watermark canceled'
             : stage === 'ready'
-              ? '无水印'
-              : `去水印中${attempt > 0 ? ` · ${attempt}` : ''}`;
+              ? 'No watermark'
+              : `Removing watermark${attempt > 0 ? ` · ${attempt}` : ''}`;
       } else {
         previewModalWatermark.style.display = 'none';
         previewModalWatermark.textContent = '';
@@ -489,16 +489,16 @@
         previewModalDownload.setAttribute('download', filename);
         previewModalDownload.title = filename;
       } catch (_) {
-        // 至少保证有 download 属性（无值时浏览器会用 URL 文件名）
+        // Ensure at least a download attribute (browser will use URL filename if empty)
         previewModalDownload.setAttribute('download', '');
-        previewModalDownload.title = '下载';
+        previewModalDownload.title = 'Download';
       }
     }
     if (btnPreviewLocateTask) {
       btnPreviewLocateTask.disabled = !tid;
     }
 
-    // 兜底：无论用户是否切到“预览”Tab，只要打开了预览弹层，就视为已读（避免红点反复冒出来）
+    // Fallback: regardless of preview tab, opening the modal marks as seen (avoid unread dot popping back)
     if (tid) {
       try {
         markPreviewSeen(tid);
@@ -565,7 +565,7 @@
     const tid = taskId ? parseInt(String(taskId), 10) : 0;
     const t = tid ? tasks.find((x) => x.id === tid) : null;
     if (!t || !t.storyboard) {
-      showToast('未找到该分镜任务', 'warn');
+      showToast('Storyboard task not found', 'warn');
       return;
     }
     const sbLabel = t.storyboard && t.storyboard.label ? String(t.storyboard.label) : '';
@@ -579,7 +579,9 @@
       }
     }
     if (editStoryboardModalMeta) {
-      editStoryboardModalMeta.textContent = sbLabel ? `修改分镜提示词（${sbLabel}）` : '修改分镜提示词（仅影响当前分镜任务）';
+      editStoryboardModalMeta.textContent = sbLabel
+        ? `Edit storyboard prompt (${sbLabel})`
+        : 'Edit storyboard prompt (only affects current storyboard task)';
     }
     editStoryboardModalState = { taskId: tid };
     editStoryboardTextarea.value = String(t.promptUser || '');
@@ -607,20 +609,20 @@
 
     const nextShotText = String(editStoryboardTextarea.value || '').trim();
     if (!nextShotText) {
-      showToast('请先修改分镜提示词（不能为空）', 'warn');
+      showToast('Please edit the storyboard prompt first (cannot be empty)', 'warn');
       return;
     }
 
     const apiKey = $('apiKey').value.trim();
     const baseUrl = getBaseUrl();
     if (!apiKey || !baseUrl) {
-      showToast('请先填写 API Key 和服务器地址');
+      showToast('Please fill in the API Key and server address');
       return;
     }
 
     const nextSend = rebuildStoryboardPromptSend(t.promptSend, t.promptUser, nextShotText);
     closeEditStoryboardModal();
-    showToast('已提交修改，正在重试该分镜…', 'info', { title: '分镜重试' });
+    showToast('Changes submitted, retrying this storyboard…', 'info', { title: 'Storyboard retry' });
     await runJobs(
       [
         {
@@ -1519,7 +1521,7 @@
         const apiKey = $('apiKey').value.trim();
         const baseUrl = getBaseUrl();
         if (!apiKey || !baseUrl) {
-          showToast('请先填写 API Key 和服务器地址');
+          showToast('Please fill in the API Key and server address');
           return;
         }
         if (!t) {
@@ -1562,11 +1564,11 @@
         const apiKey = $('apiKey').value.trim();
         const baseUrl = getBaseUrl();
         if (!apiKey || !baseUrl) {
-          showToast('请先填写 API Key 和服务器地址');
+          showToast('Please fill in the API Key and server address');
           return;
         }
         if (!t) {
-          showToast('未找到该任务，无法继续', 'error', { title: '继续失败', duration: 2600 });
+          showToast('Task not found; cannot continue', 'error', { title: 'Continue failed', duration: 2600 });
           return;
         }
         const job = {
@@ -1579,14 +1581,14 @@
           storyboard: t.storyboard || null
         };
         if (!job.promptSend && !job.file && !job.fileDataUrl) {
-          showToast('该任务没有可复用的提示词/素材，仍将尝试继续（可能失败）', 'warn', {
-            title: '空输入继续',
+          showToast('This task has no reusable prompt/media; will still try to continue (may fail)', 'warn', {
+            title: 'Continue with empty input',
             duration: 4200
           });
         } else if (!job.promptSend && (job.file || job.fileDataUrl)) {
-          showToast('空提示词继续：将只带素材提交（允许）', 'info', { title: '正在继续', duration: 2200 });
+          showToast('Empty prompt continue: submit with media only (allowed)', 'info', { title: 'Continuing', duration: 2200 });
         } else {
-          showToast('正在继续该任务', 'info');
+          showToast('Continuing task', 'info');
         }
         await runJobs(
           [job],
@@ -1608,7 +1610,7 @@
           setRightTab('log');
           smoothFocus(logTaskPanel || out);
         } else {
-          showToast('未找到该任务日志');
+          showToast('Task log not found');
         }
         flashCard(btn);
       });
@@ -1618,7 +1620,7 @@
         const id = parseInt(btn.getAttribute('data-cancel-wm'), 10);
         const t = tasks.find((x) => x.id === id);
         if (!t || !t.remoteTaskId) {
-          showToast('缺少 task_id，无法取消去水印等待');
+          showToast('Missing task_id; cannot cancel watermark wait');
           return;
         }
         const apiKey = $('apiKey').value.trim();
@@ -1644,10 +1646,10 @@
           if (!resp.ok) {
             throw new Error('HTTP ' + resp.status);
           }
-          showToast('已发送取消去水印请求', 'success');
+          showToast('Cancel watermark request sent', 'success');
         } catch (e) {
           updateTask(id, { wmCancelling: false });
-          showToast(`取消失败: ${e?.message || String(e)}`, 'error');
+          showToast(`Cancel failed: ${e?.message || String(e)}`, 'error');
         }
         flashCard(btn);
       });
@@ -1675,9 +1677,9 @@
 
     setTaskCount();
     updateTaskBubble();
-    // 日志面板只有在用户正在查看时才更新，避免流式更新导致每个 chunk 都重绘日志列表
+    // Only update log panel when user is viewing it to avoid re-rendering per streaming chunk
     if (currentRightTab === 'log') renderLogPanel();
-    // 任务状态同步给管理台（任务球/抽屉），用节流发送避免流式每个 chunk 都跨 iframe 重绘
+    // Sync task state to admin console (task bubble/drawer) with throttling to avoid cross-iframe reflow per chunk
     schedulePostTaskState({ immediate: true });
   };
 
@@ -1686,7 +1688,7 @@
     const fullList = tasks.filter((t) => t && t.url && isValidMediaUrl(t.url));
     const list = fullList.filter((t) => taskMatchesPreviewFilter(t, previewFilter));
     previewGrid.innerHTML = '';
-    // 防止 URL 去重集合无限增长（任务多、URL 长时会占内存）
+    // Prevent URL de-dupe set from growing without bound (many tasks/long URLs can use memory)
     try {
       const limit = 1200;
       while (previewKnown.size > limit) {
@@ -1728,8 +1730,8 @@
     }
 
     if (fullList.length === 0) {
-      // 预览为空：清空 URL 去重集合即可；未读红点由“已看过的任务 id 集合”控制
-      previewGrid.innerHTML = '<div class="muted" style="padding:12px;">暂无预览结果。生成完成后会在这里出现。</div>';
+      // Preview empty: just clear URL de-dupe set; unread dot is controlled by "seen task ids" set
+      previewGrid.innerHTML = '<div class="muted" style="padding:12px;">No preview results yet. They will appear here after generation completes.</div>';
       previewsHydrated = true;
       updateUnreadDots();
       return;
@@ -1737,7 +1739,7 @@
 
     if (list.length === 0) {
       previewGrid.innerHTML =
-        '<div class="muted" style="padding:12px;">当前过滤条件下暂无结果。可切换到“全部”查看。</div>';
+        '<div class="muted" style="padding:12px;">No results for the current filter. Switch to "All" to view.</div>';
       previewsHydrated = true;
       updateUnreadDots();
       return;
@@ -1770,7 +1772,7 @@
     const card = document.createElement('div');
     card.className = 'preview-card';
     try {
-      // Set 有插入顺序：只保留最近一段时间的 URL，避免无上限增长
+      // Set preserves insertion order: keep only recent URLs to avoid unbounded growth
       const limit = 1200;
       while (previewKnown.size > limit) {
         const first = previewKnown.values().next().value;
@@ -1806,10 +1808,10 @@
       wrap.style.gap = '6px';
 
       const badge = document.createElement('div');
-      badge.className = 'task-id-pill'; // 统一编号视觉
-      badge.textContent = `任务 ${taskId}`;
+      badge.className = 'task-id-pill'; // Unified number styling
+      badge.textContent = `Task ${taskId}`;
       badge.style.cursor = 'pointer';
-      badge.title = '点击定位到任务卡片';
+      badge.title = 'Click to locate task card';
       wrap.appendChild(badge);
 
       const t = tasks.find((x) => x.id === taskId);
@@ -1828,10 +1830,10 @@
         wm.className = 'task-tag-chip watermark';
         wm.textContent =
           wmStage === 'cancelled'
-            ? '已取消去水印'
+            ? 'Watermark canceled'
             : wmStage === 'ready'
-              ? '无水印'
-              : `去水印中${wmAttempt > 0 ? ` · ${wmAttempt}` : ''}`;
+              ? 'No watermark'
+              : `Removing watermark${wmAttempt > 0 ? ` · ${wmAttempt}` : ''}`;
         wrap.appendChild(wm);
       }
       card.style.position = 'relative';
@@ -1865,24 +1867,24 @@
       <span class="preview-url muted" title="${safeUrlAttr}">${safeUrlText}</span>
       ${meta ? `<span class="chip">${escapeHtml(meta)}</span>` : ''}
       <div class="preview-actions">
-        <button class="link-btn" data-open="1">查看</button>
-        ${taskId ? `<button class="link-btn" data-focus-task="${taskId}">定位任务</button>` : ''}
+        <button class="link-btn" data-open="1">View</button>
+        ${taskId ? `<button class="link-btn" data-focus-task="${taskId}">Locate task</button>` : ''}
         <a class="link-btn" href="${downloadHref}" download="${escapeHtml(downloadName || '')}" rel="noreferrer" title="${escapeHtml(
-          downloadName || '下载'
-        )}">下载</a>
-        <button class="link-btn" data-copy="${safeUrlAttr}">复制链接</button>
+          downloadName || 'Download'
+        )}">Download</a>
+        <button class="link-btn" data-copy="${safeUrlAttr}">Copy link</button>
       </div>
     `;
     card.appendChild(info);
     previewGrid.prepend(card);
 
-    // 如果用户正在看“预览”页，新产出的预览默认视为已读（避免离开后红点又冒出来）
+    // If user is viewing the preview tab, new previews are marked seen (avoid unread dot popping back up)
     if (taskId && currentRightTab === 'preview') {
       markPreviewSeen(taskId);
     }
     updateUnreadDots();
 
-    // 隐藏原生控件后仍支持点击播放/暂停
+    // Still support click to play/pause after hiding native controls
     if (type !== 'image') {
       const v = card.querySelector('video');
       if (v) {
@@ -1897,8 +1899,8 @@
     card.querySelectorAll('[data-copy]').forEach((btn) => {
       btn.addEventListener('click', () => {
         navigator.clipboard.writeText(btn.getAttribute('data-copy')).then(
-          () => showToast('已复制链接'),
-          () => showToast('复制失败')
+          () => showToast('Link copied'),
+          () => showToast('Copy failed')
         );
       });
     });
@@ -1927,7 +1929,7 @@
     });
 
     if (push) {
-      // 预览仅用于展示，不写回任务
+      // Preview is display-only; do not write back to task
     }
     return isNew;
   };

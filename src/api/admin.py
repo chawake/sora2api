@@ -882,7 +882,8 @@ async def get_logs(limit: int = 100, token: str = Depends(verify_admin_token)):
             "created_at": log.get("created_at"),
             "request_body": log.get("request_body"),
             "response_body": log.get("response_body"),
-            "task_id": log.get("task_id")
+            "task_id": log.get("task_id"),
+            "watermark_method": log.get("watermark_method")
         }
 
         # If task_id exists and status is in-progress, get task progress
