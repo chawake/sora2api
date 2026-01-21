@@ -213,6 +213,7 @@ class GenerationHandler:
         self.token_manager = token_manager
         self.load_balancer = load_balancer
         self.db = db
+        self.proxy_manager = proxy_manager
         self.concurrency_manager = concurrency_manager
         self.file_cache = FileCache(
             cache_dir="tmp",
