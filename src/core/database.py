@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from typing import Optional, List
 from pathlib import Path
-from .models import Token, TokenStats, Task, RequestLog, AdminConfig, ProxyConfig, WatermarkFreeConfig, CacheConfig, GenerationConfig, TokenRefreshConfig
+from .models import Token, TokenStats, Task, RequestLog, AdminConfig, ProxyConfig, WatermarkFreeConfig, CacheConfig, GenerationConfig, TokenRefreshConfig, Character
 
 class Database:
     """SQLite database manager"""
@@ -351,6 +351,22 @@ class Database:
                     today_error_count INTEGER DEFAULT 0,
                     today_date DATE,
                     consecutive_error_count INTEGER DEFAULT 0,
+                    FOREIGN KEY (token_id) REFERENCES tokens(id)
+                )
+            """)
+
+            # Characters table
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS characters (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cameo_id TEXT UNIQUE NOT NULL,
+                    character_id TEXT,
+                    username TEXT NOT NULL,
+                    display_name TEXT,
+                    description TEXT,
+                    avatar_path TEXT,
+                    token_id INTEGER NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (token_id) REFERENCES tokens(id)
                 )
             """)
@@ -1217,4 +1233,25 @@ class Database:
                     VALUES (1, ?, ?, ?)
                 """, (sora_auth_token, sora_refresh_token, sora_client_id))
             await db.commit()
+
+    # Character operations
+    async def add_character(self, character: Character) -> int:
+        """Add a new character"""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("""
+                INSERT INTO characters (cameo_id, character_id, username, display_name, description,
+                                     avatar_path, token_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (character.cameo_id, character.character_id, character.username, character.display_name,
+                  character.description, character.avatar_path, character.token_id, character.created_at or datetime.now()))
+            await db.commit()
+            return cursor.lastrowid
+
+    async def get_characters(self) -> List[Character]:
+        """Get all characters"""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            cursor = await db.execute("SELECT * FROM characters ORDER BY created_at DESC")
+            rows = await cursor.fetchall()
+            return [Character(**dict(row)) for row in rows]
 

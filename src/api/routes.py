@@ -68,6 +68,18 @@ async def list_models(api_key: str = Depends(verify_api_key_header)):
         "data": models
     }
 
+@router.get("/v1/characters")
+async def list_characters(api_key: str = Depends(verify_api_key_header)):
+    """List available characters"""
+    if not generation_handler or not generation_handler.db:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+
+    characters = await generation_handler.db.get_characters()
+    return {
+        "object": "list",
+        "data": [char.dict() for char in characters]
+    }
+
 @router.post("/v1/chat/completions")
 async def create_chat_completion(
     request: ChatCompletionRequest,

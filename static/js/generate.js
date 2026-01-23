@@ -1021,8 +1021,8 @@
       previewSeenTaskIds = new Set(
         Array.isArray(arr)
           ? arr
-              .map((x) => parseInt(String(x), 10))
-              .filter((n) => !isNaN(n) && n > 0)
+            .map((x) => parseInt(String(x), 10))
+            .filter((n) => !isNaN(n) && n > 0)
           : []
       );
     } catch (_) {
@@ -1243,8 +1243,8 @@
       : baseList;
     const filtered = statusFilter
       ? byTag.filter((t) =>
-          statusFilter === 'running' ? t.status === 'running' || t.status === 'retrying' : t.status === statusFilter
-        )
+        statusFilter === 'running' ? t.status === 'running' || t.status === 'retrying' : t.status === statusFilter
+      )
       : byTag;
     const counts = {
       running: tasks.filter((t) => t.status === 'running' || t.status === 'retrying').length,
@@ -1283,18 +1283,18 @@
               : t.type === 'character' && t.status === 'error'
                 ? 'Character card failed'
                 : (() => {
-                    const retryCount =
-                      typeof t.retryCount === 'number' ? t.retryCount : parseInt(String(t.retryCount || '0'), 10) || 0;
-                    const statusMap = {
-                      queue: 'Queued',
-                      running: 'Running',
-                      retrying: `Retrying${retryCount > 0 ? ` · ${retryCount}` : ''}`,
-                      done: 'Completed',
-                      error: 'Failed',
-                      stalled: 'Stalled'
-                    };
-                    return statusMap[t.status] || 'Unknown';
-                  })();
+                  const retryCount =
+                    typeof t.retryCount === 'number' ? t.retryCount : parseInt(String(t.retryCount || '0'), 10) || 0;
+                  const statusMap = {
+                    queue: 'Queued',
+                    running: 'Running',
+                    retrying: `Retrying${retryCount > 0 ? ` · ${retryCount}` : ''}`,
+                    done: 'Completed',
+                    error: 'Failed',
+                    stalled: 'Stalled'
+                  };
+                  return statusMap[t.status] || 'Unknown';
+                })();
         const statusClass = `status ${t.timedOut ? 'timedout' : t.status}`;
         const msg = t.message || '';
         const msgColor = t.status === 'retrying' ? '#b45309' : '#f87171';
@@ -1321,8 +1321,8 @@
         const sbChip =
           sb && sb.label
             ? `<span class="task-tag-chip storyboard" title="${escapeAttr(
-                [sb.title, sb.label].filter(Boolean).join(' · ')
-              )}">${escapeHtml(sb.label)}</span>`
+              [sb.title, sb.label].filter(Boolean).join(' · ')
+            )}">${escapeHtml(sb.label)}</span>`
             : '';
         const sbTitleChip =
           sb && sb.title
@@ -1395,21 +1395,18 @@
             </div>
             <div class="task-actions">
               ${t.url ? `<button class="link-btn" data-url="${escapeHtml(t.url)}" data-type="${escapeAttr(t.type || 'video')}">Preview</button>` : ''}
-              ${
-                t.status === 'running' && t.wmCanCancel && t.remoteTaskId
-                  ? `<button class="link-btn" data-cancel-wm="${t.id}" ${t.wmCancelling ? 'disabled' : ''}>${
-                      t.wmCancelling ? 'Canceling...' : 'Cancel watermark wait'
-                    }</button>`
-                  : ''
-              }
+              ${t.status === 'running' && t.wmCanCancel && t.remoteTaskId
+            ? `<button class="link-btn" data-cancel-wm="${t.id}" ${t.wmCancelling ? 'disabled' : ''}>${t.wmCancelling ? 'Canceling...' : 'Cancel watermark wait'
+            }</button>`
+            : ''
+          }
               ${canEditStoryboardPrompt ? `<button class="link-btn" data-edit-storyboard="${t.id}">Edit storyboard prompt</button>` : ''}
-              ${
-                t.status === 'retrying' &&
-                t.retryMode === 'submit' &&
-                (typeof t.retryCount === 'number' ? t.retryCount : parseInt(String(t.retryCount || '0'), 10) || 0) >= 3
-                  ? `<button class="link-btn" data-abort-retry="${t.id}">Abort retry</button>`
-                  : ''
-              }
+              ${t.status === 'retrying' &&
+            t.retryMode === 'submit' &&
+            (typeof t.retryCount === 'number' ? t.retryCount : parseInt(String(t.retryCount || '0'), 10) || 0) >= 3
+            ? `<button class="link-btn" data-abort-retry="${t.id}">Abort retry</button>`
+            : ''
+          }
               ${t.timedOut || t.status === 'error' || (!t.url && t.status === 'done') ? `<button class="link-btn" data-retry="${t.id}">Retry</button>` : ''}
               ${t.status === 'stalled' ? `<button class="link-btn" data-continue="${t.id}">Continue</button>` : ''}
               ${t.promptUser ? `<button class="link-btn" data-reuse="${t.id}">Reuse prompt</button>` : ''}
@@ -1725,7 +1722,7 @@
             previewCountFlashTimer = setTimeout(() => {
               try {
                 previewCount.classList.remove('count-flash');
-              } catch (_) {}
+              } catch (_) { }
               previewCountFlashTimer = null;
             }, 1900);
           }
@@ -1792,7 +1789,7 @@
       setTimeout(() => {
         try {
           card.classList.remove('preview-new');
-        } catch (_) {}
+        } catch (_) { }
       }, 3600);
     }
     // Escape URLs for HTML attributes/text (avoid `&bar` style entity decoding).
@@ -1876,8 +1873,8 @@
         <button class="link-btn" data-open="1">View</button>
         ${taskId ? `<button class="link-btn" data-focus-task="${taskId}">Locate task</button>` : ''}
         <a class="link-btn" href="${downloadHref}" download="${escapeHtml(downloadName || '')}" rel="noreferrer" title="${escapeHtml(
-          downloadName || 'Download'
-        )}">Download</a>
+      downloadName || 'Download'
+    )}">Download</a>
         <button class="link-btn" data-copy="${safeUrlAttr}">Copy link</button>
       </div>
     `;
@@ -2350,7 +2347,7 @@
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'task_count', running, total }, '*');
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // Task list state (for admin drawer): throttle sends to avoid parent reflow per chunk
@@ -2454,7 +2451,7 @@
           prev.cancelled = true;
           try {
             if (typeof prev.abortFetch === 'function') prev.abortFetch();
-          } catch (_) {}
+          } catch (_) { }
         }
         taskLogBuffer[taskId] = '';
         updateTask(taskId, {
@@ -2565,102 +2562,168 @@
       taskRetryControls.set(taskId, retryCtl);
 
       try {
-      // Upstream submission stage: avoid marking failure too early (auto-retry, abort button after 3 attempts)
-      const MAX_RETRY = 9999;
-      for (let attempt = 1; attempt <= MAX_RETRY + 1; attempt++) {
-        let lastChunk = '';
-        let contentAccumulated = '';  // Accumulate all content fields
-        let characterCreated = false;
-        let characterCardInfo = null;
-        let hadError = false;
-        let finished = false;
-        let logBufferAttempt = '';
-        let watermarkWaitSeen = false; // once seen, disable the 10-min hard timeout and rely on explicit cancel
-        let progressMarkerSeen = false; // once seen, do NOT auto-resubmit (avoid duplicates)
-        const controller = new AbortController();
-        retryCtl.abortFetch = () => controller.abort();
-        const HARD_TIMEOUT = 600000; // 10-minute hard timeout
-        let hardTimer = null;
-        const clearTimers = () => {
-          if (hardTimer) clearTimeout(hardTimer);
-        };
+        // Upstream submission stage: avoid marking failure too early (auto-retry, abort button after 3 attempts)
+        const MAX_RETRY = 9999;
+        for (let attempt = 1; attempt <= MAX_RETRY + 1; attempt++) {
+          let lastChunk = '';
+          let contentAccumulated = '';  // Accumulate all content fields
+          let characterCreated = false;
+          let characterCardInfo = null;
+          let hadError = false;
+          let finished = false;
+          let logBufferAttempt = '';
+          let watermarkWaitSeen = false; // once seen, disable the 10-min hard timeout and rely on explicit cancel
+          let progressMarkerSeen = false; // once seen, do NOT auto-resubmit (avoid duplicates)
+          const controller = new AbortController();
+          retryCtl.abortFetch = () => controller.abort();
+          const HARD_TIMEOUT = 600000; // 10-minute hard timeout
+          let hardTimer = null;
+          const clearTimers = () => {
+            if (hardTimer) clearTimeout(hardTimer);
+          };
 
-        try {
-          if (retryCtl.cancelled) {
-            updateTask(taskId, { status: 'error', message: 'Auto-retry aborted (click "Retry" to start again)' });
-            return;
-          }
-          // attempt=1: normal generation (or first manual retry attempt)
-          // attempt>1: auto-retry for upstream submission failures only
-          if (attempt > 1) {
-            updateTask(taskId, {
-              status: 'retrying',
-              retryMode: 'submit',
-              retryCount: attempt - 1,
-              timedOut: false,
-              progress: 0
+          try {
+            if (retryCtl.cancelled) {
+              updateTask(taskId, { status: 'error', message: 'Auto-retry aborted (click "Retry" to start again)' });
+              return;
+            }
+            // attempt=1: normal generation (or first manual retry attempt)
+            // attempt>1: auto-retry for upstream submission failures only
+            if (attempt > 1) {
+              updateTask(taskId, {
+                status: 'retrying',
+                retryMode: 'submit',
+                retryCount: attempt - 1,
+                timedOut: false,
+                progress: 0
+              });
+            } else if (job.taskId) {
+              updateTask(taskId, { status: 'retrying', retryMode: 'manual', retryCount: 0, timedOut: false, progress: 0 });
+            } else {
+              updateTask(taskId, { status: 'running', timedOut: false, progress: 0 });
+            }
+
+            const resp = await fetch(url, {
+              method: 'POST',
+              headers: {
+                Authorization: 'Bearer ' + apiKey,
+                'Content-Type': 'application/json',
+                Accept: 'text/event-stream'
+              },
+              body: JSON.stringify(body),
+              signal: controller.signal
             });
-          } else if (job.taskId) {
-            updateTask(taskId, { status: 'retrying', retryMode: 'manual', retryCount: 0, timedOut: false, progress: 0 });
-          } else {
-            updateTask(taskId, { status: 'running', timedOut: false, progress: 0 });
-          }
 
-          const resp = await fetch(url, {
-            method: 'POST',
-            headers: {
-              Authorization: 'Bearer ' + apiKey,
-              'Content-Type': 'application/json',
-              Accept: 'text/event-stream'
-            },
-            body: JSON.stringify(body),
-            signal: controller.signal
-          });
+            if (!resp.ok || !resp.body) {
+              throw new Error('HTTP ' + resp.status);
+            }
 
-          if (!resp.ok || !resp.body) {
-            throw new Error('HTTP ' + resp.status);
-          }
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+            let mediaUrl = null;
+            // Default infer by model to avoid misclassification when URL lacks extension (image rendered as video)
+            let mediaType = parseModelId(job.model).isImage ? 'image' : 'video';
+            let mediaMeta = null;
 
-          const reader = resp.body.getReader();
-          const decoder = new TextDecoder();
-          let mediaUrl = null;
-          // Default infer by model to avoid misclassification when URL lacks extension (image rendered as video)
-          let mediaType = parseModelId(job.model).isImage ? 'image' : 'video';
-          let mediaMeta = null;
+            hardTimer = setTimeout(() => controller.abort(), HARD_TIMEOUT);
 
-          hardTimer = setTimeout(() => controller.abort(), HARD_TIMEOUT);
-
-          logTask(taskId, 'Connected, receiving stream...');
-          while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-            const chunk = decoder.decode(value, { stream: true });
-            lastChunk = chunk || lastChunk;
-            chunk.split(/\n\n/).forEach((line) => {
-              if (!line.startsWith('data:')) return;
-              const data = line.replace(/^data:\s*/, '');
-              if (data === '[DONE]') {
-                logTask(taskId, '[DONE]');
-                finished = true;
-                return;
-              }
-              logTask(taskId, data);
-              logBufferAttempt = (logBufferAttempt + data + '\n').slice(-LOG_STORE_LIMIT);
-              try {
-                const obj = JSON.parse(data);
-                const choice = (obj.choices && obj.choices[0]) || {};
-                const delta = choice.delta || {};
-                if (obj.error) {
-                  const pretty = humanizeUpstreamError(obj.error);
-                  const errMsg = pretty.message || obj.error.message || obj.error.code || 'Generation failed';
-                  // Auto-retry only for upstream submission/network blips before progress; avoid duplicate submissions
-                  if (isRetryable(errMsg) && !progressMarkerSeen && !watermarkWaitSeen) {
-                    const retryErr = new Error(errMsg);
-                    retryErr.__submitRetryable = true;
-                    throw retryErr;
+            logTask(taskId, 'Connected, receiving stream...');
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              const chunk = decoder.decode(value, { stream: true });
+              lastChunk = chunk || lastChunk;
+              chunk.split(/\n\n/).forEach((line) => {
+                if (!line.startsWith('data:')) return;
+                const data = line.replace(/^data:\s*/, '');
+                if (data === '[DONE]') {
+                  logTask(taskId, '[DONE]');
+                  finished = true;
+                  return;
+                }
+                logTask(taskId, data);
+                logBufferAttempt = (logBufferAttempt + data + '\n').slice(-LOG_STORE_LIMIT);
+                try {
+                  const obj = JSON.parse(data);
+                  const choice = (obj.choices && obj.choices[0]) || {};
+                  const delta = choice.delta || {};
+                  if (obj.error) {
+                    const pretty = humanizeUpstreamError(obj.error);
+                    const errMsg = pretty.message || obj.error.message || obj.error.code || 'Generation failed';
+                    // Auto-retry only for upstream submission/network blips before progress; avoid duplicate submissions
+                    if (isRetryable(errMsg) && !progressMarkerSeen && !watermarkWaitSeen) {
+                      const retryErr = new Error(errMsg);
+                      retryErr.__submitRetryable = true;
+                      throw retryErr;
+                    }
+                    // Content moderation hit: do not auto-retry; offer edit storyboard prompt fallback
+                    if (isContentPolicyViolation(errMsg)) {
+                      hadError = true;
+                      const isSb = !!(job.storyboard && job.storyboard.label);
+                      const msg = isSb
+                        ? 'Content review failed (edit storyboard prompt and retry)'
+                        : 'Content review failed (adjust prompt and retry)';
+                      updateTask(taskId, {
+                        status: 'error',
+                        errorKind: 'policy',
+                        message: msg,
+                        logTail: lastChunk,
+                        logFull: logBufferAttempt,
+                        progress: 0
+                      });
+                      showToast(msg, 'warn', { title: 'Content review failed', duration: 5200 });
+                      return;
+                    }
+                    hadError = true;
+                    updateTask(taskId, { status: 'error', message: errMsg, logTail: lastChunk, logFull: logBufferAttempt });
+                    showToast(errMsg || 'Generation failed', pretty.type === 'warn' ? 'warn' : 'error', {
+                      title: pretty.title || 'Generation failed',
+                      duration: 4200
+                    });
+                    return;
                   }
-                  // Content moderation hit: do not auto-retry; offer edit storyboard prompt fallback
-                  if (isContentPolicyViolation(errMsg)) {
+                  const rc = delta.reasoning_content || (choice.message && choice.message.content) || '';
+
+                  // Watermark-free waiting (structured, from backend delta.wm)
+                  if (delta && delta.wm && typeof delta.wm === 'object') {
+                    const wm = delta.wm || {};
+                    const stage = wm.stage ? String(wm.stage) : '';
+                    const attempt =
+                      typeof wm.attempt === 'number' ? wm.attempt : parseInt(String(wm.attempt || '0'), 10) || 0;
+                    const canCancel = !!wm.can_cancel;
+                    const remoteTaskId = wm.task_id ? String(wm.task_id) : '';
+                    const patch = { wmStage: stage, wmAttempt: attempt, wmCanCancel: canCancel };
+                    if (remoteTaskId) patch.remoteTaskId = remoteTaskId;
+                    updateTask(taskId, patch);
+
+                    // Once we enter watermark-free waiting, do not enforce the 10-min hard timeout.
+                    if (!watermarkWaitSeen) {
+                      watermarkWaitSeen = true;
+                      if (hardTimer) {
+                        clearTimeout(hardTimer);
+                        hardTimer = null;
+                      }
+                    }
+                  }
+
+                  // Parse JSON embedded in delta.content (character_card)
+                  const rawContent =
+                    delta.content ||
+                    (choice.message && choice.message.content) ||
+                    obj.content ||
+                    '';
+                  const finishReason = choice.finish_reason || choice.native_finish_reason || delta.finish_reason;
+                  const deltaContent = typeof delta.content === 'string' ? delta.content : '';
+                  const deltaReasoning = typeof delta.reasoning_content === 'string' ? delta.reasoning_content : '';
+
+                  // Accumulate content fields
+                  if (deltaContent) {
+                    contentAccumulated += deltaContent;
+                  }
+
+                  // Content moderation: Sora may return in reasoning/content (not always obj.error)
+                  const policyText = [deltaReasoning, deltaContent, rc, rawContent].filter(Boolean).join('\n');
+                  if (!hadError && isContentPolicyViolation(policyText)) {
                     hadError = true;
                     const isSb = !!(job.storyboard && job.storyboard.label);
                     const msg = isSb
@@ -2677,425 +2740,339 @@
                     showToast(msg, 'warn', { title: 'Content review failed', duration: 5200 });
                     return;
                   }
-                  hadError = true;
-                  updateTask(taskId, { status: 'error', message: errMsg, logTail: lastChunk, logFull: logBufferAttempt });
-                  showToast(errMsg || 'Generation failed', pretty.type === 'warn' ? 'warn' : 'error', {
-                    title: pretty.title || 'Generation failed',
-                    duration: 4200
-                  });
-                  return;
-                }
-                const rc = delta.reasoning_content || (choice.message && choice.message.content) || '';
-
-                // Watermark-free waiting (structured, from backend delta.wm)
-                if (delta && delta.wm && typeof delta.wm === 'object') {
-                  const wm = delta.wm || {};
-                  const stage = wm.stage ? String(wm.stage) : '';
-                  const attempt =
-                    typeof wm.attempt === 'number' ? wm.attempt : parseInt(String(wm.attempt || '0'), 10) || 0;
-                  const canCancel = !!wm.can_cancel;
-                  const remoteTaskId = wm.task_id ? String(wm.task_id) : '';
-                  const patch = { wmStage: stage, wmAttempt: attempt, wmCanCancel: canCancel };
-                  if (remoteTaskId) patch.remoteTaskId = remoteTaskId;
-                  updateTask(taskId, patch);
-
-                  // Once we enter watermark-free waiting, do not enforce the 10-min hard timeout.
-                  if (!watermarkWaitSeen) {
-                    watermarkWaitSeen = true;
-                    if (hardTimer) {
-                      clearTimeout(hardTimer);
-                      hardTimer = null;
+                  const characterFailHit =
+                    /Character card creation failed/i.test(deltaContent) ||
+                    /Character card creation failed/i.test(deltaReasoning) ||
+                    /Character card creation failed/i.test(rawContent || '') ||
+                    (/character_card/i.test(rawContent || '') && finishReason === 'STOP' && !characterCreated && !mediaUrl);
+                  if (!hadError && characterFailHit) {
+                    const msg =
+                      (deltaContent || deltaReasoning || rawContent || 'Character card creation failed')
+                        .replace(/^❌\s*/, '')
+                        .trim();
+                    hadError = true;
+                    updateTask(taskId, {
+                      status: 'error',
+                      type: 'character',
+                      message: msg,
+                      logTail: lastChunk,
+                      logFull: logBufferAttempt,
+                      progress: 0
+                    });
+                    return;
+                  }
+                  let innerObj = null;
+                  if (typeof rawContent === 'string' && rawContent.trim().startsWith('{')) {
+                    try {
+                      innerObj = JSON.parse(rawContent);
+                    } catch (_) {
+                      innerObj = null;
                     }
                   }
-                }
 
-                // Parse JSON embedded in delta.content (character_card)
-                const rawContent =
-                  delta.content ||
-                  (choice.message && choice.message.content) ||
-                  obj.content ||
-                  '';
-                const finishReason = choice.finish_reason || choice.native_finish_reason || delta.finish_reason;
-                const deltaContent = typeof delta.content === 'string' ? delta.content : '';
-                const deltaReasoning = typeof delta.reasoning_content === 'string' ? delta.reasoning_content : '';
-
-                // Accumulate content fields
-                if (deltaContent) {
-                  contentAccumulated += deltaContent;
-                }
-
-                // Content moderation: Sora may return in reasoning/content (not always obj.error)
-                const policyText = [deltaReasoning, deltaContent, rc, rawContent].filter(Boolean).join('\n');
-                if (!hadError && isContentPolicyViolation(policyText)) {
-                  hadError = true;
-                  const isSb = !!(job.storyboard && job.storyboard.label);
-                  const msg = isSb
-                    ? 'Content review failed (edit storyboard prompt and retry)'
-                    : 'Content review failed (adjust prompt and retry)';
-                  updateTask(taskId, {
-                    status: 'error',
-                    errorKind: 'policy',
-                    message: msg,
-                    logTail: lastChunk,
-                    logFull: logBufferAttempt,
-                    progress: 0
-                  });
-                  showToast(msg, 'warn', { title: 'Content review failed', duration: 5200 });
-                  return;
-                }
-                const characterFailHit =
-                  /Character card creation failed/i.test(deltaContent) ||
-                  /Character card creation failed/i.test(deltaReasoning) ||
-                  /Character card creation failed/i.test(rawContent || '') ||
-                  (/character_card/i.test(rawContent || '') && finishReason === 'STOP' && !characterCreated && !mediaUrl);
-                if (!hadError && characterFailHit) {
-                  const msg =
-                    (deltaContent || deltaReasoning || rawContent || 'Character card creation failed')
-                    .replace(/^❌\s*/, '')
-                    .trim();
-                  hadError = true;
-                  updateTask(taskId, {
-                    status: 'error',
-                    type: 'character',
-                    message: msg,
-                    logTail: lastChunk,
-                    logFull: logBufferAttempt,
-                    progress: 0
-                  });
-                  return;
-                }
-                let innerObj = null;
-                if (typeof rawContent === 'string' && rawContent.trim().startsWith('{')) {
-                  try {
-                    innerObj = JSON.parse(rawContent);
-                  } catch (_) {
-                    innerObj = null;
+                  if (typeof rc === 'string' && /(blocked|guardrail|violation|unsupported|restricted)/i.test(rc)) {
+                    hadError = true;
+                    const pretty = humanizeUpstreamError(rc);
+                    updateTask(taskId, {
+                      status: 'error',
+                      message: pretty.message || rc.trim(),
+                      logTail: lastChunk,
+                      logFull: logBufferAttempt
+                    });
+                    showToast(pretty.message || rc.trim(), pretty.type === 'warn' ? 'warn' : 'error', {
+                      title: pretty.title || 'Generation failed',
+                      duration: 4200
+                    });
+                    return;
                   }
-                }
-
-                if (typeof rc === 'string' && /(blocked|guardrail|violation|unsupported|restricted)/i.test(rc)) {
-                  hadError = true;
-                  const pretty = humanizeUpstreamError(rc);
-                  updateTask(taskId, {
-                    status: 'error',
-                    message: pretty.message || rc.trim(),
-                    logTail: lastChunk,
-                    logFull: logBufferAttempt
-                  });
-                  showToast(pretty.message || rc.trim(), pretty.type === 'warn' ? 'warn' : 'error', {
-                    title: pretty.title || 'Generation failed',
-                    duration: 4200
-                  });
-                  return;
-                }
-                // Character card event: mark as success directly
-                const cardPayload = obj.event === 'character_card' || obj.card ? obj : innerObj && innerObj.event === 'character_card' ? innerObj : null;
-                if (!cardPayload && typeof data === 'string' && data.includes('"character_card"')) {
-                  try {
-                    const temp = JSON.parse(data);
-                    if (temp && (temp.event === 'character_card' || temp.card)) {
-                      cardPayload = temp;
-                    }
-                  } catch (_) {}
-                }
-                if (cardPayload && (cardPayload.event === 'character_card' || cardPayload.card)) {
-                  const card = cardPayload.card || {};
-                  characterCreated = true;
-                  characterCardInfo = card;
-                  syncRoleCardToLibrary(card);
-                  showToast(`Character card created: @${card.username || card.display_name || 'Character'}`);
-                  updateTask(taskId, {
-                    status: 'done',
-                    type: 'character',
-                    message: `Character card created: @${card.username || 'Character'}`,
-                    meta: { display: card.display_name || card.username || '' },
-                    logTail: lastChunk,
-                    logFull: logBufferAttempt
-                  });
-                  return;
-                }
-                // Progress: structured fields or percent in reasoning_content
-                const currentProgress =
-                  tasks.find((t) => t.id === taskId && !isNaN(parseFloat(t.progress)))?.progress ?? 0;
-                let progressVal = null;
-                const pctMatch = data.match(/(\d{1,3})%/);
-                if (pctMatch) progressMarkerSeen = true;
-                if (obj.progress !== undefined && !isNaN(parseFloat(obj.progress))) {
-                  progressVal = parseFloat(obj.progress);
-                  progressMarkerSeen = true;
-                }
-                if (obj.delta && typeof obj.delta.reasoning_content === 'string') {
-                  const m = obj.delta.reasoning_content.match(/(\d{1,3})%/);
-                  if (m) progressVal = Math.max(progressVal ?? 0, parseFloat(m[1]));
-                  if (m) progressMarkerSeen = true;
-                }
-                if (!progressVal && pctMatch) {
-                  progressVal = Math.min(100, parseFloat(pctMatch[1]));
-                }
-                if (!isNaN(progressVal)) {
-                  const merged = Math.max(currentProgress, progressVal);
-                  updateTask(taskId, { progress: merged });
-                }
-
-                // Prefer structured fields
-                const output0 = (obj.output && obj.output[0]) || null;
-                const deltaOut0 = (delta.output && delta.output[0]) || null;
-                // Upstream sometimes provides explicit type (image/video); trust it even if URL lacks extension.
-                const declaredTypeRaw = (output0 && output0.type) || (deltaOut0 && deltaOut0.type) || obj.type || '';
-                const declaredType = String(declaredTypeRaw || '').toLowerCase();
-                const declaredHint = declaredType === 'image' || declaredType === 'video' ? declaredType : '';
-                const typeHintFromFields =
-                  declaredHint ||
-                  (obj.image_url && obj.image_url.url ? 'image' : '') ||
-                  (obj.video_url && obj.video_url.url ? 'video' : '') ||
-                  (output0 && output0.image_url ? 'image' : '') ||
-                  (output0 && output0.video_url ? 'video' : '') ||
-                  (deltaOut0 && deltaOut0.image_url ? 'image' : '') ||
-                  (deltaOut0 && deltaOut0.video_url ? 'video' : '') ||
-                  '';
-                const candidates = [
-                  obj.url,
-                  obj.video_url && obj.video_url.url,
-                  obj.image_url && obj.image_url.url,
-                  output0 && (output0.url || output0.video_url || output0.image_url),
-                  deltaOut0 && (deltaOut0.url || deltaOut0.video_url || deltaOut0.image_url)
-                ].filter(Boolean);
-
-                // Capture remote task_id from delta.output if present (used by watermark cancel button)
-                if (delta.output && delta.output[0] && delta.output[0].task_id) {
-                  updateTask(taskId, { remoteTaskId: String(delta.output[0].task_id) });
-                  progressMarkerSeen = true;
-                }
-
-                let extractedUrl = candidates[0];
-
-                // <video src> or direct media links in content/markdown
-                if (!extractedUrl && obj.content) {
-                  const htmlMatch = obj.content.match(/<video[^>]+src=['"]([^'"]+)['"]/i);
-                  if (htmlMatch) extractedUrl = htmlMatch[1];
-                  const mdMatch = obj.content.match(/https?:[^\s)"'<>]+\.(mp4|mov|m4v|webm|png|jpg|jpeg|webp)/i);
-                  if (!extractedUrl && mdMatch) extractedUrl = mdMatch[0];
-                }
-                // Fallback: extract media link from latest chunk
-                if (!extractedUrl) {
-                  const urlMatch = lastChunk.match(/https?:[^\s)"'<>]+\.(mp4|mov|m4v|webm|png|jpg|jpeg|webp)/i);
-                  if (urlMatch) extractedUrl = urlMatch[0];
-                }
-
-                if (extractedUrl) {
-                  mediaUrl = extractedUrl;
-                }
-                if (mediaUrl) {
-                  const u = mediaUrl.toString();
-                  const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
-                  const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
-                  mediaType = typeHintFromFields || extHint || modelHint;
-                  const reso =
-                    obj.resolution ||
-                    (obj.meta && obj.meta.resolution) ||
-                    (obj.width && obj.height ? `${obj.width}x${obj.height}` : null);
-                  const dur = obj.duration || (obj.meta && obj.meta.duration) || (obj.length && `${obj.length}s`);
-                  mediaMeta = [reso, dur].filter(Boolean).join(' · ');
-                  updateTask(taskId, {
-                    url: mediaUrl,
-                    type: mediaType,
-                    meta: { resolution: reso || '', duration: dur || '' },
-                    logTail: lastChunk,
-                    logFull: logBufferAttempt,
-                    progress: 100
-                  });
-                } else {
-                  updateTask(taskId, { logTail: lastChunk, logFull: logBufferAttempt });
-                }
-
-                // Fallback: extract any http(s) link from choices.delta/content
-                if (!mediaUrl) {
-                  const choice = (obj.choices && obj.choices[0]) || {};
-                  const delta = choice.delta || {};
-                  const msg = choice.message || {};
-                  const contentField = delta.content ?? msg.content ?? obj.content;
-                  const outputField = delta.output ?? msg.output ?? obj.output;
-                  const tryExtract = (text) => {
-                    if (!text) return null;
-                    const htmlMatch = text.match(/<video[^>]+src=['"]([^'"]+)['"]/i);
-                    if (htmlMatch) return htmlMatch[1];
-                    const anyMatch = text.match(/https?:[^\s)"'<>]+/i);
-                    return anyMatch ? anyMatch[0] : null;
-                  };
-                  let extracted = tryExtract(contentField) || tryExtract(lastChunk);
-                  if (!extracted && outputField && outputField[0]) {
-                    extracted = outputField[0].url || outputField[0].video_url || outputField[0].image_url || null;
+                  // Character card event: mark as success directly
+                  const cardPayload = obj.event === 'character_card' || obj.card ? obj : innerObj && innerObj.event === 'character_card' ? innerObj : null;
+                  if (!cardPayload && typeof data === 'string' && data.includes('"character_card"')) {
+                    try {
+                      const temp = JSON.parse(data);
+                      if (temp && (temp.event === 'character_card' || temp.card)) {
+                        cardPayload = temp;
+                      }
+                    } catch (_) { }
                   }
-                  if (extracted) {
-                    mediaUrl = extracted;
+                  if (cardPayload && (cardPayload.event === 'character_card' || cardPayload.card)) {
+                    const card = cardPayload.card || {};
+                    characterCreated = true;
+                    characterCardInfo = card;
+                    syncRoleCardToLibrary(card);
+                    showToast(`Character card created: @${card.username || card.display_name || 'Character'}`);
+                    updateTask(taskId, {
+                      status: 'done',
+                      type: 'character',
+                      message: `Character card created: @${card.username || 'Character'}`,
+                      meta: { display: card.display_name || card.username || '' },
+                      logTail: lastChunk,
+                      logFull: logBufferAttempt
+                    });
+                    return;
+                  }
+                  // Progress: structured fields or percent in reasoning_content
+                  const currentProgress =
+                    tasks.find((t) => t.id === taskId && !isNaN(parseFloat(t.progress)))?.progress ?? 0;
+                  let progressVal = null;
+                  const pctMatch = data.match(/(\d{1,3})%/);
+                  if (pctMatch) progressMarkerSeen = true;
+                  if (obj.progress !== undefined && !isNaN(parseFloat(obj.progress))) {
+                    progressVal = parseFloat(obj.progress);
+                    progressMarkerSeen = true;
+                  }
+                  if (obj.delta && typeof obj.delta.reasoning_content === 'string') {
+                    const m = obj.delta.reasoning_content.match(/(\d{1,3})%/);
+                    if (m) progressVal = Math.max(progressVal ?? 0, parseFloat(m[1]));
+                    if (m) progressMarkerSeen = true;
+                  }
+                  if (!progressVal && pctMatch) {
+                    progressVal = Math.min(100, parseFloat(pctMatch[1]));
+                  }
+                  if (!isNaN(progressVal)) {
+                    const merged = Math.max(currentProgress, progressVal);
+                    updateTask(taskId, { progress: merged });
+                  }
+
+                  // Prefer structured fields
+                  const output0 = (obj.output && obj.output[0]) || null;
+                  const deltaOut0 = (delta.output && delta.output[0]) || null;
+                  // Upstream sometimes provides explicit type (image/video); trust it even if URL lacks extension.
+                  const declaredTypeRaw = (output0 && output0.type) || (deltaOut0 && deltaOut0.type) || obj.type || '';
+                  const declaredType = String(declaredTypeRaw || '').toLowerCase();
+                  const declaredHint = declaredType === 'image' || declaredType === 'video' ? declaredType : '';
+                  const typeHintFromFields =
+                    declaredHint ||
+                    (obj.image_url && obj.image_url.url ? 'image' : '') ||
+                    (obj.video_url && obj.video_url.url ? 'video' : '') ||
+                    (output0 && output0.image_url ? 'image' : '') ||
+                    (output0 && output0.video_url ? 'video' : '') ||
+                    (deltaOut0 && deltaOut0.image_url ? 'image' : '') ||
+                    (deltaOut0 && deltaOut0.video_url ? 'video' : '') ||
+                    '';
+                  const candidates = [
+                    obj.url,
+                    obj.video_url && obj.video_url.url,
+                    obj.image_url && obj.image_url.url,
+                    output0 && (output0.url || output0.video_url || output0.image_url),
+                    deltaOut0 && (deltaOut0.url || deltaOut0.video_url || deltaOut0.image_url)
+                  ].filter(Boolean);
+
+                  // Capture remote task_id from delta.output if present (used by watermark cancel button)
+                  if (delta.output && delta.output[0] && delta.output[0].task_id) {
+                    updateTask(taskId, { remoteTaskId: String(delta.output[0].task_id) });
+                    progressMarkerSeen = true;
+                  }
+
+                  let extractedUrl = candidates[0];
+
+                  // <video src> or direct media links in content/markdown
+                  if (!extractedUrl && obj.content) {
+                    const htmlMatch = obj.content.match(/<video[^>]+src=['"]([^'"]+)['"]/i);
+                    if (htmlMatch) extractedUrl = htmlMatch[1];
+                    const mdMatch = obj.content.match(/https?:[^\s)"'<>]+\.(mp4|mov|m4v|webm|png|jpg|jpeg|webp)/i);
+                    if (!extractedUrl && mdMatch) extractedUrl = mdMatch[0];
+                  }
+                  // Fallback: extract media link from latest chunk
+                  if (!extractedUrl) {
+                    const urlMatch = lastChunk.match(/https?:[^\s)"'<>]+\.(mp4|mov|m4v|webm|png|jpg|jpeg|webp)/i);
+                    if (urlMatch) extractedUrl = urlMatch[0];
+                  }
+
+                  if (extractedUrl) {
+                    mediaUrl = extractedUrl;
+                  }
+                  if (mediaUrl) {
                     const u = mediaUrl.toString();
                     const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
                     const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
-                    mediaType = extHint || modelHint;
-                    updateTask(taskId, { url: mediaUrl, type: mediaType, logTail: lastChunk, logFull: logBufferAttempt, progress: 100 });
+                    mediaType = typeHintFromFields || extHint || modelHint;
+                    const reso =
+                      obj.resolution ||
+                      (obj.meta && obj.meta.resolution) ||
+                      (obj.width && obj.height ? `${obj.width}x${obj.height}` : null);
+                    const dur = obj.duration || (obj.meta && obj.meta.duration) || (obj.length && `${obj.length}s`);
+                    mediaMeta = [reso, dur].filter(Boolean).join(' · ');
+                    updateTask(taskId, {
+                      url: mediaUrl,
+                      type: mediaType,
+                      meta: { resolution: reso || '', duration: dur || '' },
+                      logTail: lastChunk,
+                      logFull: logBufferAttempt,
+                      progress: 100
+                    });
+                  } else {
+                    updateTask(taskId, { logTail: lastChunk, logFull: logBufferAttempt });
                   }
+
+                  // Fallback: extract any http(s) link from choices.delta/content
+                  if (!mediaUrl) {
+                    const choice = (obj.choices && obj.choices[0]) || {};
+                    const delta = choice.delta || {};
+                    const msg = choice.message || {};
+                    const contentField = delta.content ?? msg.content ?? obj.content;
+                    const outputField = delta.output ?? msg.output ?? obj.output;
+                    const tryExtract = (text) => {
+                      if (!text) return null;
+                      const htmlMatch = text.match(/<video[^>]+src=['"]([^'"]+)['"]/i);
+                      if (htmlMatch) return htmlMatch[1];
+                      const anyMatch = text.match(/https?:[^\s)"'<>]+/i);
+                      return anyMatch ? anyMatch[0] : null;
+                    };
+                    let extracted = tryExtract(contentField) || tryExtract(lastChunk);
+                    if (!extracted && outputField && outputField[0]) {
+                      extracted = outputField[0].url || outputField[0].video_url || outputField[0].image_url || null;
+                    }
+                    if (extracted) {
+                      mediaUrl = extracted;
+                      const u = mediaUrl.toString();
+                      const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
+                      const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
+                      mediaType = extHint || modelHint;
+                      updateTask(taskId, { url: mediaUrl, type: mediaType, logTail: lastChunk, logFull: logBufferAttempt, progress: 100 });
+                    }
+                  }
+                } catch (e) {
+                  if (e && e.__submitRetryable) throw e;
+                  updateTask(taskId, { logTail: lastChunk, logFull: logBufferAttempt });
                 }
-              } catch (e) {
-                if (e && e.__submitRetryable) throw e;
-                updateTask(taskId, { logTail: lastChunk, logFull: logBufferAttempt });
-              }
-            });
-            if (hadError || finished) break;
-          }
-
-          clearTimers();
-          // Fallback after completion: any link in lastChunk
-          if (!mediaUrl) {
-            const tailMatch = lastChunk.match(/https?:[^\s)"'<>]+/i);
-            if (tailMatch) {
-              mediaUrl = tailMatch[0];
-              const u = String(mediaUrl || '');
-              const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
-              const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
-              mediaType = extHint || modelHint;
+              });
+              if (hadError || finished) break;
             }
-          }
 
-          if (hadError) {
-            return;
-          }
-
-          // Allowlist filtering
-          if (mediaUrl && !isValidMediaUrl(mediaUrl)) {
-            mediaUrl = null;
-          }
-
-          if (mediaUrl) {
-            updateTask(taskId, {
-              status: 'done',
-              url: mediaUrl,
-              type: mediaType,
-              meta: mediaMeta ? { info: mediaMeta } : null,
-              logTail: lastChunk,
-              logFull: logBufferAttempt || lastChunk,
-              progress: 100
-            });
-          } else {
-            // Check whether this is a character card creation task
-            const isCharacterTask = job.isCharacterCreation === true;
-            const hasCharacterSuccessMsg = /Character created|Character card created|Character name@/i.test(
-              contentAccumulated || lastChunk || ''
-            );
-
-            if (characterCreated || characterCardInfo || (isCharacterTask && hasCharacterSuccessMsg)) {
-              // Extract character name from message
-              let username = characterCardInfo?.username || '';
-              if (!username && hasCharacterSuccessMsg) {
-                const match = (contentAccumulated || lastChunk || '').match(/Character name@(\w+)/i);
-                if (match) username = match[1];
+            clearTimers();
+            // Fallback after completion: any link in lastChunk
+            if (!mediaUrl) {
+              const tailMatch = lastChunk.match(/https?:[^\s)"'<>]+/i);
+              if (tailMatch) {
+                mediaUrl = tailMatch[0];
+                const u = String(mediaUrl || '');
+                const extHint = /\.(png|jpg|jpeg|webp)$/i.test(u) ? 'image' : /\.(mp4|mov|m4v|webm)$/i.test(u) ? 'video' : '';
+                const modelHint = parseModelId(job.model).isImage ? 'image' : 'video';
+                mediaType = extHint || modelHint;
               }
+            }
 
+            if (hadError) {
+              return;
+            }
+
+            // Allowlist filtering
+            if (mediaUrl && !isValidMediaUrl(mediaUrl)) {
+              mediaUrl = null;
+            }
+
+            if (mediaUrl) {
               updateTask(taskId, {
                 status: 'done',
-                type: 'character',
-                message: username ? `Character card created: @${username}` : 'Character card created',
-                meta: { display: characterCardInfo?.display_name || username || '' },
+                url: mediaUrl,
+                type: mediaType,
+                meta: mediaMeta ? { info: mediaMeta } : null,
                 logTail: lastChunk,
                 logFull: logBufferAttempt || lastChunk,
                 progress: 100
               });
-
-              // Save character card to localStorage
-              try {
-                const stored = localStorage.getItem('character_cards');
-                const cards = stored ? JSON.parse(stored) : [];
-
-                // Create new character card object
-                const newCard = {
-                  id: Date.now(), // Use timestamp as ID
-                  username: username || 'unknown',
-                  display_name: characterCardInfo?.display_name || username || '',
-                  description: characterCardInfo?.description || '',
-                  avatar_path: characterCardInfo?.avatar_path || '',
-                  created_at: new Date().toISOString()
-                };
-
-                // Add to list front (newest first)
-                cards.unshift(newCard);
-
-                // Save back to localStorage
-                localStorage.setItem('character_cards', JSON.stringify(cards));
-              } catch (e) {
-                console.error('Failed to save character card:', e);
-              }
-
-              // Refresh character card list
-              if (typeof loadRoles === 'function') {
-                loadRoles();
-              }
             } else {
-              const maybePolicy = isContentPolicyViolation(`${logBufferAttempt || ''}\n${lastChunk || ''}`);
-              const isSb = !!(job.storyboard && job.storyboard.label);
-              const msg = maybePolicy
-                ? isSb
-                  ? 'Content review failed (edit storyboard prompt and retry)'
-                  : 'Content review failed (adjust prompt and retry)'
-                : 'No media link returned; may be blocked by safety or invalid prompt';
-              updateTask(taskId, {
-                status: 'error',
-                errorKind: maybePolicy ? 'policy' : '',
-                message: msg,
-                logTail: lastChunk,
-                logFull: logBufferAttempt || lastChunk,
-                progress: 0
-            });
-          }
-          }
-          return; // success
-        } catch (e) {
-          clearTimers();
-          const msg = e?.message || String(e);
-          if (retryCtl.cancelled) {
-            updateTask(taskId, { status: 'error', message: 'Auto-retry aborted (click "Retry" to start again)' });
-            return;
-          }
+              // Check whether this is a character card creation task
+              const isCharacterTask = job.isCharacterCreation === true;
+              const hasCharacterSuccessMsg = /Character created|Character card created|Character name@/i.test(
+                contentAccumulated || lastChunk || ''
+              );
 
-          // Auto-retry only for upstream submission failures before progress; avoid duplicate submissions
-          const retryableSubmit = isRetryable(msg) && !progressMarkerSeen && !watermarkWaitSeen && attempt <= MAX_RETRY;
-          if (retryableSubmit) {
-            const retryCount = attempt; // 1st failure -> retry 1; 2nd failure -> retry 2 ...
-            const delay = Math.min(1500 * Math.pow(2, Math.min(retryCount - 1, 5)), 15000);
-            const brief = String(msg || 'Unknown error').replace(/\s+/g, ' ').slice(0, 120);
-            updateTask(taskId, {
-              status: 'retrying',
-              retryMode: 'submit',
-              retryCount,
-              timedOut: false,
-              message: `Upload failed, auto-retrying (${retryCount}): ${brief}`,
-              progress: 0
-            });
-            logTask(taskId, `Upload failed: ${brief}; auto-retry in ${delay}ms (${retryCount})`);
-            const ok = await sleepCancellable(delay, () => retryCtl.cancelled);
-            if (!ok) {
+              if (characterCreated || characterCardInfo || (isCharacterTask && hasCharacterSuccessMsg)) {
+                // Extract character name from message
+                let username = characterCardInfo?.username || '';
+                if (!username && hasCharacterSuccessMsg) {
+                  const match = (contentAccumulated || lastChunk || '').match(/Character name@(\w+)/i);
+                  if (match) username = match[1];
+                }
+
+                updateTask(taskId, {
+                  status: 'done',
+                  type: 'character',
+                  message: username ? `Character card created: @${username}` : 'Character card created',
+                  meta: { display: characterCardInfo?.display_name || username || '' },
+                  logTail: lastChunk,
+                  logFull: logBufferAttempt || lastChunk,
+                  progress: 100
+                });
+
+                // Character saved to server by backend
+                // Just refresh local list
+                /* saved on backend */
+
+                // Refresh character card list
+                if (typeof loadRoles === 'function') {
+                  loadRoles();
+                }
+              } else {
+                const maybePolicy = isContentPolicyViolation(`${logBufferAttempt || ''}\n${lastChunk || ''}`);
+                const isSb = !!(job.storyboard && job.storyboard.label);
+                const msg = maybePolicy
+                  ? isSb
+                    ? 'Content review failed (edit storyboard prompt and retry)'
+                    : 'Content review failed (adjust prompt and retry)'
+                  : 'No media link returned; may be blocked by safety or invalid prompt';
+                updateTask(taskId, {
+                  status: 'error',
+                  errorKind: maybePolicy ? 'policy' : '',
+                  message: msg,
+                  logTail: lastChunk,
+                  logFull: logBufferAttempt || lastChunk,
+                  progress: 0
+                });
+              }
+            }
+            return; // success
+          } catch (e) {
+            clearTimers();
+            const msg = e?.message || String(e);
+            if (retryCtl.cancelled) {
               updateTask(taskId, { status: 'error', message: 'Auto-retry aborted (click "Retry" to start again)' });
               return;
             }
-            continue;
+
+            // Auto-retry only for upstream submission failures before progress; avoid duplicate submissions
+            const retryableSubmit = isRetryable(msg) && !progressMarkerSeen && !watermarkWaitSeen && attempt <= MAX_RETRY;
+            if (retryableSubmit) {
+              const retryCount = attempt; // 1st failure -> retry 1; 2nd failure -> retry 2 ...
+              const delay = Math.min(1500 * Math.pow(2, Math.min(retryCount - 1, 5)), 15000);
+              const brief = String(msg || 'Unknown error').replace(/\s+/g, ' ').slice(0, 120);
+              updateTask(taskId, {
+                status: 'retrying',
+                retryMode: 'submit',
+                retryCount,
+                timedOut: false,
+                message: `Upload failed, auto-retrying (${retryCount}): ${brief}`,
+                progress: 0
+              });
+              logTask(taskId, `Upload failed: ${brief}; auto-retry in ${delay}ms (${retryCount})`);
+              const ok = await sleepCancellable(delay, () => retryCtl.cancelled);
+              if (!ok) {
+                updateTask(taskId, { status: 'error', message: 'Auto-retry aborted (click "Retry" to start again)' });
+                return;
+              }
+              continue;
+            }
+            const timeout =
+              /Failed to connect|timed out|Timeout|ETIMEDOUT|ENETUNREACH|ECONNABORTED|AbortError|aborted/i.test(msg);
+            const message = timeout ? 'Request timed out; upstream may still be processing. Please retry later.' : msg;
+            log('Error: ' + message);
+            updateTask(taskId, {
+              status: 'error',
+              timedOut: timeout,
+              message,
+              logTail: '',
+              logFull: logBufferAttempt || msg,
+              progress: 0
+            });
+            showToast(message, timeout ? 'warn' : 'error', {
+              title: timeout ? 'Timeout' : 'Request failed',
+              duration: 4200
+            });
+            return;
           }
-          const timeout =
-            /Failed to connect|timed out|Timeout|ETIMEDOUT|ENETUNREACH|ECONNABORTED|AbortError|aborted/i.test(msg);
-          const message = timeout ? 'Request timed out; upstream may still be processing. Please retry later.' : msg;
-          log('Error: ' + message);
-          updateTask(taskId, {
-            status: 'error',
-            timedOut: timeout,
-            message,
-            logTail: '',
-            logFull: logBufferAttempt || msg,
-            progress: 0
-          });
-          showToast(message, timeout ? 'warn' : 'error', {
-            title: timeout ? 'Timeout' : 'Request failed',
-            duration: 4200
-          });
-          return;
         }
-      }
       } finally {
         retryCtl.abortFetch = null;
         taskRetryControls.delete(taskId);
@@ -3529,7 +3506,7 @@
         setTimeout(() => {
           try {
             btn.classList.remove('btn-ready');
-          } catch (_) {}
+          } catch (_) { }
         }, 2950)
       );
     } catch (_) {
@@ -3620,8 +3597,8 @@
           <button type="button" class="pill-btn multi-remove multi-prompt-remove" data-idx="${idx}">Delete</button>
         </div>
         <textarea class="input multi-prompt-input multi-prompt-textarea" data-idx="${idx}" placeholder="Prompt ${idx + 1} (multiline; describe shot/subject/action/style)">${escapeHtml(
-          p.text ?? ''
-        )}</textarea>
+            p.text ?? ''
+          )}</textarea>
         <div class="multi-row-roles" data-row-roles="${idx}"></div>
       </div>`;
         })
@@ -3759,12 +3736,12 @@
   const cloneStoryboardRoles = (rolesArr) =>
     Array.isArray(rolesArr)
       ? rolesArr
-          .map((r) => ({
-            display: r?.display || r?.display_name || r?.username || '',
-            username: r?.username || '',
-            avatar: r?.avatar || r?.avatar_path || ''
-          }))
-          .filter((r) => r.display || r.username || r.avatar)
+        .map((r) => ({
+          display: r?.display || r?.display_name || r?.username || '',
+          username: r?.username || '',
+          avatar: r?.avatar || r?.avatar_path || ''
+        }))
+        .filter((r) => r.display || r.username || r.avatar)
       : [];
   const cloneStoryboardShots = (arr) =>
     (Array.isArray(arr) ? arr : []).map((s) => ({
@@ -4064,7 +4041,7 @@
       makeBtn('Close', () => {
         try {
           document.body.removeChild(menu);
-        } catch (_) {}
+        } catch (_) { }
       }, { dim: true })
     );
     menu.appendChild(foot);
@@ -4088,7 +4065,7 @@
       if (!menu.contains(e.target) && e.target !== anchorEl) {
         try {
           document.body.removeChild(menu);
-        } catch (_) {}
+        } catch (_) { }
         document.removeEventListener('mousedown', dismiss);
       }
     };
@@ -4590,12 +4567,12 @@
             useGlobalRoles: s.useGlobalRoles === false || s.use_global_roles === false ? false : true,
             roles: Array.isArray(s.roles)
               ? s.roles
-                  .map((r) => ({
-                    display: r.display || r.display_name || r.username || '',
-                    username: r.username || '',
-                    avatar: r.avatar || r.avatar_path || ''
-                  }))
-                  .filter((r) => r.display || r.username)
+                .map((r) => ({
+                  display: r.display || r.display_name || r.username || '',
+                  username: r.username || '',
+                  avatar: r.avatar || r.avatar_path || ''
+                }))
+                .filter((r) => r.display || r.username)
               : []
           }));
         }
@@ -5386,7 +5363,7 @@
           () => toggleAttachedRoleMulti(roleObj)
         )
       );
-      menu.appendChild(makeBtn('— Attach to a single row —', () => {})).disabled = true;
+      menu.appendChild(makeBtn('— Attach to a single row —', () => { })).disabled = true;
       multiPrompts.forEach((p, idx) => {
         const row = multiPromptRoles[idx] || [];
         const inRow = uname ? row.some((r) => String(r?.username || '').trim() === uname) : false;
@@ -5402,10 +5379,10 @@
         makeBtn(
           inGlobal ? 'Global (this mode): attached (click to remove)' : 'Global (this mode): attach to all shots',
           () =>
-          toggleAttachedRoleStoryboard(roleObj)
+            toggleAttachedRoleStoryboard(roleObj)
         )
       );
-      menu.appendChild(makeBtn('— Attach to a single shot —', () => {})).disabled = true;
+      menu.appendChild(makeBtn('— Attach to a single shot —', () => { })).disabled = true;
       storyboardShots.forEach((s, idx) => {
         const roles = (s && Array.isArray(s.roles) ? s.roles : []) || [];
         const inShot = uname ? roles.some((r) => String(r?.username || '').trim() === uname) : false;
@@ -5797,13 +5774,24 @@
   const loadRoles = async () => {
     renderRoleSkeleton(6);
     try {
-      // Load character cards from localStorage
-      const stored = localStorage.getItem('character_cards');
-      const data = stored ? JSON.parse(stored) : [];
-      roles = Array.isArray(data) ? data : [];
+      const baseUrl = getBaseUrl();
+      if (baseUrl) {
+        const resp = await fetch(`${baseUrl}/v1/characters`, {
+          headers: getAuthHeaders()
+        });
+        if (resp.ok) {
+          const json = await resp.json();
+          if (json && Array.isArray(json.data)) {
+            roles = json.data;
+            renderRoles();
+            return;
+          }
+        }
+      }
+      roles = [];
     } catch (e) {
       roles = [];
-      log('Failed to load character cards');
+      log('Failed to load character cards: ' + (e.message || String(e)));
     }
     renderRoles();
   };
@@ -5994,7 +5982,7 @@
         setTimeout(() => {
           try {
             btnPreviewBatchDownload.removeAttribute('data-done');
-          } catch (_) {}
+          } catch (_) { }
         }, 1200);
         btnPreviewBatchDownload.textContent = oldText;
         previewBatchDownloading = false;
@@ -6740,12 +6728,12 @@
             useGlobalRoles: x && (x.useGlobalRoles === false || x.use_global_roles === false) ? false : true,
             roles: Array.isArray(x.roles)
               ? x.roles
-                  .map((r) => ({
-                    display: r.display || r.display_name || r.username || '',
-                    username: r.username || '',
-                    avatar: r.avatar || r.avatar_path || ''
-                  }))
-                  .filter((r) => r.display || r.username)
+                .map((r) => ({
+                  display: r.display || r.display_name || r.username || '',
+                  username: r.username || '',
+                  avatar: r.avatar || r.avatar_path || ''
+                }))
+                .filter((r) => r.display || r.username)
               : []
           }));
         if (!storyboardShots.length) {

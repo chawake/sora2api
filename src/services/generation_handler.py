@@ -13,7 +13,7 @@ from .load_balancer import LoadBalancer
 from .file_cache import FileCache
 from .concurrency_manager import ConcurrencyManager
 from ..core.database import Database
-from ..core.models import Task, RequestLog
+from ..core.models import Task, RequestLog, Character
 from ..core.config import config
 from ..core.logger import debug_logger
 
@@ -1498,9 +1498,9 @@ class GenerationHandler:
             # Process username: remove prefix and add 3 random digits
             username = self._process_character_username(username_hint)
 
-            # Output character name immediately
+                # Output character name immediately
             yield self._format_stream_chunk(
-                reasoning_content=f"✨ 角色已识别: {display_name} (@{username})\n"
+                reasoning_content=f"✨ Character Identified: {display_name} (@{username})\n"
             )
 
             # Step 3: Download and cache avatar
@@ -1565,9 +1565,25 @@ class GenerationHandler:
                 duration=duration
             )
 
+            # Save character to database
+            try:
+                await self.db.add_character(Character(
+                    cameo_id=cameo_id,
+                    character_id=character_id,
+                    username=username,
+                    display_name=display_name,
+                    description="",
+                    avatar_path=profile_asset_url or "",
+                    token_id=token_obj.id,
+                    created_at=datetime.now()
+                ))
+                debug_logger.log_info(f"Character saved to database: @{username}")
+            except Exception as e:
+                debug_logger.log_error(f"Failed to save character to database: {e}")
+
             # Step 7: Return success message
             yield self._format_stream_chunk(
-                content=f"角色创建成功，角色名@{username}",
+                content=f"Character created successfully: @{username}",
                 finish_reason="STOP"
             )
             yield "data: [DONE]\n\n"
@@ -1679,9 +1695,9 @@ class GenerationHandler:
             # Process username: remove prefix and add 3 random digits
             username = self._process_character_username(username_hint)
 
-            # Output character name immediately
+                # Output character name immediately
             yield self._format_stream_chunk(
-                reasoning_content=f"✨ 角色已识别: {display_name} (@{username})\n"
+                reasoning_content=f"✨ Character Identified: {display_name} (@{username})\n"
             )
 
             # Step 3: Download and cache avatar
@@ -1990,7 +2006,7 @@ class GenerationHandler:
                         status_code=500,
                         response_text=error_message
                     )
-                    raise Exception(f"角色创建失败: {error_message}")
+                    raise Exception(f"Character creation failed: {error_message}")
 
                 # Check if processing is complete
                 # Primary condition: status_message == "Completed" means processing is done
@@ -2009,7 +2025,7 @@ class GenerationHandler:
 
                 # Check if it's a character creation failure (not a network error)
                 # These should be raised immediately, not retried
-                if "角色创建失败" in error_msg:
+                if "Character creation failed" in error_msg:
                     raise
 
                 # Log error with context

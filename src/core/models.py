@@ -55,6 +55,18 @@ class TokenStats(BaseModel):
     today_date: Optional[str] = None
     consecutive_error_count: int = 0  # Consecutive errors for auto-disable
 
+class Character(BaseModel):
+    """Character model"""
+    id: Optional[int] = None
+    cameo_id: str
+    character_id: Optional[str] = None
+    username: str
+    display_name: str
+    description: Optional[str] = None
+    avatar_path: Optional[str] = None
+    token_id: int
+    created_at: Optional[datetime] = None
+
 class Task(BaseModel):
     """Task model"""
     id: Optional[int] = None
