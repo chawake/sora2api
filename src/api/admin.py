@@ -115,6 +115,13 @@ class ImportTokensRequest(BaseModel):
     tokens: List[ImportTokenItem]
     mode: str = "at"  # Import mode: offline/at/st/rt
 
+class PureRtImportRequest(BaseModel):
+    refresh_tokens: List[str]  # List of Refresh Tokens
+    client_id: str  # Client ID (required)
+    proxy_url: Optional[str] = None  # Proxy URL (optional)
+    image_concurrency: int = 1  # Image concurrency limit (default: 1)
+    video_concurrency: int = 3  # Video concurrency limit (default: 3)
+
 class UpdateAdminConfigRequest(BaseModel):
     error_ban_threshold: int
     task_retry_enabled: Optional[bool] = None
@@ -656,6 +663,111 @@ async def import_tokens(request: ImportTokensRequest, token: str = Depends(verif
     return {
         "success": True,
         "message": f"Import completed ({mode} mode): {added_count} added, {updated_count} updated, {failed_count} failed",
+        "added": added_count,
+        "updated": updated_count,
+        "failed": failed_count,
+        "results": results
+    }
+
+@router.post("/api/tokens/import/pure-rt")
+async def import_pure_rt(request: PureRtImportRequest, token: str = Depends(verify_admin_token)):
+    """Import tokens using pure RT mode (batch RT conversion and import)"""
+    added_count = 0
+    updated_count = 0
+    failed_count = 0
+    results = []
+
+    for rt in request.refresh_tokens:
+        try:
+            # Step 1: Use RT + client_id + proxy to refresh and get AT
+            rt_result = await token_manager.rt_to_at(
+                rt,
+                client_id=request.client_id,
+                proxy_url=request.proxy_url
+            )
+
+            access_token = rt_result.get("access_token")
+            new_refresh_token = rt_result.get("refresh_token", rt)  # Use new RT if returned, else use original
+
+            if not access_token:
+                raise ValueError("Failed to get access_token from RT conversion")
+
+            # Step 2: Parse AT to get user info (email)
+            # The rt_to_at already includes email in the response
+            email = rt_result.get("email")
+
+            # If email not in rt_result, parse it from access_token
+            if not email:
+                import jwt
+                try:
+                    decoded = jwt.decode(access_token, options={"verify_signature": False})
+                    email = decoded.get("https://api.openai.com/profile", {}).get("email")
+                except Exception as e:
+                    raise ValueError(f"Failed to parse email from access_token: {str(e)}")
+
+            if not email:
+                raise ValueError("Failed to extract email from access_token")
+
+            # Step 3: Check if token with this email already exists
+            existing_token = await db.get_token_by_email(email)
+
+            if existing_token:
+                # Update existing token
+                await token_manager.update_token(
+                    token_id=existing_token.id,
+                    token=access_token,
+                    st=None,  # No ST in pure RT mode
+                    rt=new_refresh_token,  # Use refreshed RT
+                    client_id=request.client_id,
+                    proxy_url=request.proxy_url,
+                    remark=None,  # Keep existing remark
+                    image_enabled=True,
+                    video_enabled=True,
+                    image_concurrency=request.image_concurrency,
+                    video_concurrency=request.video_concurrency,
+                    skip_status_update=False  # Update status with new AT
+                )
+                updated_count += 1
+                results.append({
+                    "email": email,
+                    "status": "updated",
+                    "message": "Token updated successfully"
+                })
+            else:
+                # Add new token
+                new_token = await token_manager.add_token(
+                    token_value=access_token,
+                    st=None,  # No ST in pure RT mode
+                    rt=new_refresh_token,  # Use refreshed RT
+                    client_id=request.client_id,
+                    proxy_url=request.proxy_url,
+                    remark=None,
+                    update_if_exists=False,
+                    image_enabled=True,
+                    video_enabled=True,
+                    image_concurrency=request.image_concurrency,
+                    video_concurrency=request.video_concurrency,
+                    skip_status_update=False,  # Update status with new AT
+                    email=email  # Pass email for new token
+                )
+                added_count += 1
+                results.append({
+                    "email": email,
+                    "status": "added",
+                    "message": "Token added successfully"
+                })
+
+        except Exception as e:
+            failed_count += 1
+            results.append({
+                "email": "unknown",
+                "status": "failed",
+                "message": str(e)
+            })
+
+    return {
+        "success": True,
+        "message": f"Pure RT import completed: {added_count} added, {updated_count} updated, {failed_count} failed",
         "added": added_count,
         "updated": updated_count,
         "failed": failed_count,
