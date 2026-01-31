@@ -161,6 +161,10 @@ class BatchUpdateProxyRequest(BaseModel):
     token_ids: List[int]
     proxy_url: Optional[str] = None
 
+class UpdatePowProxyConfigRequest(BaseModel):
+    pow_proxy_enabled: bool
+    pow_proxy_url: Optional[str] = None
+
 # Auth endpoints
 @router.post("/api/login", response_model=LoginResponse)
 async def login(request: LoginRequest):
@@ -792,6 +796,34 @@ async def update_proxy_config(
     try:
         await proxy_manager.update_proxy_config(request.proxy_enabled, request.proxy_url)
         return {"success": True, "message": "Proxy configuration updated"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# POW Proxy config endpoints
+@router.get("/api/pow-proxy/config")
+async def get_pow_proxy_config(token: str = Depends(verify_admin_token)) -> dict:
+    """Get POW proxy configuration"""
+    config = await db.get_pow_proxy_config()
+    return {
+        "pow_proxy_enabled": config.pow_proxy_enabled,
+        "pow_proxy_url": config.pow_proxy_url
+    }
+
+@router.post("/api/pow-proxy/config")
+async def update_pow_proxy_config(
+    request: UpdatePowProxyConfigRequest,
+    token: str = Depends(verify_admin_token)
+):
+    """Update POW proxy configuration"""
+    try:
+        await db.update_pow_proxy_config(request.pow_proxy_enabled, request.pow_proxy_url)
+        
+        # Update in-memory config
+        config.set_pow_proxy_enabled(request.pow_proxy_enabled)
+        if request.pow_proxy_url:
+            config.set_pow_proxy_url(request.pow_proxy_url)
+            
+        return {"success": True, "message": "POW Proxy configuration updated"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

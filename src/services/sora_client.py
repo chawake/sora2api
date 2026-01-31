@@ -237,6 +237,11 @@ class SoraClient:
         pow_token = self._get_pow_token(user_agent)
 
         proxy_url = await self.proxy_manager.get_proxy_url()
+        
+        # Check if POW proxy is enabled and configured
+        if config.pow_proxy_enabled and config.pow_proxy_url:
+            debug_logger.log_info(f"Using POW proxy: {config.pow_proxy_url}")
+            proxy_url = config.pow_proxy_url
 
         # Request sentinel/req endpoint
         url = f"{self.CHATGPT_BASE_URL}/backend-api/sentinel/req"
