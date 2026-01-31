@@ -20,6 +20,7 @@ wheels/
 .installed.cfg
 *.egg
 manage-old.html
+*.bak
 
 # Virtual Environment
 venv/
