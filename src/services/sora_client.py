@@ -187,9 +187,10 @@ async def _generate_sentinel_token_lightweight(proxy_url: str = None, device_id:
         url = route.request.url
         if "__sentinel__" in url:
             await route.fulfill(status=200, content_type="text/html", body=inject_html)
-        elif "/sentinel/" in url or "chatgpt.com" in url:
+        elif "/sentinel/" in url or "chatgpt.com" in url or "oaistatic.com" in url or "openai.com" in url:
             await route.continue_()
         else:
+            debug_logger.log_info(f"[Sentinel] BLOCKING url: {url}")
             await route.abort()
     
     await page.route("**/*", handle_route)
@@ -598,25 +599,36 @@ class SoraClient:
             )
             return None
 
-    async def _nf_create_urllib(self, token: str, payload: dict, sentinel_token: str,
-                                proxy_url: Optional[str], token_id: Optional[int] = None,
-                                user_agent: Optional[str] = None) -> Dict[str, Any]:
-        """Make nf/create request
+    async def _nf_create_urllib(self, token: str, request: Dict[str, Any], device_id: str = None) -> Dict[str, Any]:
+        """Create video generation task using urllib (lighter than aiohttp)"""
+        url = f"{self.base_url}/backend/nf/create"
         
-        Returns:
-            Response dict on success
+        # Check for Team ID appended to token (format: token,team_id)
+        org_id = None
+        if "," in token:
+            token, org_id = token.split(",", 1)
             
-        Raises:
-            Exception: With error info, including '400' in message for sentinel token errors
-        """
-        url = f"{self.base_url}/nf/create"
-        if not user_agent:
-            user_agent = random.choice(DESKTOP_USER_AGENTS)
-
-        import json as json_mod
-        sentinel_data = json_mod.loads(sentinel_token)
-        device_id = sentinel_data.get("id", str(uuid4()))
+        # Get sentinel token
+        sentinel_token, user_agent = await self._generate_sentinel_token(token)
         
+        # Extract device_id from sentinel token if not provided
+        if not device_id:
+            try:
+                # Sentinel token is JWT-like: header.payload.signature
+                # Payload is base64 encoded JSON
+                payload_b64 = sentinel_token.split('.')[1]
+                # Add padding if needed
+                payload_b64 += '=' * (-len(payload_b64) % 4)
+                data = json.loads(base64.b64decode(payload_b64))
+                device_id = data.get('id') # Changed from 'device_id' to 'id' based on _build_sentinel_token
+                debug_logger.log_info(f"[SoraClient] Extracted device_id from sentinel: {device_id}")
+            except Exception as e:
+                debug_logger.log_info(f"[SoraClient] Failed to extract device_id from sentinel: {e}")
+                
+        # If still no device_id, generate one
+        if not device_id:
+            device_id = str(uuid4())
+
         headers = {
             "Authorization": f"Bearer {token}",
             "OpenAI-Sentinel-Token": sentinel_token,
@@ -626,10 +638,15 @@ class SoraClient:
             "OAI-Device-Id": device_id,
             "Cookie": f"oai-did={device_id}",
         }
+        
+        if org_id:
+            headers["OpenAI-Organization"] = org_id
+
+        proxy_url = await self.proxy_manager.get_proxy_url() # Get proxy_url here
 
         try:
             result = await asyncio.to_thread(
-                self._post_json_sync, url, headers, payload, 30, proxy_url
+                self._post_json_sync, url, headers, request, 30, proxy_url # Changed payload to request
             )
             return result
         except Exception as e:
@@ -815,10 +832,19 @@ class SoraClient:
         """
         proxy_url = await self.proxy_manager.get_proxy_url(token_id)
 
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
-        }
+        # Check for Team ID appended to token (format: token,team_id)
+        if "," in token:
+            token, org_id = token.split(",", 1)
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "OpenAI-Organization": org_id,
+                "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
+            }
+        else:
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
+            }
 
         # 只在生成请求时添加 sentinel token
         if add_sentinel_token:
