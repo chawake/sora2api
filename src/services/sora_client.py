@@ -190,6 +190,7 @@ async def _generate_sentinel_token_lightweight(proxy_url: str = None, device_id:
         elif "/sentinel/" in url or "chatgpt.com" in url or "oaistatic.com" in url or "openai.com" in url:
             await route.continue_()
         else:
+            debug_logger.log_info(f"[Sentinel] BLOCKING url: {url}")
             await route.abort()
     
     await page.route("**/*", handle_route)
