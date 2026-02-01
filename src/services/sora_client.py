@@ -1164,8 +1164,11 @@ class SoraClient:
         proxy_url = await self.proxy_manager.get_proxy_url()
 
         headers = {
-            "Authorization": f"Bearer {token}"
+            "Authorization": f"Bearer {token.split(',')[0] if ',' in token else token}"
         }
+
+        if "," in token:
+            headers["ChatGPT-Account-ID"] = token.split(",", 1)[1]
 
         async with AsyncSession() as session:
             url = f"{self.base_url}/project_y/post/{post_id}"

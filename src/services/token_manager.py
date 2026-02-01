@@ -65,11 +65,13 @@ class TokenManager:
 
         async with AsyncSession() as session:
             headers = {
-                "Authorization": f"Bearer {access_token}",
+                "Authorization": f"Bearer {access_token.split(',')[0] if ',' in access_token else access_token}",
                 "Accept": "application/json",
                 "Origin": "https://sora.chatgpt.com",
                 "Referer": "https://sora.chatgpt.com/"
             }
+            if "," in access_token:
+                headers["ChatGPT-Account-ID"] = access_token.split(",", 1)[1]
 
             kwargs = {
                 "headers": headers,
@@ -113,8 +115,10 @@ class TokenManager:
         proxy_url = await self.proxy_manager.get_proxy_url(token_id, proxy_url)
 
         headers = {
-            "Authorization": f"Bearer {token}"
+            "Authorization": f"Bearer {token.split(',')[0] if ',' in token else token}"
         }
+        if "," in token:
+            headers["ChatGPT-Account-ID"] = token.split(",", 1)[1]
 
         async with AsyncSession() as session:
             url = "https://sora.chatgpt.com/backend/billing/subscriptions"
@@ -180,9 +184,11 @@ class TokenManager:
 
         async with AsyncSession() as session:
             headers = {
-                "Authorization": f"Bearer {access_token}",
+                "Authorization": f"Bearer {access_token.split(',')[0] if ',' in access_token else access_token}",
                 "Accept": "application/json"
             }
+            if "," in access_token:
+                headers["ChatGPT-Account-ID"] = access_token.split(",", 1)[1]
 
             kwargs = {
                 "headers": headers,
@@ -288,10 +294,12 @@ class TokenManager:
 
         async with AsyncSession() as session:
             headers = {
-                "Authorization": f"Bearer {access_token}",
+                "Authorization": f"Bearer {access_token.split(',')[0] if ',' in access_token else access_token}",
                 "Accept": "application/json",
                 "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
             }
+            if "," in access_token:
+                headers["ChatGPT-Account-ID"] = access_token.split(",", 1)[1]
 
             kwargs = {
                 "headers": headers,
@@ -346,9 +354,11 @@ class TokenManager:
 
         async with AsyncSession() as session:
             headers = {
-                "Authorization": f"Bearer {access_token}",
+                "Authorization": f"Bearer {access_token.split(',')[0] if ',' in access_token else access_token}",
                 "Content-Type": "application/json"
             }
+            if "," in access_token:
+                headers["ChatGPT-Account-ID"] = access_token.split(",", 1)[1]
 
             kwargs = {
                 "headers": headers,
@@ -394,9 +404,11 @@ class TokenManager:
 
         async with AsyncSession() as session:
             headers = {
-                "Authorization": f"Bearer {access_token}",
+                "Authorization": f"Bearer {access_token.split(',')[0] if ',' in access_token else access_token}",
                 "Content-Type": "application/json"
             }
+            if "," in access_token:
+                headers["ChatGPT-Account-ID"] = access_token.split(",", 1)[1]
 
             kwargs = {
                 "headers": headers,
