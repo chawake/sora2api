@@ -1018,7 +1018,8 @@ class SoraClient:
     
     async def generate_video(self, prompt: str, token: str, orientation: str = "landscape",
                             media_id: Optional[str] = None, n_frames: int = 450, style_id: Optional[str] = None,
-                            model: str = "sy_8", size: str = "small", token_id: Optional[int] = None) -> str:
+                            model: str = "sy_8", size: str = "small", token_id: Optional[int] = None,
+                            account_id: Optional[str] = None) -> str:
         """Generate video (text-to-video or image-to-video)
 
         Args:
@@ -1031,6 +1032,7 @@ class SoraClient:
             model: Model to use (sy_8 for standard, sy_ore for pro)
             size: Video size (small for standard, large for HD)
             token_id: Token ID for getting token-specific proxy (optional)
+            account_id: Account ID for Team accounts
         """
         inpaint_items = []
         if media_id:
@@ -1082,7 +1084,7 @@ class SoraClient:
 
         # First attempt with cached/generated token
         try:
-            result = await self._nf_create_urllib(token, json_data, sentinel_token, proxy_url, token_id, user_agent)
+            result = await self._nf_create_urllib(token, json_data, sentinel_token, proxy_url, token_id, user_agent, account_id=account_id)
             return result["id"]
         except Exception as e:
             error_str = str(e)
@@ -1109,27 +1111,27 @@ class SoraClient:
                     sentinel_token, user_agent = await self._generate_sentinel_token(token)
                 
                 # Retry with fresh token
-                result = await self._nf_create_urllib(token, json_data, sentinel_token, proxy_url, token_id, user_agent)
+                result = await self._nf_create_urllib(token, json_data, sentinel_token, proxy_url, token_id, user_agent, account_id=account_id)
                 return result["id"]
             
             # For other errors, just re-raise
             raise
     
-    async def get_image_tasks(self, token: str, limit: int = 20, token_id: Optional[int] = None) -> Dict[str, Any]:
+    async def get_image_tasks(self, token: str, limit: int = 20, token_id: Optional[int] = None, account_id: Optional[str] = None) -> Dict[str, Any]:
         """Get recent image generation tasks"""
-        return await self._make_request("GET", f"/v2/recent_tasks?limit={limit}", token, token_id=token_id)
+        return await self._make_request("GET", f"/v2/recent_tasks?limit={limit}", token, token_id=token_id, account_id=account_id)
 
-    async def get_video_drafts(self, token: str, limit: int = 15, token_id: Optional[int] = None) -> Dict[str, Any]:
+    async def get_video_drafts(self, token: str, limit: int = 15, token_id: Optional[int] = None, account_id: Optional[str] = None) -> Dict[str, Any]:
         """Get recent video drafts"""
-        return await self._make_request("GET", f"/project_y/profile/drafts?limit={limit}", token, token_id=token_id)
+        return await self._make_request("GET", f"/project_y/profile/drafts?limit={limit}", token, token_id=token_id, account_id=account_id)
 
-    async def get_pending_tasks(self, token: str, token_id: Optional[int] = None) -> list:
+    async def get_pending_tasks(self, token: str, token_id: Optional[int] = None, account_id: Optional[str] = None) -> list:
         """Get pending video generation tasks
 
         Returns:
             List of pending tasks with progress information
         """
-        result = await self._make_request("GET", "/nf/pending/v2", token, token_id=token_id)
+        result = await self._make_request("GET", "/nf/pending/v2", token, token_id=token_id, account_id=account_id)
         # The API returns a list directly
         return result if isinstance(result, list) else []
 
