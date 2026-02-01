@@ -12,7 +12,6 @@ services:
       - TZ=Asia/Shanghai
       - TIMEZONE_OFFSET=8
     restart: unless-stopped
-
   warp:
     image: caomingjun/warp
     container_name: warp

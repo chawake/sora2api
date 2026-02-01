@@ -624,6 +624,7 @@ class SoraClient:
             "User-Agent": user_agent,
             "OAI-Language": "en-US",
             "OAI-Device-Id": device_id,
+            "Cookie": f"oai-did={device_id}",
         }
 
         try:
