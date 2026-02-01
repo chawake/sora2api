@@ -479,6 +479,139 @@ class SoraClient:
         }
         return json.dumps(token_payload, ensure_ascii=False, separators=(",", ":"))
 
+    async def _generate_sentinel_token(self, token: Optional[str] = None, user_agent: Optional[str] = None) -> Tuple[str, str]:
+        """Generate openai-sentinel-token by calling /backend-api/sentinel/req and solving PoW"""
+        req_id = str(uuid4())
+        if not user_agent:
+            user_agent = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
+
+        pow_token = self._get_pow_token(user_agent)
+        
+        init_payload = {
+            "p": pow_token,
+            "id": req_id,
+            "flow": "sora_init"
+        }
+        ua_with_pow = f"{user_agent} {json.dumps(init_payload, separators=(',', ':'))}"
+
+        proxy_url = await self.proxy_manager.get_proxy_url()
+
+        # Request sentinel/req endpoint
+        url = f"{self.CHATGPT_BASE_URL}/backend-api/sentinel/req"
+        request_payload = {
+            "p": pow_token,
+            "id": req_id,
+            "flow": "sora_init"
+        }
+        request_body = json.dumps(request_payload, separators=(',', ':'))
+        
+        headers = {
+            "Accept": "*/*",
+            "Content-Type": "text/plain;charset=UTF-8",
+            "Origin": "https://chatgpt.com",
+            "Referer": "https://chatgpt.com/backend-api/sentinel/frame.html",
+            "User-Agent": ua_with_pow,
+            "sec-ch-ua": '"Not(A:Brand";v="8", "Chromium";v="131", "Google Chrome";v="131"',
+            "sec-ch-ua-mobile": "?1",
+            "sec-ch-ua-platform": '"Android"',
+        }
+
+        try:
+            async with AsyncSession(impersonate="chrome131") as session:
+                response = await session.post(
+                    url,
+                    headers=headers,
+                    data=request_body,
+                    proxy=proxy_url,
+                    timeout=10
+                )
+                if response.status_code != 200:
+                    raise Exception(f"Sentinel request failed: {response.status_code} {response.text}")
+                resp = response.json()
+            
+            debug_logger.log_info(f"Sentinel response: turnstile.dx={bool(resp.get('turnstile', {}).get('dx'))}, token={bool(resp.get('token'))}, pow_required={resp.get('proofofwork', {}).get('required')}")
+        except Exception as e:
+            debug_logger.log_error(
+                error_message=f"Sentinel request failed: {str(e)}",
+                status_code=0,
+                response_text=str(e),
+                source="Server"
+            )
+            raise
+
+        # Build final sentinel token
+        sentinel_token = self._build_sentinel_token(
+            self.SENTINEL_FLOW, req_id, pow_token, resp, user_agent
+        )
+        
+        # Log final token for debugging
+        parsed = json.loads(sentinel_token)
+        debug_logger.log_info(f"Final sentinel: p_prefix={parsed['p'][:10]}, p_suffix={parsed['p'][-5:]}, t_len={len(parsed['t'])}, c_len={len(parsed['c'])}, flow={parsed['flow']}")
+        
+        return sentinel_token, user_agent
+
+    @staticmethod
+    def is_storyboard_prompt(prompt: str) -> bool:
+        """检测提示词是否为分镜模式格式
+
+        格式: [time]prompt 或 [time]prompt\n[time]prompt
+        例如: [5.0s]猫猫从飞机上跳伞 [5.0s]猫猫降落
+
+        Args:
+            prompt: 用户输入的提示词
+
+        Returns:
+            True if prompt matches storyboard format
+        """
+        if not prompt:
+            return False
+        # 匹配格式: [数字s] 或 [数字.数字s]
+        pattern = r'\[\d+(?:\.\d+)?s\]'
+        matches = re.findall(pattern, prompt)
+        # 至少包含一个时间标记才认为是分镜模式
+        return len(matches) >= 1
+
+    @staticmethod
+    def format_storyboard_prompt(prompt: str) -> str:
+        """将分镜格式提示词转换为API所需格式
+
+        输入: 猫猫的奇妙冒险\n[5.0s]猫猫从飞机上跳伞 [5.0s]猫猫降落
+        输出: current timeline:\nShot 1:...\n\ninstructions:\n猫猫的奇妙冒险
+
+        Args:
+            prompt: 原始分镜格式提示词
+
+        Returns:
+            格式化后的API提示词
+        """
+        # 匹配 [时间]内容 的模式
+        pattern = r'\[(\d+(?:\.\d+)?)s\]\s*([^\[]+)'
+        matches = re.findall(pattern, prompt)
+
+        if not matches:
+            return prompt
+
+        # 提取总述(第一个[时间]之前的内容)
+        first_bracket_pos = prompt.find('[')
+        instructions = ""
+        if first_bracket_pos > 0:
+            instructions = prompt[:first_bracket_pos].strip()
+
+        # 格式化分镜
+        formatted_shots = []
+        for idx, (duration, scene) in enumerate(matches, 1):
+            scene = scene.strip()
+            shot = f"Shot {idx}:\nduration: {duration}sec\nScene: {scene}"
+            formatted_shots.append(shot)
+
+        timeline = "\n\n".join(formatted_shots)
+
+        # 如果有总述,添加instructions部分
+        if instructions:
+            return f"current timeline:\n{timeline}\n\ninstructions:\n{instructions}"
+        else:
+            return timeline
+
     async def _get_sentinel_token_via_browser(self, proxy_url: Optional[str] = None) -> Optional[str]:
         if not PLAYWRIGHT_AVAILABLE:
             debug_logger.log_info("[Warning] Playwright not available, cannot use browser fallback")
