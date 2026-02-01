@@ -59,7 +59,7 @@ class TokenManager:
         # 转换为小写
         return format_choice.lower()
 
-    async def get_user_info(self, access_token: str, token_id: Optional[int] = None, proxy_url: Optional[str] = None) -> dict:
+    async def get_user_info(self, access_token: str, token_id: Optional[int] = None, proxy_url: Optional[str] = None, account_id: Optional[str] = None) -> dict:
         """Get user info from Sora API"""
         proxy_url = await self.proxy_manager.get_proxy_url(token_id, proxy_url)
 
@@ -70,7 +70,9 @@ class TokenManager:
                 "Origin": "https://sora.chatgpt.com",
                 "Referer": "https://sora.chatgpt.com/"
             }
-            if "," in access_token:
+            if account_id:
+                headers["ChatGPT-Account-ID"] = account_id
+            elif "," in access_token:
                 headers["ChatGPT-Account-ID"] = access_token.split(",", 1)[1]
 
             kwargs = {
@@ -101,7 +103,7 @@ class TokenManager:
 
             return response.json()
 
-    async def get_subscription_info(self, token: str, token_id: Optional[int] = None, proxy_url: Optional[str] = None) -> Dict[str, Any]:
+    async def get_subscription_info(self, token: str, token_id: Optional[int] = None, proxy_url: Optional[str] = None, account_id: Optional[str] = None) -> Dict[str, Any]:
         """Get subscription information from Sora API
 
         Returns:
@@ -117,7 +119,9 @@ class TokenManager:
         headers = {
             "Authorization": f"Bearer {token.split(',')[0] if ',' in token else token}"
         }
-        if "," in token:
+        if account_id:
+            headers["ChatGPT-Account-ID"] = account_id
+        elif "," in token:
             headers["ChatGPT-Account-ID"] = token.split(",", 1)[1]
 
         async with AsyncSession() as session:
@@ -176,7 +180,7 @@ class TokenManager:
 
                 raise Exception(f"Failed to get subscription info: {response.status_code}")
 
-    async def get_sora2_invite_code(self, access_token: str, token_id: Optional[int] = None, proxy_url: Optional[str] = None) -> dict:
+    async def get_sora2_invite_code(self, access_token: str, token_id: Optional[int] = None, proxy_url: Optional[str] = None, account_id: Optional[str] = None) -> dict:
         """Get Sora2 invite code"""
         proxy_url = await self.proxy_manager.get_proxy_url(token_id, proxy_url)
 
@@ -187,7 +191,9 @@ class TokenManager:
                 "Authorization": f"Bearer {access_token.split(',')[0] if ',' in access_token else access_token}",
                 "Accept": "application/json"
             }
-            if "," in access_token:
+            if account_id:
+                headers["ChatGPT-Account-ID"] = account_id
+            elif "," in access_token:
                 headers["ChatGPT-Account-ID"] = access_token.split(",", 1)[1]
 
             kwargs = {
@@ -668,6 +674,7 @@ class TokenManager:
                        client_id: Optional[str] = None,
                        proxy_url: Optional[str] = None,
                        remark: Optional[str] = None,
+                       account_id: Optional[str] = None,
                        update_if_exists: bool = False,
                        image_enabled: bool = True,
                        video_enabled: bool = True,
@@ -733,7 +740,7 @@ class TokenManager:
         else:
             # Normal mode: get user info from Sora API
             try:
-                user_info = await self.get_user_info(token_value, proxy_url=proxy_url)
+                user_info = await self.get_user_info(token_value, proxy_url=proxy_url, account_id=account_id)
                 email = user_info.get("email", jwt_email or "")
                 name = user_info.get("name") or ""
             except Exception as e:
@@ -832,6 +839,7 @@ class TokenManager:
             client_id=client_id,
             proxy_url=proxy_url,
             remark=remark,
+            account_id=account_id,
             expiry_time=expiry_time,
             is_active=True,
             plan_type=plan_type,
@@ -857,7 +865,8 @@ class TokenManager:
     async def update_existing_token(self, token_id: int, token_value: str,
                                     st: Optional[str] = None,
                                     rt: Optional[str] = None,
-                                    remark: Optional[str] = None) -> Token:
+                                    remark: Optional[str] = None,
+                                    account_id: Optional[str] = None) -> Token:
         """Update an existing token with new information"""
         # Decode JWT to get expiry time
         decoded = await self.decode_jwt(token_value)
@@ -869,7 +878,7 @@ class TokenManager:
             jwt_email = decoded["https://api.openai.com/profile"].get("email")
 
         try:
-            user_info = await self.get_user_info(token_value)
+            user_info = await self.get_user_info(token_value, account_id=account_id)
             email = user_info.get("email", jwt_email or "")
             name = user_info.get("name", "")
         except Exception as e:
@@ -881,7 +890,7 @@ class TokenManager:
         plan_title = None
         subscription_end = None
         try:
-            sub_info = await self.get_subscription_info(token_value)
+            sub_info = await self.get_subscription_info(token_value, account_id=account_id)
             plan_type = sub_info.get("plan_type")
             plan_title = sub_info.get("plan_title")
             if sub_info.get("subscription_end"):
@@ -900,7 +909,8 @@ class TokenManager:
             expiry_time=expiry_time,
             plan_type=plan_type,
             plan_title=plan_title,
-            subscription_end=subscription_end
+            subscription_end=subscription_end,
+            account_id=account_id
         )
 
         # Get updated token
@@ -922,8 +932,9 @@ class TokenManager:
                           video_enabled: Optional[bool] = None,
                           image_concurrency: Optional[int] = None,
                           video_concurrency: Optional[int] = None,
+                          account_id: Optional[str] = None,
                           skip_status_update: bool = False):
-        """Update token (AT, ST, RT, client_id, proxy_url, remark, image_enabled, video_enabled, concurrency limits)"""
+        """Update token (AT, ST, RT, client_id, proxy_url, remark, image_enabled, video_enabled, concurrency limits, account_id)"""
         # If token (AT) is updated, decode JWT to get new expiry time
         expiry_time = None
         if token:
@@ -934,6 +945,7 @@ class TokenManager:
                 pass  # If JWT decode fails, keep expiry_time as None
 
         await self.db.update_token(token_id, token=token, st=st, rt=rt, client_id=client_id, proxy_url=proxy_url, remark=remark, expiry_time=expiry_time,
+                                   account_id=account_id,
                                    image_enabled=image_enabled, video_enabled=video_enabled,
                                    image_concurrency=image_concurrency, video_concurrency=video_concurrency)
 

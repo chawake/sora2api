@@ -246,14 +246,15 @@ class Database:
             """, (sora_auth_token, sora_refresh_token, sora_client_id))
 
 
+
     async def check_and_migrate_db(self, config_dict: dict = None):
         """Check database integrity and perform migrations if needed
-
-        Args:
-            config_dict: Configuration dictionary from setting.toml (optional)
-                        Used to initialize new tables with values from setting.toml
         """
+    async def check_and_migrate_db(self, config_dict: dict = None):
+        """Check database integrity and perform migrations if needed"""
         async with aiosqlite.connect(self.db_path) as db:
+            print("Checking database integrity and performing migrations...")
+
             print("Checking database integrity and performing migrations...")
 
             # Check and add missing columns to tokens table
@@ -272,6 +273,7 @@ class Database:
                     ("client_id", "TEXT"),
                     ("proxy_url", "TEXT"),
                     ("is_expired", "BOOLEAN DEFAULT 0"),
+                    ("account_id", "TEXT"),
                 ]
 
                 for col_name, col_type in columns_to_add:
@@ -367,6 +369,7 @@ class Database:
                     client_id TEXT,
                     proxy_url TEXT,
                     remark TEXT,
+                    account_id TEXT,
                     expiry_time TIMESTAMP,
                     is_active BOOLEAN DEFAULT 1,
                     cooled_until TIMESTAMP,
@@ -624,13 +627,13 @@ class Database:
         """Add a new token"""
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute("""
-                INSERT INTO tokens (token, email, username, name, st, rt, client_id, proxy_url, remark, expiry_time, is_active,
+                INSERT INTO tokens (token, email, username, name, st, rt, client_id, proxy_url, remark, account_id, expiry_time, is_active,
                                    plan_type, plan_title, subscription_end, sora2_supported, sora2_invite_code,
                                    sora2_redeemed_count, sora2_total_count, sora2_remaining_count, sora2_cooldown_until,
                                    image_enabled, video_enabled, image_concurrency, video_concurrency)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (token.token, token.email, "", token.name, token.st, token.rt, token.client_id, token.proxy_url,
-                  token.remark, token.expiry_time, token.is_active,
+                  token.remark, token.account_id, token.expiry_time, token.is_active,
                   token.plan_type, token.plan_title, token.subscription_end,
                   token.sora2_supported, token.sora2_invite_code,
                   token.sora2_redeemed_count, token.sora2_total_count,
@@ -783,6 +786,7 @@ class Database:
                           client_id: Optional[str] = None,
                           proxy_url: Optional[str] = None,
                           remark: Optional[str] = None,
+                          account_id: Optional[str] = None,
                           expiry_time: Optional[datetime] = None,
                           plan_type: Optional[str] = None,
                           plan_title: Optional[str] = None,
@@ -821,6 +825,10 @@ class Database:
                 updates.append("remark = ?")
                 params.append(remark)
 
+            if account_id is not None:
+                updates.append("account_id = ?")
+                params.append(account_id)
+
             if expiry_time is not None:
                 updates.append("expiry_time = ?")
                 params.append(expiry_time)
@@ -844,6 +852,10 @@ class Database:
             if video_enabled is not None:
                 updates.append("video_enabled = ?")
                 params.append(video_enabled)
+
+            if account_id is not None:
+                updates.append("account_id = ?")
+                params.append(account_id)
 
             if image_concurrency is not None:
                 updates.append("image_concurrency = ?")

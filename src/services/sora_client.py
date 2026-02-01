@@ -601,7 +601,7 @@ class SoraClient:
 
     async def _nf_create_urllib(self, token: str, payload: dict, sentinel_token: str,
                                 proxy_url: Optional[str], token_id: Optional[int] = None,
-                                user_agent: Optional[str] = None) -> Dict[str, Any]:
+                                user_agent: Optional[str] = None, account_id: Optional[str] = None) -> Dict[str, Any]:
         """Make nf/create request
         
         Returns:
@@ -615,8 +615,8 @@ class SoraClient:
             user_agent = random.choice(DESKTOP_USER_AGENTS)
 
         # Check for Team ID appended to token (format: token,team_id)
-        org_id = None
-        if "," in token:
+        org_id = account_id
+        if "," in token and not org_id:
             token, org_id = token.split(",", 1)
 
         import json as json_mod
@@ -810,7 +810,8 @@ class SoraClient:
                            json_data: Optional[Dict] = None,
                            multipart: Optional[Dict] = None,
                            add_sentinel_token: bool = False,
-                           token_id: Optional[int] = None) -> Dict[str, Any]:
+                           token_id: Optional[int] = None,
+                           account_id: Optional[str] = None) -> Dict[str, Any]:
         """Make HTTP request with proxy support
 
         Args:
@@ -821,22 +822,29 @@ class SoraClient:
             multipart: Multipart form data (for file uploads)
             add_sentinel_token: Whether to add openai-sentinel-token header (only for generation requests)
             token_id: Token ID for getting token-specific proxy (optional)
+            account_id: Build ChatGPT-Account-ID header (for Team accounts)
         """
         proxy_url = await self.proxy_manager.get_proxy_url(token_id)
 
         # Check for Team ID appended to token (format: token,team_id)
+        org_id = account_id
         if "," in token:
-            token, org_id = token.split(",", 1)
-            headers = {
-                "Authorization": f"Bearer {token}",
-                "ChatGPT-Account-ID": org_id,
-                "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
-            }
-        else:
-            headers = {
-                "Authorization": f"Bearer {token}",
-                "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
-            }
+             # Backward compatibility: split token if no explicit account_id provided, 
+             # OR if provided but token still contains comma (we just clean the token part)
+             # But if account_id is provided, we use it. If not, we take from token.
+             if not org_id:
+                token, org_id = token.split(",", 1)
+             else:
+                # account_id provided, but token has comma. Use the token part only.
+                token, _ = token.split(",", 1)
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
+        }
+        
+        if org_id:
+            headers["ChatGPT-Account-ID"] = org_id
 
         # 只在生成请求时添加 sentinel token
         if add_sentinel_token:
@@ -942,11 +950,11 @@ class SoraClient:
 
             return response_json if response_json else response.json()
     
-    async def get_user_info(self, token: str) -> Dict[str, Any]:
+    async def get_user_info(self, token: str, account_id: Optional[str] = None) -> Dict[str, Any]:
         """Get user information"""
-        return await self._make_request("GET", "/me", token)
+        return await self._make_request("GET", "/me", token, account_id=account_id)
     
-    async def upload_image(self, image_data: bytes, token: str, filename: str = "image.png") -> str:
+    async def upload_image(self, image_data: bytes, token: str, filename: str = "image.png", account_id: Optional[str] = None) -> str:
         """Upload image and return media_id
 
         使用 CurlMime 对象上传文件（curl_cffi 的正确方式）
@@ -976,11 +984,12 @@ class SoraClient:
             data=filename.encode('utf-8')
         )
 
-        result = await self._make_request("POST", "/uploads", token, multipart=mp)
+        result = await self._make_request("POST", "/uploads", token, multipart=mp, account_id=account_id)
         return result["id"]
     
     async def generate_image(self, prompt: str, token: str, width: int = 360,
-                            height: int = 360, media_id: Optional[str] = None, token_id: Optional[int] = None) -> str:
+                            height: int = 360, media_id: Optional[str] = None, token_id: Optional[int] = None,
+                            account_id: Optional[str] = None) -> str:
         """Generate image (text-to-image or image-to-image)"""
         operation = "remix" if media_id else "simple_compose"
 
@@ -1004,7 +1013,7 @@ class SoraClient:
         }
 
         # 生成请求需要添加 sentinel token
-        result = await self._make_request("POST", "/video_gen", token, json_data=json_data, add_sentinel_token=True, token_id=token_id)
+        result = await self._make_request("POST", "/video_gen", token, json_data=json_data, add_sentinel_token=True, token_id=token_id, account_id=account_id)
         return result["id"]
     
     async def generate_video(self, prompt: str, token: str, orientation: str = "landscape",
@@ -1321,12 +1330,13 @@ class SoraClient:
 
     # ==================== Character Creation Methods ====================
 
-    async def upload_character_video(self, video_data: bytes, token: str) -> str:
+    async def upload_character_video(self, video_data: bytes, token: str, account_id: Optional[str] = None) -> str:
         """Upload character video and return cameo_id
 
         Args:
             video_data: Video file bytes
             token: Access token
+            account_id: Account ID for Team accounts
 
         Returns:
             cameo_id
@@ -1343,20 +1353,21 @@ class SoraClient:
             data=b"0,3"
         )
 
-        result = await self._make_request("POST", "/characters/upload", token, multipart=mp)
+        result = await self._make_request("POST", "/characters/upload", token, multipart=mp, account_id=account_id)
         return result.get("id")
 
-    async def get_cameo_status(self, cameo_id: str, token: str) -> Dict[str, Any]:
+    async def get_cameo_status(self, cameo_id: str, token: str, account_id: Optional[str] = None) -> Dict[str, Any]:
         """Get character (cameo) processing status
 
         Args:
             cameo_id: The cameo ID returned from upload_character_video
             token: Access token
+            account_id: Account ID for Team accounts
 
         Returns:
             Dictionary with status, display_name_hint, username_hint, profile_asset_url, instruction_set_hint
         """
-        return await self._make_request("GET", f"/project_y/cameos/in_progress/{cameo_id}", token)
+        return await self._make_request("GET", f"/project_y/cameos/in_progress/{cameo_id}", token, account_id=account_id)
 
     async def download_character_image(self, image_url: str) -> bytes:
         """Download character image from URL
@@ -1384,7 +1395,7 @@ class SoraClient:
             return response.content
 
     async def finalize_character(self, cameo_id: str, username: str, display_name: str,
-                                profile_asset_pointer: str, instruction_set, token: str) -> str:
+                                profile_asset_pointer: str, instruction_set, token: str, account_id: Optional[str] = None) -> str:
         """Finalize character creation
 
         Args:
@@ -1394,6 +1405,7 @@ class SoraClient:
             profile_asset_pointer: Asset pointer from upload_character_image
             instruction_set: Character instruction set (not used by API, always set to None)
             token: Access token
+            account_id: Account ID for Team accounts
 
         Returns:
             character_id
@@ -1410,29 +1422,31 @@ class SoraClient:
             "safety_instruction_set": None
         }
 
-        result = await self._make_request("POST", "/characters/finalize", token, json_data=json_data)
+        result = await self._make_request("POST", "/characters/finalize", token, json_data=json_data, account_id=account_id)
         return result.get("character", {}).get("character_id")
 
-    async def set_character_public(self, cameo_id: str, token: str) -> bool:
+    async def set_character_public(self, cameo_id: str, token: str, account_id: Optional[str] = None) -> bool:
         """Set character as public
 
         Args:
             cameo_id: The cameo ID
             token: Access token
+            account_id: Account ID for Team accounts
 
         Returns:
             True if successful
         """
         json_data = {"visibility": "public"}
-        await self._make_request("POST", f"/project_y/cameos/by_id/{cameo_id}/update_v2", token, json_data=json_data)
+        await self._make_request("POST", f"/project_y/cameos/by_id/{cameo_id}/update_v2", token, json_data=json_data, account_id=account_id)
         return True
 
-    async def upload_character_image(self, image_data: bytes, token: str) -> str:
+    async def upload_character_image(self, image_data: bytes, token: str, account_id: Optional[str] = None) -> str:
         """Upload character image and return asset_pointer
 
         Args:
             image_data: Image file bytes
             token: Access token
+            account_id: Account ID for Team accounts
 
         Returns:
             asset_pointer
@@ -1449,15 +1463,16 @@ class SoraClient:
             data=b"profile"
         )
 
-        result = await self._make_request("POST", "/project_y/file/upload", token, multipart=mp)
+        result = await self._make_request("POST", "/project_y/file/upload", token, multipart=mp, account_id=account_id)
         return result.get("asset_pointer")
 
-    async def delete_character(self, character_id: str, token: str) -> bool:
+    async def delete_character(self, character_id: str, token: str, account_id: Optional[str] = None) -> bool:
         """Delete a character
 
         Args:
             character_id: The character ID
             token: Access token
+            account_id: Account ID for Team accounts
 
         Returns:
             True if successful
@@ -1467,6 +1482,10 @@ class SoraClient:
         headers = {
             "Authorization": f"Bearer {token}"
         }
+        if account_id:
+            headers["ChatGPT-Account-ID"] = account_id
+        elif "," in token:
+            headers["ChatGPT-Account-ID"] = token.split(",", 1)[1]
 
         async with AsyncSession() as session:
             url = f"{self.base_url}/project_y/characters/{character_id}"
@@ -1486,7 +1505,8 @@ class SoraClient:
             return True
 
     async def remix_video(self, remix_target_id: str, prompt: str, token: str,
-                         orientation: str = "portrait", n_frames: int = 450, style_id: Optional[str] = None) -> str:
+                          orientation: str = "portrait", n_frames: int = 450, style_id: Optional[str] = None,
+                          account_id: Optional[str] = None) -> str:
         """Generate video using remix (based on existing video)
 
         Args:
@@ -1496,6 +1516,7 @@ class SoraClient:
             orientation: Video orientation (portrait/landscape)
             n_frames: Number of frames
             style_id: Optional style ID
+            account_id: Account ID for Team accounts
 
         Returns:
             task_id
@@ -1516,11 +1537,12 @@ class SoraClient:
         # Generate sentinel token and call /nf/create using urllib
         proxy_url = await self.proxy_manager.get_proxy_url()
         sentinel_token, user_agent = await self._generate_sentinel_token(token)
-        result = await self._nf_create_urllib(token, json_data, sentinel_token, proxy_url, user_agent=user_agent)
+        result = await self._nf_create_urllib(token, json_data, sentinel_token, proxy_url, user_agent=user_agent, account_id=account_id)
         return result.get("id")
 
     async def generate_storyboard(self, prompt: str, token: str, orientation: str = "landscape",
-                                 media_id: Optional[str] = None, n_frames: int = 450, style_id: Optional[str] = None) -> str:
+                                 media_id: Optional[str] = None, n_frames: int = 450, style_id: Optional[str] = None,
+                                 account_id: Optional[str] = None) -> str:
         """Generate video using storyboard mode
 
         Args:
@@ -1530,6 +1552,7 @@ class SoraClient:
             media_id: Optional image media_id for image-to-video
             n_frames: Number of frames
             style_id: Optional style ID
+            account_id: Account ID for Team accounts
 
         Returns:
             task_id
@@ -1561,11 +1584,11 @@ class SoraClient:
             "video_caption": None
         }
 
-        result = await self._make_request("POST", "/nf/create/storyboard", token, json_data=json_data, add_sentinel_token=True)
+        result = await self._make_request("POST", "/nf/create/storyboard", token, json_data=json_data, add_sentinel_token=True, account_id=account_id)
         return result.get("id")
 
     async def enhance_prompt(self, prompt: str, token: str, expansion_level: str = "medium",
-                            duration_s: int = 10, token_id: Optional[int] = None) -> str:
+                            duration_s: int = 10, token_id: Optional[int] = None, account_id: Optional[str] = None) -> str:
         """Enhance prompt using Sora's prompt enhancement API
 
         Args:
@@ -1574,6 +1597,7 @@ class SoraClient:
             expansion_level: Expansion level (medium/long)
             duration_s: Duration in seconds (10/15/20)
             token_id: Token ID for getting token-specific proxy (optional)
+            account_id: Account ID for Team accounts
 
         Returns:
             Enhanced prompt text
@@ -1584,5 +1608,5 @@ class SoraClient:
             "duration_s": duration_s
         }
 
-        result = await self._make_request("POST", "/editor/enhance_prompt", token, json_data=json_data, token_id=token_id)
+        result = await self._make_request("POST", "/editor/enhance_prompt", token, json_data=json_data, token_id=token_id, account_id=account_id)
         return result.get("enhanced_prompt", "")

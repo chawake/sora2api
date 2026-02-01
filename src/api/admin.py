@@ -65,6 +65,7 @@ class LoginResponse(BaseModel):
 
 class AddTokenRequest(BaseModel):
     token: str  # Access Token (AT)
+    account_id: Optional[str] = None
     st: Optional[str] = None  # Session Token (optional, for storage)
     rt: Optional[str] = None  # Refresh Token (optional, for storage)
     client_id: Optional[str] = None  # Client ID (optional)
@@ -87,6 +88,7 @@ class UpdateTokenStatusRequest(BaseModel):
 
 class UpdateTokenRequest(BaseModel):
     token: Optional[str] = None  # Access Token
+    account_id: Optional[str] = None
     st: Optional[str] = None
     rt: Optional[str] = None
     client_id: Optional[str] = None  # Client ID
@@ -263,6 +265,7 @@ async def add_token(request: AddTokenRequest, token: str = Depends(verify_admin_
             client_id=request.client_id,
             proxy_url=request.proxy_url,
             remark=request.remark,
+            account_id=request.account_id,
             update_if_exists=False,
             image_enabled=request.image_enabled,
             video_enabled=request.video_enabled,
@@ -799,6 +802,7 @@ async def update_token(
             client_id=request.client_id,
             proxy_url=request.proxy_url,
             remark=request.remark,
+            account_id=request.account_id,
             image_enabled=request.image_enabled,
             video_enabled=request.video_enabled,
             image_concurrency=request.image_concurrency,

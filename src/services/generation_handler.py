@@ -547,7 +547,11 @@ class GenerationHandler:
                     is_first_chunk = False
 
                 image_data = self._decode_base64_image(image)
-                media_id = await self.sora_client.upload_image(image_data, token_obj.token)
+                media_id = await self.sora_client.upload_image(
+                    image_data, 
+                    token_obj.token,
+                    account_id=token_obj.account_id
+                )
 
                 if stream:
                     yield self._format_stream_chunk(
@@ -590,7 +594,8 @@ class GenerationHandler:
                         orientation=model_config["orientation"],
                         media_id=media_id,
                         n_frames=n_frames,
-                        style_id=style_id
+                        style_id=style_id,
+                        account_id=token_obj.account_id
                     )
                 else:
                     # Normal video generation
@@ -606,7 +611,8 @@ class GenerationHandler:
                         style_id=style_id,
                         model=sora_model,
                         size=video_size,
-                        token_id=token_obj.id
+                        token_id=token_obj.id,
+                        account_id=token_obj.account_id
                     )
             else:
                 task_id = await self.sora_client.generate_image(
@@ -614,7 +620,8 @@ class GenerationHandler:
                     width=model_config["width"],
                     height=model_config["height"],
                     media_id=media_id,
-                    token_id=token_obj.id
+                    token_id=token_obj.id,
+                    account_id=token_obj.account_id
                 )
 
             # Save task to database
@@ -1587,7 +1594,8 @@ class GenerationHandler:
                 token=token_obj.token,
                 expansion_level=expansion_level,
                 duration_s=duration_s,
-                token_id=token_obj.id
+                token_id=token_obj.id,
+                account_id=token_obj.account_id
             )
 
             if stream:
@@ -1650,14 +1658,22 @@ class GenerationHandler:
             yield self._format_stream_chunk(
                 reasoning_content="Uploading video file...\n"
             )
-            cameo_id = await self.sora_client.upload_character_video(video_bytes, token_obj.token)
+            cameo_id = await self.sora_client.upload_character_video(
+                video_bytes, 
+                token_obj.token,
+                account_id=token_obj.account_id
+            )
             debug_logger.log_info(f"Video uploaded, cameo_id: {cameo_id}")
 
             # Step 2: Poll for character processing
             yield self._format_stream_chunk(
                 reasoning_content="Processing video to extract character...\n"
             )
-            cameo_status = await self._poll_cameo_status(cameo_id, token_obj.token)
+            cameo_status = await self._poll_cameo_status(
+                cameo_id, 
+                token_obj.token, 
+                account_id=token_obj.account_id
+            )
             debug_logger.log_info(f"Cameo status: {cameo_status}")
 
             # Extract character info immediately after polling completes
@@ -1687,7 +1703,11 @@ class GenerationHandler:
             yield self._format_stream_chunk(
                 reasoning_content="Uploading character avatar...\n"
             )
-            asset_pointer = await self.sora_client.upload_character_image(avatar_data, token_obj.token)
+            asset_pointer = await self.sora_client.upload_character_image(
+                avatar_data, 
+                token_obj.token,
+                account_id=token_obj.account_id
+            )
             debug_logger.log_info(f"Avatar uploaded, asset_pointer: {asset_pointer}")
 
             # Step 5: Finalize character
@@ -1703,7 +1723,8 @@ class GenerationHandler:
                 display_name=display_name,
                 profile_asset_pointer=asset_pointer,
                 instruction_set=instruction_set,
-                token=token_obj.token
+                token=token_obj.token,
+                account_id=token_obj.account_id
             )
             debug_logger.log_info(f"Character finalized, character_id: {character_id}")
 
@@ -1711,7 +1732,11 @@ class GenerationHandler:
             yield self._format_stream_chunk(
                 reasoning_content="Setting character as public...\n"
             )
-            await self.sora_client.set_character_public(cameo_id, token_obj.token)
+            await self.sora_client.set_character_public(
+                cameo_id, 
+                token_obj.token,
+                account_id=token_obj.account_id
+            )
             debug_logger.log_info(f"Character set as public")
 
             # Log successful character creation
@@ -1847,14 +1872,22 @@ class GenerationHandler:
             yield self._format_stream_chunk(
                 reasoning_content="Uploading video file...\n"
             )
-            cameo_id = await self.sora_client.upload_character_video(video_bytes, token_obj.token)
+            cameo_id = await self.sora_client.upload_character_video(
+                video_bytes, 
+                token_obj.token, 
+                account_id=token_obj.account_id
+            )
             debug_logger.log_info(f"Video uploaded, cameo_id: {cameo_id}")
 
             # Step 2: Poll for character processing
             yield self._format_stream_chunk(
                 reasoning_content="Processing video to extract character...\n"
             )
-            cameo_status = await self._poll_cameo_status(cameo_id, token_obj.token)
+            cameo_status = await self._poll_cameo_status(
+                cameo_id, 
+                token_obj.token, 
+                account_id=token_obj.account_id
+            )
             debug_logger.log_info(f"Cameo status: {cameo_status}")
 
             # Extract character info immediately after polling completes
@@ -1884,7 +1917,11 @@ class GenerationHandler:
             yield self._format_stream_chunk(
                 reasoning_content="Uploading character avatar...\n"
             )
-            asset_pointer = await self.sora_client.upload_character_image(avatar_data, token_obj.token)
+            asset_pointer = await self.sora_client.upload_character_image(
+                avatar_data, 
+                token_obj.token, 
+                account_id=token_obj.account_id
+            )
             debug_logger.log_info(f"Avatar uploaded, asset_pointer: {asset_pointer}")
 
             # Step 5: Finalize character
@@ -1900,7 +1937,8 @@ class GenerationHandler:
                 display_name=display_name,
                 profile_asset_pointer=asset_pointer,
                 instruction_set=instruction_set,
-                token=token_obj.token
+                token=token_obj.token,
+                account_id=token_obj.account_id
             )
             debug_logger.log_info(f"Character finalized, character_id: {character_id}")
 
@@ -1948,7 +1986,8 @@ class GenerationHandler:
                 n_frames=n_frames,
                 model=sora_model,
                 size=video_size,
-                token_id=token_obj.id
+                token_id=token_obj.id,
+                account_id=token_obj.account_id
             )
             debug_logger.log_info(f"Video generation started, task_id: {task_id}")
 
@@ -2030,7 +2069,11 @@ class GenerationHandler:
                     yield self._format_stream_chunk(
                         reasoning_content="Cleaning up temporary character...\n"
                     )
-                    await self.sora_client.delete_character(character_id, token_obj.token)
+                    await self.sora_client.delete_character(
+                        character_id, 
+                        token_obj.token,
+                        account_id=token_obj.account_id
+                    )
                     debug_logger.log_info(f"Character deleted: {character_id}")
                 except Exception as e:
                     debug_logger.log_error(
@@ -2079,7 +2122,8 @@ class GenerationHandler:
                 token=token_obj.token,
                 orientation=model_config["orientation"],
                 n_frames=n_frames,
-                style_id=style_id
+                style_id=style_id,
+                account_id=token_obj.account_id
             )
             debug_logger.log_info(f"Remix generation started, task_id: {task_id}")
 
@@ -2133,7 +2177,7 @@ class GenerationHandler:
             )
             raise
 
-    async def _poll_cameo_status(self, cameo_id: str, token: str, timeout: int = 600, poll_interval: int = 5) -> Dict[str, Any]:
+    async def _poll_cameo_status(self, cameo_id: str, token: str, timeout: int = 600, poll_interval: int = 5, account_id: Optional[str] = None) -> Dict[str, Any]:
         """Poll for cameo (character) processing status
 
         Args:
@@ -2141,6 +2185,7 @@ class GenerationHandler:
             token: Access token
             timeout: Maximum time to wait in seconds
             poll_interval: Time between polls in seconds
+            account_id: Account ID for Team accounts
 
         Returns:
             Cameo status dictionary with display_name_hint, username_hint, profile_asset_url, instruction_set_hint
@@ -2158,7 +2203,11 @@ class GenerationHandler:
             await asyncio.sleep(poll_interval)
 
             try:
-                status = await self.sora_client.get_cameo_status(cameo_id, token)
+                status = await self.sora_client.get_cameo_status(
+                    cameo_id, 
+                    token,
+                    account_id=account_id
+                )
                 current_status = status.get("status")
                 status_message = status.get("status_message", "")
 

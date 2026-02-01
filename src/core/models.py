@@ -7,6 +7,7 @@ class Token(BaseModel):
     """Token model"""
     id: Optional[int] = None
     token: str
+    account_id: Optional[str] = None
     email: str
     name: Optional[str] = ""
     st: Optional[str] = None
