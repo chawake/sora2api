@@ -1069,7 +1069,7 @@ class SoraClient:
         if not sentinel_token:
             # Fallback to manual POW if lightweight approach fails
             debug_logger.log_info("[Warning] Lightweight sentinel token failed, falling back to manual POW")
-            sentinel_token, user_agent = await self._generate_sentinel_token(token, user_agent=user_agent)
+            sentinel_token, user_agent = await self._generate_sentinel_token(token)
 
         # First attempt with cached/generated token
         try:
@@ -1097,7 +1097,7 @@ class SoraClient:
                 if not sentinel_token:
                     # Fallback to manual POW
                     debug_logger.log_info("[Warning] Refresh failed, falling back to manual POW")
-                    sentinel_token, user_agent = await self._generate_sentinel_token(token, user_agent=user_agent)
+                    sentinel_token, user_agent = await self._generate_sentinel_token(token)
                 
                 # Retry with fresh token
                 result = await self._nf_create_urllib(token, json_data, sentinel_token, proxy_url, token_id, user_agent)
