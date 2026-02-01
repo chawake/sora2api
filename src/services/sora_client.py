@@ -615,9 +615,8 @@ class SoraClient:
             user_agent = random.choice(DESKTOP_USER_AGENTS)
 
         # Check for Team ID appended to token (format: token,team_id)
+        # Check for Team ID appended to token (format: token,team_id)
         org_id = account_id
-        if "," in token and not org_id:
-            token, org_id = token.split(",", 1)
 
         import json as json_mod
         sentinel_data = json_mod.loads(sentinel_token)
@@ -827,16 +826,8 @@ class SoraClient:
         proxy_url = await self.proxy_manager.get_proxy_url(token_id)
 
         # Check for Team ID appended to token (format: token,team_id)
+        # Check for Team ID only if account_id is provided logic is implicit below
         org_id = account_id
-        if "," in token:
-             # Backward compatibility: split token if no explicit account_id provided, 
-             # OR if provided but token still contains comma (we just clean the token part)
-             # But if account_id is provided, we use it. If not, we take from token.
-             if not org_id:
-                token, org_id = token.split(",", 1)
-             else:
-                # account_id provided, but token has comma. Use the token part only.
-                token, _ = token.split(",", 1)
 
         headers = {
             "Authorization": f"Bearer {token}",
@@ -1162,12 +1153,13 @@ class SoraClient:
         # 返回 post.id
         return result.get("post", {}).get("id", "")
 
-    async def delete_post(self, post_id: str, token: str) -> bool:
+    async def delete_post(self, post_id: str, token: str, account_id: Optional[str] = None) -> bool:
         """Delete a published post
 
         Args:
             post_id: The post ID (e.g., s_690ce161c2488191a3476e9969911522)
             token: Access token
+            account_id: Account ID for Team accounts
 
         Returns:
             True if deletion was successful
@@ -1175,11 +1167,11 @@ class SoraClient:
         proxy_url = await self.proxy_manager.get_proxy_url()
 
         headers = {
-            "Authorization": f"Bearer {token.split(',')[0] if ',' in token else token}"
+            "Authorization": f"Bearer {token}"
         }
 
-        if "," in token:
-            headers["ChatGPT-Account-ID"] = token.split(",", 1)[1]
+        if account_id:
+            headers["ChatGPT-Account-ID"] = account_id
 
         async with AsyncSession() as session:
             url = f"{self.base_url}/project_y/post/{post_id}"
