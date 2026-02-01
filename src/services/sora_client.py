@@ -614,6 +614,11 @@ class SoraClient:
         if not user_agent:
             user_agent = random.choice(DESKTOP_USER_AGENTS)
 
+        # Check for Team ID appended to token (format: token,team_id)
+        org_id = None
+        if "," in token:
+            token, org_id = token.split(",", 1)
+
         import json as json_mod
         sentinel_data = json_mod.loads(sentinel_token)
         device_id = sentinel_data.get("id", str(uuid4()))
@@ -627,6 +632,9 @@ class SoraClient:
             "OAI-Device-Id": device_id,
             "Cookie": f"oai-did={device_id}",
         }
+
+        if org_id:
+            headers["OpenAI-Organization"] = org_id
 
         try:
             result = await asyncio.to_thread(
@@ -816,10 +824,19 @@ class SoraClient:
         """
         proxy_url = await self.proxy_manager.get_proxy_url(token_id)
 
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
-        }
+        # Check for Team ID appended to token (format: token,team_id)
+        if "," in token:
+            token, org_id = token.split(",", 1)
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "OpenAI-Organization": org_id,
+                "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
+            }
+        else:
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
+            }
 
         # 只在生成请求时添加 sentinel token
         if add_sentinel_token:
