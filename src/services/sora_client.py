@@ -634,7 +634,7 @@ class SoraClient:
         }
 
         if org_id:
-            headers["OpenAI-Organization"] = org_id
+            headers["ChatGPT-Account-ID"] = org_id
 
         try:
             result = await asyncio.to_thread(
@@ -829,7 +829,7 @@ class SoraClient:
             token, org_id = token.split(",", 1)
             headers = {
                 "Authorization": f"Bearer {token}",
-                "OpenAI-Organization": org_id,
+                "ChatGPT-Account-ID": org_id,
                 "User-Agent" : "Sora/1.2026.007 (Android 15; 24122RKC7C; build 2600700)"
             }
         else:
