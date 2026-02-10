@@ -72,6 +72,7 @@ class DebugLogger:
         source: str = "Server"
     ):
         """Log API request details to log.txt
+
         Args:
             method: HTTP method
             url: Request URL
@@ -81,6 +82,7 @@ class DebugLogger:
             proxy: Proxy URL
             source: Request source - "Client" for user->sora2api, "Server" for sora2api->Sora
         """
+
         # Check if debug mode is enabled
         if not config.debug_enabled:
             return
@@ -149,6 +151,7 @@ class DebugLogger:
         source: str = "Server"
     ):
         """Log API response details to log.txt
+
         Args:
             status_code: HTTP status code
             headers: Response headers
@@ -213,6 +216,7 @@ class DebugLogger:
         source: str = "Server"
     ):
         """Log API error details to log.txt
+
         Args:
             error_message: Error message
             status_code: HTTP status code
@@ -266,6 +270,17 @@ class DebugLogger:
         except Exception as e:
             self.logger.error(f"Error logging info: {e}")
 
+    def log_warning(self, message: str):
+        """Log warning message to log.txt"""
+
+        # Check if debug mode is enabled
+        if not config.debug_enabled:
+            return
+
+        try:
+            self.logger.warning(f"⚠️  [{self._format_timestamp()}] {message}")
+        except Exception as e:
+            self.logger.error(f"Error logging warning: {e}")
+
 # Global debug logger instance
 debug_logger = DebugLogger()
-

@@ -16,6 +16,7 @@ from urllib.error import HTTPError, URLError
 from curl_cffi.requests import AsyncSession
 from curl_cffi import CurlMime
 from .proxy_manager import ProxyManager
+from .pow_service_client import pow_service_client
 from ..core.config import config
 from ..core.logger import debug_logger
 
@@ -233,11 +234,11 @@ async def _generate_sentinel_token_lightweight(proxy_url: str = None, device_id:
 
 async def _get_cached_sentinel_token(proxy_url: str = None, force_refresh: bool = False) -> str:
     """Get sentinel token with caching support
-    
+
     Args:
         proxy_url: Optional proxy URL
         force_refresh: Force refresh token (e.g., after 400 error)
-        
+      
     Returns:
         Sentinel token string or None
         
@@ -245,20 +246,35 @@ async def _get_cached_sentinel_token(proxy_url: str = None, force_refresh: bool 
         Exception: If 403/429 when fetching oai-did
     """
     global _cached_sentinel_token
-    
+
+    # Check if external POW service is configured
+    if config.pow_service_mode == "external":
+        debug_logger.log_info("[POW] Using external POW service (cached sentinel)")
+        from .pow_service_client import pow_service_client
+        result = await pow_service_client.get_sentinel_token()
+
+        if result:
+            sentinel_token, device_id, service_user_agent = result
+            debug_logger.log_info("[POW] External service returned sentinel token successfully")
+            return sentinel_token
+        else:
+            # Fallback to local mode if external service fails
+            debug_logger.log_info("[POW] External service failed, falling back to local mode")
+
+    # Local mode (original logic)
     # Return cached token if available and not forcing refresh
     if _cached_sentinel_token and not force_refresh:
         debug_logger.log_info("[Sentinel] Using cached token")
         return _cached_sentinel_token
-    
+
     # Generate new token
     debug_logger.log_info("[Sentinel] Generating new token...")
     token = await _generate_sentinel_token_lightweight(proxy_url)
-    
+
     if token:
         _cached_sentinel_token = token
         debug_logger.log_info("[Sentinel] Token cached successfully")
-    
+
     return token
 
 
@@ -603,10 +619,10 @@ class SoraClient:
                                 proxy_url: Optional[str], token_id: Optional[int] = None,
                                 user_agent: Optional[str] = None, account_id: Optional[str] = None) -> Dict[str, Any]:
         """Make nf/create request
-        
+
         Returns:
             Response dict on success
-            
+
         Raises:
             Exception: With error info, including '400' in message for sentinel token errors
         """
@@ -624,13 +640,76 @@ class SoraClient:
         
         headers = {
             "Authorization": f"Bearer {token}",
-            "OpenAI-Sentinel-Token": sentinel_token,
+            "openai-sentinel-token": sentinel_token, # Use lowercase, consistent with successful curl requests
             "Content-Type": "application/json",
             "User-Agent": user_agent,
-            "OAI-Language": "en-US",
-            "OAI-Device-Id": device_id,
-            "Cookie": f"oai-did={device_id}",
+            "oai-language": "en-US",  # 使用小写
+            "oai-device-id": device_id,  # 使用小写
+            "Accept": "*/*",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            "Cache-Control": "no-cache",
+            "Origin": "https://sora.chatgpt.com",
+            "Referer": "https://sora.chatgpt.com/explore",
+            "Sec-Ch-Ua": '"Not(A:Brand";v="8", "Chromium";v="131", "Google Chrome";v="131"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+            "Pragma": "no-cache",
+            "Priority": "u=1, i",
         }
+
+         # 添加 Cookie 头（关键修复）
+        if token_id:
+            try:
+                from src.core.database import Database
+                db = Database()
+                token_obj = await db.get_token(token_id)
+                if token_obj and token_obj.st:
+                    # 添加 session token cookie
+                    headers["Cookie"] = f"__Secure-next-auth.session-token={token_obj.st}"
+                    debug_logger.log_info(f"[nf/create] Added session token cookie (length: {len(token_obj.st)})")
+                else:
+                    debug_logger.log_warning("[nf/create] No session token (st) found for this token")
+            except Exception as e:
+                debug_logger.log_warning(f"[nf/create] Failed to get session token: {e}")
+
+        # 记录详细的 Sentinel Token 信息
+        debug_logger.log_info(f"[nf/create] Preparing request to {url}")
+        debug_logger.log_info(f"[nf/create] Device ID: {device_id}")
+
+        # Sentinel Token 前100字符和后50字符
+        if len(sentinel_token) > 150:
+            debug_logger.log_info(f"[nf/create] Sentinel Token (first 100 chars): {sentinel_token[:100]}...")
+            debug_logger.log_info(f"[nf/create] Sentinel Token (last 50 chars): ...{sentinel_token[-50:]}")
+        else:
+            debug_logger.log_info(f"[nf/create] Sentinel Token: {sentinel_token}")
+
+        debug_logger.log_info(f"[nf/create] Sentinel Token length: {len(sentinel_token)}")
+
+        # Sentinel Token 结构信息
+        debug_logger.log_info(f"[nf/create] Sentinel Token structure:")
+        if "p" in sentinel_data:
+            debug_logger.log_info(f"  - p (POW) length: {len(sentinel_data['p'])}")
+        if "t" in sentinel_data:
+            debug_logger.log_info(f"  - t (Turnstile) length: {len(sentinel_data['t'])}")
+        if "c" in sentinel_data:
+            debug_logger.log_info(f"  - c (Challenge) length: {len(sentinel_data['c'])}")
+        if "id" in sentinel_data:
+            debug_logger.log_info(f"  - id: {sentinel_data['id']}")
+        if "flow" in sentinel_data:
+            debug_logger.log_info(f"  - flow: {sentinel_data['flow']}")
+
+        # 使用 log_request 方法记录完整的请求详情
+        debug_logger.log_request(
+            method="POST",
+            url=url,
+            headers=headers,
+            body=payload,
+            proxy=proxy_url,
+            source="Server"
+        )
 
         if org_id:
             headers["ChatGPT-Account-ID"] = org_id
@@ -639,6 +718,7 @@ class SoraClient:
             result = await asyncio.to_thread(
                 self._post_json_sync, url, headers, payload, 30, proxy_url
             )
+            debug_logger.log_info(f"[nf/create] Request succeeded, task_id: {result.get('id', 'N/A')}")
             return result
         except Exception as e:
             error_str = str(e)
@@ -673,7 +753,33 @@ class SoraClient:
             raise Exception(f"URL Error: {exc}") from exc
 
     async def _generate_sentinel_token(self, token: Optional[str] = None, user_agent: Optional[str] = None) -> Tuple[str, str]:
-        """Generate openai-sentinel-token by calling /backend-api/sentinel/req and solving PoW"""
+        """Generate openai-sentinel-token by calling /backend-api/sentinel/req and solving PoW
+        Supports two modes:
+        - external: Get complete sentinel token from external POW service
+        - local: Generate POW locally and call sentinel/req endpoint
+        """
+        # Check if external POW service is configured
+        if config.pow_service_mode == "external":
+            debug_logger.log_info("[Sentinel] Using external POW service...")
+            result = await pow_service_client.get_sentinel_token()
+
+            if result:
+                sentinel_token, device_id, service_user_agent = result
+                # Use service user agent if provided, otherwise use default
+                final_user_agent = service_user_agent if service_user_agent else (
+                    user_agent if user_agent else
+                    "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
+                )
+
+                debug_logger.log_info(f"[Sentinel] Got token from external service")
+                debug_logger.log_info(f"[Sentinel] Token cached successfully (external)")
+                return sentinel_token, final_user_agent
+            else:
+                # Fallback to local mode if external service fails
+                debug_logger.log_info("[Sentinel] External service failed, falling back to local mode")
+
+        # Local mode (original logic)
+        debug_logger.log_info("[POW] Using local POW generation")
         req_id = str(uuid4())
         if not user_agent:
             user_agent = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
@@ -1045,10 +1151,10 @@ class SoraClient:
 
         proxy_url = await self.proxy_manager.get_proxy_url(token_id)
 
-        # Get POW proxy from configuration
+        # Get POW proxy from configuration (unified with pow_service config)
         pow_proxy_url = None
-        if config.pow_proxy_enabled:
-            pow_proxy_url = config.pow_proxy_url or None
+        if config.pow_service_proxy_enabled:
+            pow_proxy_url = config.pow_service_proxy_url or None
 
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 

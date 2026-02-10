@@ -60,3 +60,16 @@ call_mode = "default"
 # 可选值：-12 到 +14 的整数
 # 常用时区：中国/新加坡 +8, 日本/韩国 +9, 印度 +5.5, 伦敦 0, 纽约 -5, 洛杉矶 -8
 timezone_offset = 8
+
+[pow_service]
+# Beta testing, currently in beta testing phase
+# POW calculation mode: local (local calculation) or external (external service)
+mode = "external"
+# External POW service URL (only used in external mode)
+server_url = "http://localhost:8002"
+# External POW service access key (only used in external mode)
+api_key = "your-secure-api-key-here"
+# POW proxy configuration
+proxy_enabled = false
+proxy_url = ""
+
