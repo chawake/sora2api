@@ -1431,16 +1431,6 @@ class Database:
                 proxy_url=None
             )
             
-     async def update_pow_proxy_config(self, pow_proxy_enabled: bool, pow_proxy_url: Optional[str] = None):
-        """Update POW proxy configuration"""
-        async with aiosqlite.connect(self.db_path) as db:
-            # Use INSERT OR REPLACE to ensure the row exists
-            await db.execute("""
-                INSERT OR REPLACE INTO pow_proxy_config (id, pow_proxy_enabled, pow_proxy_url, updated_at)
-                VALUES (1, ?, ?, CURRENT_TIMESTAMP)
-            """, (pow_proxy_enabled, pow_proxy_url))
-            await db.commit()
-
     async def update_pow_service_config(
         self,
         mode: str,

@@ -259,14 +259,14 @@ class Config:
         return self._config.get("pow_proxy", {}).get("pow_proxy_url", "")
 
     def set_pow_proxy_url(self, url: str):
-         """Set POW proxy URL
+        """Set POW proxy URL
         DEPRECATED: This configuration is deprecated. Use set_pow_service_proxy_url instead.
         All POW proxy settings are now unified under [pow_service] section.
         """
         if "pow_proxy" not in self._config:
             self._config["pow_proxy"] = {}
         self._config["pow_proxy"]["pow_proxy_url"] = url
- @property
+    @property
     def pow_service_mode(self) -> str:
         """Get POW service mode (local or external)"""
         return self._config.get("pow_service", {}).get("mode", "local")
