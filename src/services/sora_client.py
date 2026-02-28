@@ -87,8 +87,23 @@ async def _fetch_oai_did(proxy_url: str = None, max_retries: int = 3) -> str:
     Raises:
         Exception: If 403 or 429 response received
     """
+    # Check if using Oxylabs proxy - if so, try to use primary proxy (Warp) instead
+    # Oxylabs HTTP proxy often gets 403 from Cloudflare for browser-like requests
+    effective_proxy = proxy_url
+    if proxy_url and "oxylabs" in proxy_url.lower():
+        from ..core.config import config
+        from ..core.database import Database
+        try:
+            db = Database()
+            proxy_config = await db.get_proxy_config()
+            if proxy_config.proxy_enabled and proxy_config.proxy_url:
+                effective_proxy = proxy_config.proxy_url
+                debug_logger.log_info(f"[Sentinel] Oxylabs detected, using primary proxy for oai-did: {effective_proxy}")
+        except Exception as e:
+            debug_logger.log_info(f"[Sentinel] Failed to get primary proxy, using provided proxy: {e}")
+
     debug_logger.log_info(f"[Sentinel] Fetching oai-did...")
-    debug_logger.log_info(f"[Sentinel] Proxy: {proxy_url}")
+    debug_logger.log_info(f"[Sentinel] Proxy: {effective_proxy}")
     debug_logger.log_info(f"[Sentinel] Impersonate: chrome120")
 
     for attempt in range(max_retries):
@@ -96,7 +111,7 @@ async def _fetch_oai_did(proxy_url: str = None, max_retries: int = 3) -> str:
             async with AsyncSession(impersonate="chrome120") as session:
                 response = await session.get(
                     "https://chatgpt.com/",
-                    proxy=proxy_url,
+                    proxy=effective_proxy,
                     timeout=30,
                     allow_redirects=True
                 )
@@ -109,7 +124,7 @@ async def _fetch_oai_did(proxy_url: str = None, max_retries: int = 3) -> str:
                     debug_logger.log_error(
                         error_message="403 Forbidden when fetching oai-did - Proxy may be blocked",
                         status_code=403,
-                        response_text=f"Proxy: {proxy_url}, Impersonate: chrome120",
+                        response_text=f"Proxy: {effective_proxy}, Impersonate: chrome120",
                         source="Sentinel"
                     )
                     raise Exception("403 Forbidden - Access denied when fetching oai-did")
@@ -117,7 +132,7 @@ async def _fetch_oai_did(proxy_url: str = None, max_retries: int = 3) -> str:
                     debug_logger.log_error(
                         error_message="429 Rate limited when fetching oai-did",
                         status_code=429,
-                        response_text=f"Proxy: {proxy_url}, Impersonate: chrome120",
+                        response_text=f"Proxy: {effective_proxy}, Impersonate: chrome120",
                         source="Sentinel"
                     )
                     raise Exception("429 Too Many Requests - Rate limited when fetching oai-did")
