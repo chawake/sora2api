@@ -798,8 +798,9 @@ class GenerationHandler:
         retry_count = 0
         last_error = None
         last_token_id = None  # Track the token that caused the error
+        effective_max_retries = max_retries  # Track effective max retries (can be increased for heavy_load)
 
-        while retry_count <= max_retries:
+        while True:  # Loop until we explicitly return or raise
             try:
                 # Try generation
                 # Only show init message on first attempt (not on retries)
@@ -815,12 +816,10 @@ class GenerationHandler:
 
                 # Check if it's a heavy_load error - allow more retries
                 is_heavy_load = "heavy_load" in error_str.lower() or "skip_queue" in error_str.lower()
-                if is_heavy_load and max_retries < 5:
+                if is_heavy_load and effective_max_retries < 5:
                     # Increase max retries for heavy load (up to 5)
                     effective_max_retries = 5
                     debug_logger.log_info(f"Heavy load detected - increasing max retries to {effective_max_retries}")
-                else:
-                    effective_max_retries = max_retries
 
                 # Extract token_id from GenerationError if available
                 if isinstance(e, GenerationError) and e.token_id:
