@@ -813,6 +813,15 @@ class GenerationHandler:
                 last_error = e
                 error_str = str(e)
 
+                # Check if it's a heavy_load error - allow more retries
+                is_heavy_load = "heavy_load" in error_str.lower() or "skip_queue" in error_str.lower()
+                if is_heavy_load and max_retries < 5:
+                    # Increase max retries for heavy load (up to 5)
+                    effective_max_retries = 5
+                    debug_logger.log_info(f"Heavy load detected - increasing max retries to {effective_max_retries}")
+                else:
+                    effective_max_retries = max_retries
+
                 # Extract token_id from GenerationError if available
                 if isinstance(e, GenerationError) and e.token_id:
                     last_token_id = e.token_id
@@ -839,22 +848,36 @@ class GenerationHandler:
                 # Check if we should retry
                 should_retry = (
                     retry_enabled and
-                    retry_count < max_retries and
+                    retry_count < effective_max_retries and
                     self._should_retry_on_error(e)
                 )
 
                 if should_retry:
                     retry_count += 1
-                    debug_logger.log_info(f"Generation failed, retrying ({retry_count}/{max_retries}): {str(e)}")
+                    error_str = str(e)
+
+                    # Check if it's a heavy_load error - use exponential backoff
+                    is_heavy_load = "heavy_load" in error_str.lower() or "skip_queue" in error_str.lower()
+
+                    if is_heavy_load:
+                        # Exponential backoff for heavy load: 3s, 6s, 12s, 24s, 48s
+                        delay = 3 * (2 ** (retry_count - 1))
+                        delay = min(delay, 30)  # Cap at 30 seconds
+                        debug_logger.log_info(f"Heavy load detected - using exponential backoff: {delay}s before retry {retry_count}/{effective_max_retries}")
+                    else:
+                        # Normal backoff for other errors: 2s
+                        delay = 2
+
+                    debug_logger.log_info(f"Generation failed, retrying ({retry_count}/{effective_max_retries}) in {delay}s: {str(e)}")
 
                     # Send retry notification to user if streaming
                     if stream:
                         yield self._format_stream_chunk(
-                            reasoning_content=f"**生成失败，正在重试**\n\n第 {retry_count} 次重试（共 {max_retries} 次）...\n\n失败原因：{str(e)}\n\n"
+                            reasoning_content=f"**生成失败，正在重试**\n\n第 {retry_count} 次重试（共 {effective_max_retries} 次）...\n\n失败原因：{str(e)}\n\n等待 {delay} 秒后重试...\n\n"
                         )
 
-                    # Small delay before retry
-                    await asyncio.sleep(2)
+                    # Wait before retry
+                    await asyncio.sleep(delay)
                 else:
                     # No more retries, raise the error
                     raise last_error
