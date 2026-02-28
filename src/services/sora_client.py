@@ -83,12 +83,14 @@ async def _close_browser():
 
 async def _fetch_oai_did(proxy_url: str = None, max_retries: int = 3) -> str:
     """Fetch oai-did using curl_cffi (lightweight approach)
-    
+
     Raises:
         Exception: If 403 or 429 response received
     """
     debug_logger.log_info(f"[Sentinel] Fetching oai-did...")
-    
+    debug_logger.log_info(f"[Sentinel] Proxy: {proxy_url}")
+    debug_logger.log_info(f"[Sentinel] Impersonate: chrome120")
+
     for attempt in range(max_retries):
         try:
             async with AsyncSession(impersonate="chrome120") as session:
@@ -98,35 +100,56 @@ async def _fetch_oai_did(proxy_url: str = None, max_retries: int = 3) -> str:
                     timeout=30,
                     allow_redirects=True
                 )
-                
+
+                # Log detailed response info
+                debug_logger.log_info(f"[Sentinel] Response status: {response.status_code}")
+
                 # Check for 403/429 errors - don't retry, just fail
                 if response.status_code == 403:
+                    debug_logger.log_error(
+                        error_message="403 Forbidden when fetching oai-did - Proxy may be blocked",
+                        status_code=403,
+                        response_text=f"Proxy: {proxy_url}, Impersonate: chrome120",
+                        source="Sentinel"
+                    )
                     raise Exception("403 Forbidden - Access denied when fetching oai-did")
                 if response.status_code == 429:
+                    debug_logger.log_error(
+                        error_message="429 Rate limited when fetching oai-did",
+                        status_code=429,
+                        response_text=f"Proxy: {proxy_url}, Impersonate: chrome120",
+                        source="Sentinel"
+                    )
                     raise Exception("429 Too Many Requests - Rate limited when fetching oai-did")
-                
+
                 oai_did = response.cookies.get("oai-did")
                 if oai_did:
-                    debug_logger.log_info(f"[Sentinel] oai-did: {oai_did}")
+                    debug_logger.log_info(f"[Sentinel] oai-did obtained: {oai_did}")
                     return oai_did
-                
+
                 set_cookie = response.headers.get("set-cookie", "")
                 match = re.search(r'oai-did=([a-f0-9-]{36})', set_cookie)
                 if match:
                     oai_did = match.group(1)
-                    debug_logger.log_info(f"[Sentinel] oai-did: {oai_did}")
+                    debug_logger.log_info(f"[Sentinel] oai-did obtained from header: {oai_did}")
                     return oai_did
-                    
+
         except Exception as e:
             error_str = str(e)
             # Re-raise 403/429 errors immediately
             if "403" in error_str or "429" in error_str:
                 raise
-            debug_logger.log_info(f"[Sentinel] oai-did fetch failed: {e}")
-        
+            debug_logger.log_info(f"[Sentinel] oai-did fetch failed (attempt {attempt + 1}/{max_retries}): {e}")
+
         if attempt < max_retries - 1:
             await asyncio.sleep(2)
-    
+
+    debug_logger.log_error(
+        error_message="Failed to fetch oai-did after all retries",
+        status_code=0,
+        response_text=f"Proxy: {proxy_url}, Impersonate: chrome120",
+        source="Sentinel"
+    )
     return None
 
 
@@ -236,26 +259,32 @@ async def _get_cached_sentinel_token(proxy_url: str = None, force_refresh: bool 
     """Get sentinel token with caching support
 
     Args:
-        proxy_url: Optional proxy URL
+        proxy_url: Optional proxy URL (used for local POW generation)
         force_refresh: Force refresh token (e.g., after 400 error)
-      
+
     Returns:
         Sentinel token string or None
-        
+
     Raises:
         Exception: If 403/429 when fetching oai-did
     """
     global _cached_sentinel_token
 
+    debug_logger.log_info(f"[Sentinel] _get_cached_sentinel_token called with proxy_url={proxy_url}")
+    debug_logger.log_info(f"[Sentinel] POW mode: {config.pow_service_mode}")
+
     # Check if external POW service is configured
     if config.pow_service_mode == "external":
-        debug_logger.log_info("[POW] Using external POW service (cached sentinel)")
+        debug_logger.log_info("[POW] Using external POW service")
+        debug_logger.log_info(f"[POW] External service URL: {config.pow_service_server_url}")
         from .pow_service_client import pow_service_client
         result = await pow_service_client.get_sentinel_token()
 
         if result:
             sentinel_token, device_id, service_user_agent = result
             debug_logger.log_info("[POW] External service returned sentinel token successfully")
+            debug_logger.log_info(f"[POW] Device ID: {device_id}")
+            debug_logger.log_info(f"[POW] User-Agent: {service_user_agent}")
             return sentinel_token
         else:
             # Fallback to local mode if external service fails
@@ -627,8 +656,14 @@ class SoraClient:
             Exception: With error info, including '400' in message for sentinel token errors
         """
         url = f"{self.base_url}/nf/create"
+        original_user_agent = user_agent
         if not user_agent:
             user_agent = random.choice(DESKTOP_USER_AGENTS)
+
+        debug_logger.log_info(f"[nf/create] Proxy: {proxy_url}")
+        debug_logger.log_info(f"[nf/create] User-Agent: {user_agent}")
+        if original_user_agent != user_agent:
+            debug_logger.log_info(f"[nf/create] User-Agent was None, selected randomly from DESKTOP_USER_AGENTS")
 
         # Check for Team ID appended to token (format: token,team_id)
         # Check for Team ID appended to token (format: token,team_id)
@@ -637,7 +672,7 @@ class SoraClient:
         import json as json_mod
         sentinel_data = json_mod.loads(sentinel_token)
         device_id = sentinel_data.get("id", str(uuid4()))
-        
+
         headers = {
             "Authorization": f"Bearer {token}",
             "openai-sentinel-token": sentinel_token, # Use lowercase, consistent with successful curl requests
@@ -772,6 +807,7 @@ class SoraClient:
                 )
 
                 debug_logger.log_info(f"[Sentinel] Got token from external service")
+                debug_logger.log_info(f"[Sentinel] User-Agent: {final_user_agent}")
                 debug_logger.log_info(f"[Sentinel] Token cached successfully (external)")
                 return sentinel_token, final_user_agent
             else:
@@ -784,8 +820,11 @@ class SoraClient:
         if not user_agent:
             user_agent = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
 
+        debug_logger.log_info(f"[Sentinel] User-Agent: {user_agent}")
+        debug_logger.log_info(f"[Sentinel] Impersonate: chrome131")
+
         pow_token = self._get_pow_token(user_agent)
-        
+
         init_payload = {
             "p": pow_token,
             "id": req_id,
@@ -794,6 +833,7 @@ class SoraClient:
         ua_with_pow = f"{user_agent} {json.dumps(init_payload, separators=(',', ':'))}"
 
         proxy_url = await self.proxy_manager.get_proxy_url()
+        debug_logger.log_info(f"[Sentinel] Proxy: {proxy_url}")
 
         # Request sentinel/req endpoint
         url = f"{self.CHATGPT_BASE_URL}/backend-api/sentinel/req"
@@ -803,7 +843,7 @@ class SoraClient:
             "flow": "sora_init"
         }
         request_body = json.dumps(request_payload, separators=(',', ':'))
-        
+
         headers = {
             "Accept": "*/*",
             "Content-Type": "text/plain;charset=UTF-8",
@@ -815,6 +855,10 @@ class SoraClient:
             "sec-ch-ua-platform": '"Android"',
         }
 
+        debug_logger.log_info(f"[Sentinel] Request headers:")
+        for key, value in headers.items():
+            debug_logger.log_info(f"  {key}: {value[:100]}..." if len(str(value)) > 100 else f"  {key}: {value}")
+
         try:
             async with AsyncSession(impersonate="chrome131") as session:
                 response = await session.post(
@@ -824,6 +868,7 @@ class SoraClient:
                     proxy=proxy_url,
                     timeout=10
                 )
+                debug_logger.log_info(f"[Sentinel] Response status: {response.status_code}")
                 if response.status_code != 200:
                     raise Exception(f"Sentinel request failed: {response.status_code} {response.text}")
                 resp = response.json()
@@ -1156,11 +1201,21 @@ class SoraClient:
         if config.pow_service_proxy_enabled:
             pow_proxy_url = config.pow_service_proxy_url or None
 
+        debug_logger.log_info("=" * 80)
+        debug_logger.log_info(f"[generate_video] Primary Proxy (for API calls): {proxy_url}")
+        debug_logger.log_info(f"[generate_video] POW Proxy (for Sentinel Token): {pow_proxy_url}")
+        debug_logger.log_info(f"[generate_video] POW Proxy Enabled: {config.pow_service_proxy_enabled}")
+
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
         # Try to get cached sentinel token first (using lightweight Playwright approach)
         try:
+            debug_logger.log_info(f"[generate_video] Fetching Sentinel Token with POW proxy...")
             sentinel_token = await _get_cached_sentinel_token(pow_proxy_url, force_refresh=False)
+            if sentinel_token:
+                debug_logger.log_info(f"[generate_video] Sentinel Token obtained successfully (cached/lightweight)")
+            else:
+                debug_logger.log_info(f"[generate_video] Sentinel Token returned None, will fallback to manual POW")
         except Exception as e:
             # 403/429 errors from oai-did fetch - don't retry, just fail
             error_str = str(e)
@@ -1168,15 +1223,17 @@ class SoraClient:
                 debug_logger.log_error(
                     error_message=f"Failed to get sentinel token: {error_str}",
                     status_code=403 if "403" in error_str else 429,
-                    response_text=error_str,
+                    response_text=f"POW Proxy: {pow_proxy_url}",
                     source="Server"
                 )
                 raise
+            debug_logger.log_info(f"[generate_video] Lightweight sentinel token exception: {e}")
             sentinel_token = None
 
         if not sentinel_token:
             # Fallback to manual POW if lightweight approach fails
-            debug_logger.log_info("[Warning] Lightweight sentinel token failed, falling back to manual POW")
+            debug_logger.log_info("[generate_video] [Warning] Lightweight sentinel token failed, falling back to manual POW")
+            debug_logger.log_info(f"[generate_video] Manual POW will use primary proxy: {proxy_url}")
             sentinel_token, user_agent = await self._generate_sentinel_token(token)
 
         # First attempt with cached/generated token
