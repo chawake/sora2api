@@ -155,81 +155,151 @@ async def _fetch_oai_did(proxy_url: str = None, max_retries: int = 3) -> str:
 
 async def _generate_sentinel_token_lightweight(proxy_url: str = None, device_id: str = None) -> str:
     """Generate sentinel token using lightweight Playwright approach
-    
+
     Uses route interception and SDK injection for minimal resource usage.
     Reuses browser instance across calls.
-    
+
     Args:
         proxy_url: Optional proxy URL
         device_id: Optional pre-fetched oai-did
-        
+
     Returns:
         Sentinel token string or None on failure
-        
+
     Raises:
         Exception: If 403/429 when fetching oai-did
     """
     global _cached_device_id
-    
+
     if not PLAYWRIGHT_AVAILABLE:
         debug_logger.log_info("[Sentinel] Playwright not available")
         return None
-    
+
     # Get oai-did
     if not device_id:
         device_id = await _fetch_oai_did(proxy_url)
-    
+
     if not device_id:
         debug_logger.log_info("[Sentinel] Failed to get oai-did")
         return None
-    
+
     _cached_device_id = device_id
-    
+
     debug_logger.log_info(f"[Sentinel] Starting browser...")
+    debug_logger.log_info(f"[Sentinel] Using proxy: {proxy_url}")
     browser = await _get_browser(proxy_url)
-    
+
     context = await browser.new_context(
-        viewport={'width': 800, 'height': 600},
+        viewport={'width': 1920, 'height': 1080},
         user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        bypass_csp=True
+        bypass_csp=True,
+        java_script_enabled=True
     )
-    
-    # Set cookie
-    await context.add_cookies([{
-        'name': 'oai-did',
-        'value': device_id,
-        'domain': 'sora.chatgpt.com',
-        'path': '/'
-    }])
-    
+
+    # Set cookies for both domains
+    await context.add_cookies([
+        {
+            'name': 'oai-did',
+            'value': device_id,
+            'domain': 'sora.chatgpt.com',
+            'path': '/'
+        },
+        {
+            'name': 'oai-did',
+            'value': device_id,
+            'domain': 'chatgpt.com',
+            'path': '/'
+        }
+    ])
+
     page = await context.new_page()
-    
-    # Route interception - inject SDK
-    inject_html = '''<!DOCTYPE html><html><head><script src="https://chatgpt.com/backend-api/sentinel/sdk.js"></script></head><body></body></html>'''
-    
+
+    # Track SDK load status
+    sdk_load_attempts = 0
+    sdk_loaded = False
+    sdk_error = None
+
+    # Route interception - allow all necessary requests
     async def handle_route(route):
+        nonlocal sdk_load_attempts
         url = route.request.url
-        if "__sentinel__" in url:
-            await route.fulfill(status=200, content_type="text/html", body=inject_html)
-        elif "/sentinel/" in url or "chatgpt.com" in url or "oaistatic.com" in url or "openai.com" in url:
-            await route.continue_()
-        else:
-            debug_logger.log_info(f"[Sentinel] BLOCKING url: {url}")
+        request_type = route.request.resource_type
+        
+        # Count SDK requests
+        if "sdk.js" in url or "sentinel" in url.lower():
+            sdk_load_attempts += 1
+            debug_logger.log_info(f"[Sentinel] SDK-related request: {url[:150]}... (type: {request_type})")
+        
+        # Block unnecessary resources to speed up loading
+        if request_type in ['image', 'stylesheet', 'font', 'media']:
+            debug_logger.log_info(f"[Sentinel] Blocking {request_type}: {url[:100]}...")
             await route.abort()
-    
+        else:
+            await route.continue_()
+
     await page.route("**/*", handle_route)
-    
-    debug_logger.log_info(f"[Sentinel] Loading SDK...")
-    
+
+    # Retry logic for SDK loading
+    max_sdk_retries = 3
+    for retry in range(max_sdk_retries):
+        try:
+            # Method 1: Try loading from sora.chatgpt.com directly
+            debug_logger.log_info(f"[Sentinel] Attempt {retry + 1}/{max_sdk_retries}: Loading from sora.chatgpt.com...")
+            
+            # Navigate to explore page first to establish session
+            await page.goto("https://sora.chatgpt.com/explore", wait_until="domcontentloaded", timeout=30000)
+            await asyncio.sleep(2)  # Wait for page to initialize
+            
+            # Check if SDK is available
+            try:
+                sdk_check = await page.evaluate("typeof window.SentinelSDK !== 'undefined'")
+                if sdk_check:
+                    sdk_loaded = True
+                    debug_logger.log_info(f"[Sentinel] SDK already available on page")
+                    break
+            except:
+                pass
+            
+            # Navigate to sentinel endpoint
+            debug_logger.log_info(f"[Sentinel] Navigating to sentinel endpoint...")
+            await page.goto("https://sora.chatgpt.com/__sentinel__", wait_until="domcontentloaded", timeout=30000)
+            await asyncio.sleep(3)  # Give SDK time to load
+            
+            # Wait for SDK to load with longer timeout
+            debug_logger.log_info(f"[Sentinel] Waiting for SentinelSDK to load (timeout: 25s)...")
+            await page.wait_for_function(
+                "typeof SentinelSDK !== 'undefined' && typeof SentinelSDK.token === 'function'",
+                timeout=25000
+            )
+            sdk_loaded = True
+            debug_logger.log_info(f"[Sentinel] SDK loaded successfully after {sdk_load_attempts} SDK requests")
+            break
+            
+        except Exception as e:
+            sdk_error = str(e)
+            debug_logger.log_info(f"[Sentinel] Attempt {retry + 1} failed: {e}")
+            debug_logger.log_info(f"[Sentinel] SDK load attempts: {sdk_load_attempts}")
+            if retry < max_sdk_retries - 1:
+                debug_logger.log_info(f"[Sentinel] Retrying in 3 seconds...")
+                await asyncio.sleep(3)
+                # Reset page for retry
+                await page.close()
+                page = await context.new_page()
+                await page.route("**/*", handle_route)
+
+    if not sdk_loaded:
+        debug_logger.log_error(
+            error_message=f"Failed to load SentinelSDK after all retries: {sdk_error}",
+            status_code=0,
+            response_text=f"SDK load attempts: {sdk_load_attempts}, Proxy: {proxy_url}, Error: {sdk_error}",
+            source="Sentinel"
+        )
+        await context.close()
+        return None
+
+    debug_logger.log_info(f"[Sentinel] Getting token...")
+
     try:
-        # Load SDK via hack (must be under sora.chatgpt.com domain)
-        await page.goto("https://sora.chatgpt.com/__sentinel__", wait_until="load", timeout=30000)
-        
-        # Wait for SDK to load
-        await page.wait_for_function("typeof SentinelSDK !== 'undefined' && typeof SentinelSDK.token === 'function'", timeout=15000)
-        
-        debug_logger.log_info(f"[Sentinel] Getting token...")
-        
         # Call SDK
         token = await page.evaluate(f'''
             async () => {{
@@ -240,19 +310,20 @@ async def _generate_sentinel_token_lightweight(proxy_url: str = None, device_id:
                 }}
             }}
         ''')
-        
+
         if token and not token.startswith('ERROR'):
             debug_logger.log_info(f"[Sentinel] Token obtained successfully")
+            await context.close()
             return token
         else:
             debug_logger.log_info(f"[Sentinel] Token error: {token}")
+            await context.close()
             return None
-            
+
     except Exception as e:
-        debug_logger.log_info(f"[Sentinel] Error: {e}")
-        return None
-    finally:
+        debug_logger.log_info(f"[Sentinel] Token evaluation error: {e}")
         await context.close()
+        return None
 
 
 async def _get_cached_sentinel_token(proxy_url: str = None, force_refresh: bool = False) -> str:
