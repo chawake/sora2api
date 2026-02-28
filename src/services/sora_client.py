@@ -160,7 +160,7 @@ async def _generate_sentinel_token_lightweight(proxy_url: str = None, device_id:
     Reuses browser instance across calls.
 
     Args:
-        proxy_url: Optional proxy URL
+        proxy_url: Optional proxy URL (NOTE: Playwright works better with SOCKS5 proxies like Warp)
         device_id: Optional pre-fetched oai-did
 
     Returns:
@@ -175,7 +175,7 @@ async def _generate_sentinel_token_lightweight(proxy_url: str = None, device_id:
         debug_logger.log_info("[Sentinel] Playwright not available")
         return None
 
-    # Get oai-did
+    # Get oai-did using the provided proxy (Oxylabs works for curl_cffi)
     if not device_id:
         device_id = await _fetch_oai_did(proxy_url)
 
@@ -185,9 +185,25 @@ async def _generate_sentinel_token_lightweight(proxy_url: str = None, device_id:
 
     _cached_device_id = device_id
 
+    # For Playwright, use the primary proxy (usually Warp SOCKS5) instead of POW proxy (Oxylabs HTTP)
+    # Playwright has better compatibility with SOCKS5 proxies
+    playwright_proxy = proxy_url
+    if proxy_url and "oxylabs" in proxy_url.lower():
+        # If using Oxylabs, try to get the primary proxy from config instead
+        from ..core.config import config
+        from ..core.database import Database
+        try:
+            db = Database()
+            proxy_config = await db.get_proxy_config()
+            if proxy_config.proxy_enabled and proxy_config.proxy_url:
+                playwright_proxy = proxy_config.proxy_url
+                debug_logger.log_info(f"[Sentinel] Using primary proxy for Playwright: {playwright_proxy}")
+        except Exception as e:
+            debug_logger.log_info(f"[Sentinel] Failed to get primary proxy, using provided proxy: {e}")
+
     debug_logger.log_info(f"[Sentinel] Starting browser...")
-    debug_logger.log_info(f"[Sentinel] Using proxy: {proxy_url}")
-    browser = await _get_browser(proxy_url)
+    debug_logger.log_info(f"[Sentinel] Using proxy: {playwright_proxy}")
+    browser = await _get_browser(playwright_proxy)
 
     context = await browser.new_context(
         viewport={'width': 1920, 'height': 1080},
@@ -291,7 +307,7 @@ async def _generate_sentinel_token_lightweight(proxy_url: str = None, device_id:
         debug_logger.log_error(
             error_message=f"Failed to load SentinelSDK after all retries: {sdk_error}",
             status_code=0,
-            response_text=f"SDK load attempts: {sdk_load_attempts}, Proxy: {proxy_url}, Error: {sdk_error}",
+            response_text=f"SDK load attempts: {sdk_load_attempts}, Playwright Proxy: {playwright_proxy}, Error: {sdk_error}",
             source="Sentinel"
         )
         await context.close()
