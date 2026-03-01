@@ -154,23 +154,36 @@ class FileCache:
             if self.proxy_manager:
                 proxy_url = await self.proxy_manager.get_proxy_url(token_id)
 
-            # Download with proxy support
-            async with AsyncSession() as session:
-                kwargs = {"timeout": 60, "impersonate": "chrome"}
+            # Download with proxy support and proper headers for Cloudflare
+            # Use chrome120 impersonation for better Cloudflare compatibility
+            async with AsyncSession(impersonate="chrome120") as session:
+                kwargs = {
+                    "timeout": 60,
+                    "headers": {
+                        "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+                        "Accept-Language": "en-US,en;q=0.9",
+                        "Sec-Ch-Ua": '"Not(A:Brand";v="8", "Chromium";v="131", "Google Chrome";v="131"',
+                        "Sec-Ch-Ua-Mobile": "?0",
+                        "Sec-Ch-Ua-Platform": '"Windows"',
+                        "Sec-Fetch-Dest": "image",
+                        "Sec-Fetch-Mode": "no-cors",
+                        "Sec-Fetch-Site": "cross-site",
+                    }
+                }
                 if proxy_url:
                     kwargs["proxy"] = proxy_url
                 response = await session.get(url, **kwargs)
 
                 if response.status_code != 200:
                     raise Exception(f"Download failed: HTTP {response.status_code}")
-                
+
                 # Save to cache
                 with open(file_path, 'wb') as f:
                     f.write(response.content)
-                
+
                 debug_logger.log_info(f"File cached: {filename} ({len(response.content)} bytes)")
                 return filename
-                
+
         except Exception as e:
             debug_logger.log_error(
                 error_message=f"Failed to download file: {str(e)}",

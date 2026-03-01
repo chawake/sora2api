@@ -375,9 +375,20 @@ class GenerationHandler:
 
         proxy_url = await self.load_balancer.proxy_manager.get_proxy_url()
 
+        # Use chrome120 impersonation and proper headers for Cloudflare compatibility
         kwargs = {
             "timeout": 30,
-            "impersonate": "chrome"
+            "impersonate": "chrome120",
+            "headers": {
+                "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Sec-Ch-Ua": '"Not(A:Brand";v="8", "Chromium";v="131", "Google Chrome";v="131"',
+                "Sec-Ch-Ua-Mobile": "?0",
+                "Sec-Ch-Ua-Platform": '"Windows"',
+                "Sec-Fetch-Dest": "image",
+                "Sec-Fetch-Mode": "no-cors",
+                "Sec-Fetch-Site": "cross-site",
+            }
         }
 
         if proxy_url:
