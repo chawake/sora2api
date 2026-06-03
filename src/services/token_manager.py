@@ -499,9 +499,19 @@ class TokenManager:
         debug_logger.log_info(f"[ST_TO_AT] 开始转换 Session Token 为 Access Token...")
         proxy_url = await self.proxy_manager.get_proxy_url(proxy_url=proxy_url)
 
+        st_val = session_token.strip()
+        if "|" in st_val:
+            parts = st_val.split("|")
+            cookie_parts = []
+            for idx, part in enumerate(parts):
+                cookie_parts.append(f"__Secure-next-auth.session-token.{idx}={part}")
+            cookie_header = "; ".join(cookie_parts)
+        else:
+            cookie_header = f"__Secure-next-auth.session-token={st_val}"
+
         async with AsyncSession() as session:
             headers = {
-                "Cookie": f"__Secure-next-auth.session-token={session_token}",
+                "Cookie": cookie_header,
                 "Accept": "application/json",
                 "Origin": "https://sora.chatgpt.com",
                 "Referer": "https://sora.chatgpt.com/"

@@ -805,8 +805,18 @@ class SoraClient:
                 token_obj = await db.get_token(token_id)
                 if token_obj and token_obj.st:
                     # 添加 session token cookie
-                    headers["Cookie"] = f"__Secure-next-auth.session-token={token_obj.st}"
-                    debug_logger.log_info(f"[nf/create] Added session token cookie (length: {len(token_obj.st)})")
+                    st_val = token_obj.st.strip()
+                    if "|" in st_val:
+                        parts = st_val.split("|")
+                        cookie_parts = []
+                        for idx, part in enumerate(parts):
+                            cookie_parts.append(f"__Secure-next-auth.session-token.{idx}={part}")
+                        cookie_header = "; ".join(cookie_parts)
+                    else:
+                        cookie_header = f"__Secure-next-auth.session-token={st_val}"
+
+                    headers["Cookie"] = cookie_header
+                    debug_logger.log_info(f"[nf/create] Added session token cookie (length: {len(cookie_header)})")
                 else:
                     debug_logger.log_warning("[nf/create] No session token (st) found for this token")
             except Exception as e:
