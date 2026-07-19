@@ -12,6 +12,78 @@ from ..core.config import config
 from .proxy_manager import ProxyManager
 from ..core.logger import debug_logger
 
+def format_session_cookie(session_token: str) -> str:
+    """Format session token string into a robust Cookie header supporting all NextAuth formats and chunking."""
+    if not session_token:
+        return ""
+
+    st_val = session_token.strip()
+
+    # 1. If raw Cookie header string containing =
+    if "session-token" in st_val and "=" in st_val:
+        cookie_pairs = [p.strip() for p in st_val.split(";") if p.strip()]
+        parts_dict = {}
+        full_st = None
+        for pair in cookie_pairs:
+            if "=" in pair:
+                k, v = pair.split("=", 1)
+                k = k.strip()
+                v = v.strip()
+                if "session-token." in k:
+                    try:
+                        idx = int(k.split(".")[-1])
+                        parts_dict[idx] = v
+                    except ValueError:
+                        pass
+                elif "session-token" in k:
+                    full_st = v
+
+        if parts_dict:
+            sorted_parts = [parts_dict[i] for i in sorted(parts_dict.keys())]
+            full_st = "".join(sorted_parts)
+            explicit_parts = sorted_parts
+        elif full_st:
+            explicit_parts = [full_st]
+        else:
+            explicit_parts = [st_val]
+    else:
+        # 2. Delimiter-separated parts (| , \n ;)
+        # Note: Do not split on dots (.), because JWE tokens contain dots!
+        if "|" in st_val:
+            raw_parts = [p.strip() for p in st_val.split("|") if p.strip()]
+        elif "\n" in st_val:
+            raw_parts = [p.strip() for p in st_val.split("\n") if p.strip()]
+        elif ";" in st_val and not st_val.startswith("eyJ"):
+            raw_parts = [p.strip() for p in st_val.split(";") if p.strip()]
+        elif "," in st_val and not st_val.startswith("eyJ"):
+            raw_parts = [p.strip() for p in st_val.split(",") if p.strip()]
+        else:
+            raw_parts = [st_val]
+
+        explicit_parts = raw_parts
+        full_st = "".join(raw_parts)
+
+    chunks = []
+    if len(explicit_parts) > 1:
+        chunks = explicit_parts
+    elif len(full_st) > 2000:
+        CHUNK_SIZE = 2000
+        chunks = [full_st[i:i+CHUNK_SIZE] for i in range(0, len(full_st), CHUNK_SIZE)]
+
+    cookie_items = []
+
+    # Unchunked cookies
+    cookie_items.append(f"__Secure-next-auth.session-token={full_st}")
+    cookie_items.append(f"next-auth.session-token={full_st}")
+
+    # Chunked cookies (.0, .1, ...)
+    if chunks:
+        for idx, chunk in enumerate(chunks):
+            cookie_items.append(f"__Secure-next-auth.session-token.{idx}={chunk}")
+            cookie_items.append(f"next-auth.session-token.{idx}={chunk}")
+
+    return "; ".join(cookie_items)
+
 class TokenManager:
     """Token lifecycle manager"""
 
@@ -499,15 +571,8 @@ class TokenManager:
         debug_logger.log_info(f"[ST_TO_AT] 开始转换 Session Token 为 Access Token...")
         proxy_url = await self.proxy_manager.get_proxy_url(proxy_url=proxy_url)
 
-        st_val = session_token.strip()
-        if "|" in st_val:
-            parts = st_val.split("|")
-            cookie_parts = []
-            for idx, part in enumerate(parts):
-                cookie_parts.append(f"__Secure-next-auth.session-token.{idx}={part}")
-            cookie_header = "; ".join(cookie_parts)
-        else:
-            cookie_header = f"__Secure-next-auth.session-token={st_val}"
+        cookie_header = format_session_cookie(session_token)
+        debug_logger.log_info(f"[ST_TO_AT] 生成 Cookie 头长度: {len(cookie_header)}")
 
         async with AsyncSession() as session:
             headers = {
@@ -527,62 +592,68 @@ class TokenManager:
                 kwargs["proxy"] = proxy_url
                 debug_logger.log_info(f"[ST_TO_AT] 使用代理: {proxy_url}")
 
-            url = "https://sora.chatgpt.com/api/auth/session"
-            debug_logger.log_info(f"[ST_TO_AT] 📡 请求 URL: {url}")
+            urls = [
+                "https://sora.chatgpt.com/api/auth/session",
+                "https://chatgpt.com/api/auth/session"
+            ]
 
-            try:
-                response = await session.get(url, **kwargs)
-                debug_logger.log_info(f"[ST_TO_AT] 📥 响应状态码: {response.status_code}")
-
-                if response.status_code != 200:
-                    error_msg = f"Failed to convert ST to AT: {response.status_code}"
-                    debug_logger.log_info(f"[ST_TO_AT] ❌ {error_msg}")
-                    debug_logger.log_info(f"[ST_TO_AT] 响应内容: {response.text[:500]}")
-                    raise ValueError(error_msg)
-
-                # 获取响应文本用于调试
-                response_text = response.text
-                debug_logger.log_info(f"[ST_TO_AT] 📄 响应内容: {response_text[:500]}")
-
-                # 检查响应是否为空
-                if not response_text or response_text.strip() == "":
-                    debug_logger.log_info(f"[ST_TO_AT] ❌ 响应体为空")
-                    raise ValueError("Response body is empty")
-
+            last_error = None
+            for url in urls:
+                debug_logger.log_info(f"[ST_TO_AT] 📡 请求 URL: {url}")
                 try:
-                    data = response.json()
-                except Exception as json_err:
-                    debug_logger.log_info(f"[ST_TO_AT] ❌ JSON解析失败: {str(json_err)}")
-                    debug_logger.log_info(f"[ST_TO_AT] 原始响应: {response_text[:1000]}")
-                    raise ValueError(f"Failed to parse JSON response: {str(json_err)}")
+                    response = await session.get(url, **kwargs)
+                    debug_logger.log_info(f"[ST_TO_AT] 📥 响应状态码: {response.status_code}")
 
-                # 检查data是否为None
-                if data is None:
-                    debug_logger.log_info(f"[ST_TO_AT] ❌ 响应JSON为空")
-                    raise ValueError("Response JSON is empty")
+                    if response.status_code != 200:
+                        error_msg = f"Failed response from {url}: {response.status_code}"
+                        debug_logger.log_info(f"[ST_TO_AT] ⚠️ {error_msg}")
+                        debug_logger.log_info(f"[ST_TO_AT] 响应内容: {response.text[:500]}")
+                        last_error = error_msg
+                        continue
 
-                access_token = data.get("accessToken")
-                email = data.get("user", {}).get("email") if data.get("user") else None
-                expires = data.get("expires")
+                    response_text = response.text
+                    debug_logger.log_info(f"[ST_TO_AT] 📄 响应内容: {response_text[:500]}")
 
-                # 检查必要字段
-                if not access_token:
-                    debug_logger.log_info(f"[ST_TO_AT] ❌ 响应中缺少 accessToken 字段")
-                    debug_logger.log_info(f"[ST_TO_AT] 响应数据: {data}")
-                    raise ValueError("Missing accessToken in response")
+                    if not response_text or response_text.strip() == "":
+                        debug_logger.log_info(f"[ST_TO_AT] ⚠️ {url} 响应体为空")
+                        last_error = "Response body is empty"
+                        continue
 
-                debug_logger.log_info(f"[ST_TO_AT] ✅ ST 转换成功")
-                debug_logger.log_info(f"  - Email: {email}")
-                debug_logger.log_info(f"  - 过期时间: {expires}")
+                    try:
+                        data = response.json()
+                    except Exception as json_err:
+                        debug_logger.log_info(f"[ST_TO_AT] ⚠️ {url} JSON解析失败: {str(json_err)}")
+                        last_error = f"Failed to parse JSON response: {str(json_err)}"
+                        continue
 
-                return {
-                    "access_token": access_token,
-                    "email": email,
-                    "expires": expires
-                }
-            except Exception as e:
-                debug_logger.log_info(f"[ST_TO_AT] 🔴 异常: {str(e)}")
-                raise
+                    if not data or not isinstance(data, dict):
+                        debug_logger.log_info(f"[ST_TO_AT] ⚠️ {url} 响应 JSON 为空或无效")
+                        last_error = "Response JSON is empty or invalid"
+                        continue
+
+                    access_token = data.get("accessToken")
+                    email = data.get("user", {}).get("email") if data.get("user") else None
+                    expires = data.get("expires")
+
+                    if not access_token:
+                        debug_logger.log_info(f"[ST_TO_AT] ⚠️ {url} 响应中缺少 accessToken 字段: {data}")
+                        last_error = "Missing accessToken in response"
+                        continue
+
+                    debug_logger.log_info(f"[ST_TO_AT] ✅ ST 转换成功 (via {url})")
+                    debug_logger.log_info(f"  - Email: {email}")
+                    debug_logger.log_info(f"  - 过期时间: {expires}")
+
+                    return {
+                        "access_token": access_token,
+                        "email": email,
+                        "expires": expires
+                    }
+                except Exception as e:
+                    debug_logger.log_info(f"[ST_TO_AT] 🔴 {url} 异常: {str(e)}")
+                    last_error = str(e)
+
+            raise ValueError(f"Failed to convert ST to AT: {last_error or 'Unknown error'}")
     
     async def rt_to_at(self, refresh_token: str, client_id: Optional[str] = None, proxy_url: Optional[str] = None) -> dict:
         """Convert Refresh Token to Access Token
